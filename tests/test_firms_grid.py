@@ -74,10 +74,12 @@ def test_firms_grid_is_static_no_fetch_loop():
 
 
 def test_firms_grid_shows_four_stat_labels():
-    """Each tile surfaces the 4 promised stats (German labels)."""
+    """Each tile surfaces the 4 promised live zones: Sessions/Revenue/Leads/Gelöst
+    (Simeon's explicit spec 2026-07-17: 'in vier zonen aufgeteilt in sessions
+    und revenue und leads und so')."""
     _seed()
     body = _run(R.firms_grid(_FakeRequest())).text
-    assert "AGENTS ACTIVE" in body.upper()
-    assert "GELD GENERIERT" in body.upper()
-    assert "PROBLEME" in body.upper()
-    assert "PRODUKTE" in body.upper()
+    assert "SESSIONS" in body.upper()
+    assert "REVENUE" in body.upper()
+    assert "LEADS" in body.upper()
+    assert "GEL" in body.upper()  # "Gelöst" — umlaut-safe substring check
