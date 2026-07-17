@@ -658,8 +658,8 @@ def center_page(slug):
 nav{{border-bottom:1px solid #1c2733;padding:18px 0}}
 .brand{{font-weight:600}} .ey{{color:#36d6a0;font-size:12px;letter-spacing:.12em;text-transform:uppercase}}
 h1{{font-size:32px;margin:30px 0 10px;font-weight:650}}
-.sub{{color:#8b98a9;font-size:16px;max-width:640px}}
-.box{{background:#0f141d;border:1px solid #1c2733;border-radius:10px;padding:18px;margin-top:24px}}
+.sub{{color:#8b98a9;font-size:16px;max-width:640px;line-height:1.6}}
+.box{{background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:22px;margin-top:26px}}
 button{{background:#14202e;color:#cfe6ff;border:1px solid #2c4258;border-radius:8px;padding:9px 16px;cursor:pointer}}
 .buy{{background:#1b3a2a;border-color:#2c6b4a;color:#9ff0c8;text-decoration:none;display:inline-block;padding:10px 18px;border-radius:8px;margin-top:14px}}
 input,textarea{{width:100%;padding:10px;background:#070b10;border:1px solid #1c2733;border-radius:8px;color:#e6edf3;margin:8px 0;font-family:inherit}}
@@ -777,22 +777,40 @@ async def index(request):
     else:
         matches = dict(CENTERS.items())
     cards = "".join(
-        f'<div style="background:#0f141d;border:1px solid #1c2733;border-radius:8px;padding:12px;margin:6px">'
-        f'<a href="/{s}"><b>{c["name"]}</b></a><br>'
-        f'<span style="color:#8b98a9;font-size:13px">{c["mandate"]}</span></div>'
+        f'<a class=card href="/{s}">'
+        f'<div class=ctop><span class=cname>{c["name"]}</span>'
+        f'<span class=cmeta>{len(c["panel"])} experts</span></div>'
+        f'<div class=cmandate>{c["mandate"]}</div>'
+        f'</a>'
         for s, c in matches.items())
     hint = f'{len(matches)} centers match "{q}"' if q else f"{len(matches)} standing interdisciplinary centers"
     return web.Response(text=f"""<!doctype html><html><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
 <title>CoEvolution AI — 50 interdisciplinary centers</title>
-<style>body{{margin:0;background:#0a0e14;color:#e6edf3;font-family:-apple-system,Segoe UI,Inter,sans-serif}}
-.wrap{{max-width:1000px;margin:0 auto;padding:30px 22px}} h1{{font-size:30px}}
-.grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}}
-a{{color:#4ea1ff;text-decoration:none}}
-input{{width:100%;max-width:420px;padding:10px;background:#070b10;border:1px solid #1c2733;border-radius:8px;color:#e6edf3;margin:12px 0}}</style></head><body><div class=wrap>
+<style>
+body{{margin:0;background:#0a0e14;color:#e6edf3;font-family:-apple-system,Segoe UI,Inter,sans-serif;line-height:1.5}}
+.wrap{{max-width:1100px;margin:0 auto;padding:40px 24px 60px}}
+h1{{font-size:30px;font-weight:650;margin:0 0 10px;letter-spacing:-.01em}}
+.lede{{color:#8b98a9;font-size:15px;max-width:680px;margin:0 0 22px}}
+.lede a{{color:#4ea1ff;text-decoration:none}}
+.search{{position:relative;margin:0 0 8px}}
+.search input{{width:100%;max-width:520px;padding:12px 14px;background:#070b10;border:1px solid #1c2733;border-radius:10px;color:#e6edf3;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}}
+.search input:focus{{border-color:#2c4258}}
+.hint{{color:#5b6675;font-size:13px;margin:0 0 22px}}
+.grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}}
+.card{{display:block;background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:16px 16px 14px;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s}}
+.card:hover{{border-color:#2c4258;transform:translateY(-2px)}}
+.ctop{{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}}
+.cname{{color:#4ea1ff;font-weight:600;font-size:15px}}
+.cmeta{{color:#5b6675;font-size:11px;border:1px solid #1c2733;border-radius:10px;padding:2px 8px;white-space:nowrap}}
+.cmandate{{color:#8b98a9;font-size:13px;line-height:1.45}}
+@media(max-width:760px){{.grid{{grid-template-columns:repeat(2,1fr)}}}}
+@media(max-width:480px){{.grid{{grid-template-columns:1fr}}}}
+</style></head><body><div class=wrap>
 <h1>50 autonomous interdisciplinary centers</h1>
-<p style="color:#8b98a9">Each a distinct, crisis-resistant standing body of experts, convened across the live 292-agent engine. We only track the cashflow. <a href="/observatory">→ Observatory</a> · <a href="/network">→ Center network</a></p>
-<form method=get><input name=q placeholder="search by problem, discipline or center (e.g. GDPR, security, hiring)" value="{q}"></form>
-<p class=small style="color:#5b6675;font-size:13px">{hint}</p>
+<p class=lede>Each a distinct, crisis-resistant standing body of experts, convened across the live 292-agent engine. We only track the cashflow. <a href="/observatory">→ Observatory</a> · <a href="/network">→ Center network</a></p>
+<form class=search method=get><input name=q placeholder="search by problem, discipline or center (e.g. GDPR, security, hiring)" value="{q}"></form>
+<p class=hint>{hint}</p>
 <div class=grid>{cards}</div></div></body></html>""", content_type="text/html")
 
 
