@@ -99,3 +99,37 @@ def test_network_daughters_is_idempotent():
     assert R.CENTER_NETWORK["db"].count("da") == 1
     assert R.CENTER_NETWORK["gdpr-guard"].count("da") == 1
     assert R.CENTER_NETWORK["gdpr-guard"].count("db") == 1
+
+
+# --- Task 4: scale_out() orchestrator --------------------------------------
+
+def test_scale_out_promotes_passed_and_caps(monkeypatch):
+    """scale_out() runs the full loop (scan -> batch-gate -> capacity ->
+    promote -> network) and reports promoted slugs. Both staged candidates
+    are Laura-passed, so both get promoted and registered in CENTERS."""
+    import runtime as R
+
+    R.state["daughter_centers"] = {}
+    R.state["spawn_candidates"] = {
+        "da": {"name": "A", "mandate": "x", "status": "staged",
+               "slug": "da", "parent": "gdpr-guard",
+               "uncovered_signals": []},
+        "db": {"name": "B", "mandate": "y", "status": "staged",
+               "slug": "db", "parent": "gdpr-guard",
+               "uncovered_signals": []},
+    }
+
+    # Laura passes both (0 flags).
+    monkeypatch.setattr(DS, "mcp_laura_review_plan",
+                        lambda **kw: {"flags": []})
+    # Fake scan: returns a scan result, does NOT touch state (candidates are
+    # already staged in R.state by the test).
+    async def fake_run_spawn_agent():
+        return {"staged": 2}
+    monkeypatch.setattr(DS, "run_spawn_agent", fake_run_spawn_agent)
+
+    report = asyncio.run(DS.scale_out())
+
+    assert report["promoted"] == ["da", "db"]
+    assert "da" in R.CENTERS and "db" in R.CENTERS
+    assert report["capacity_ok"] is True

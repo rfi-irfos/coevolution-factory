@@ -197,35 +197,74 @@ def network_daughters(parent, new_slugs):
                 R.CENTER_NETWORK[s].append(o)
 
 
-async def main():
-    # 1. scan + stage
-    scan_res = await F.run_spawn_agent()
-    st = load_state()
-    cands = st.get("spawn_candidates", {})
-    promoted, blocked = [], []
-    for slug, cand in cands.items():
-        if cand.get("status") != "staged":
-            continue
-        passed = await gate_candidate(cand)
-        if passed:
-            ok = promote(st, cand)
-            cand["status"] = "born" if ok else "duplicate"
-            cand["laura_pass"] = True
-            # HITL second-reviewer SLOT (additive; Laura remains gate #1).
-            apply_second_reviewer(cand)
-            if ok:
-                promoted.append(slug)
-        else:
-            cand["status"] = "blocked_pending_laura"
-            blocked.append(slug)
+# Module-level alias so scale_out() can call run_spawn_agent() and tests can
+# monkeypatch `DS.run_spawn_agent` directly.
+run_spawn_agent = F.run_spawn_agent
+
+
+async def scale_out():
+    """Autonomous scale-out orchestrator (turntable: serial engine calls).
+
+    Full loop:
+        scan -> collect staged candidates -> if capacity_ok():
+        batch_gate_candidates -> for each passed: promote(st, cand),
+        set status 'born', laura_pass=True, apply_second_reviewer(cand)
+        -> collect new_slugs -> network_daughters(parent, new_slugs)
+        for each parent -> save_state -> return report.
+
+    Laura stays the FINAL gate (batch_gate_candidates refuses when she is
+    unavailable). capacity_ok() guards engine health + the daughter cap.
+    """
+    # 1. scan (stages candidates via the spawn agent).
+    scan_res = await run_spawn_agent()
+
+    # Operate on the live in-memory state (R.state), which is what the
+    # running process and tests mutate; save_state() persists it afterward.
+    st = R.state
+
+    # 2. collect staged candidates only.
+    staged = {
+        s: c for s, c in st.get("spawn_candidates", {}).items()
+        if c.get("status") == "staged"
+    }
+
+    promoted, blocked, new_slugs = [], [], []
+
+    if staged and capacity_ok():
+        # 3. single batch Laura gate over all staged candidates.
+        passmap = await batch_gate_candidates(staged)
+        for slug, cand in staged.items():
+            if passmap.get(slug):
+                ok = promote(st, cand)
+                cand["status"] = "born" if ok else "duplicate"
+                cand["laura_pass"] = True
+                # HITL second-reviewer SLOT (additive; Laura remains gate #1).
+                apply_second_reviewer(cand)
+                if ok:
+                    promoted.append(slug)
+                    new_slugs.append(slug)
+            else:
+                cand["status"] = "blocked_pending_laura"
+                blocked.append(slug)
+
+        # 4. auto-network co-spawned daughters to each other + their parent.
+        parents = {c.get("parent") for c in staged.values()}
+        for p in parents:
+            network_daughters(p, new_slugs)
+
+    # 5. persist + report.
     save_state(st)
-    print(json.dumps({
+    return {
         "scan": scan_res,
-        "candidates_total": len(cands),
         "promoted": promoted,
         "blocked_pending_laura": blocked,
-        "laura_available": mcp_laura_review_plan is not None,
-    }, indent=2))
+        "capacity_ok": capacity_ok(),
+    }
+
+
+async def main():
+    report = await scale_out()
+    print(json.dumps(report, indent=2))
 
 
 if __name__ == "__main__":
