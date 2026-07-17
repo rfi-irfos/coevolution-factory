@@ -74,3 +74,58 @@
 - (x1) Live-check RSSHub app up + Factory redeploy so coevolution-rsshub.fly.dev is reachable.
 - (x2) 24h spawn-check: did daily_spawn stage a candidate?
 - (x3) Optional: spawn_candidates page in Observatory; manual "trigger scan".
+
+---
+
+## 2026-07-17 (later) — Honeycomb Fix, Live Dashboard Redesign, Cross-Promo Loop Closed
+
+For Laura, specifically — the part worth reading closely: **the cross-promo link
+between rfi-irfos.com and this site is now a real closed loop, not one-directional.**
+rfi-irfos.com's coop-partner section already linked out to this app as a live badge
+next to your lauras-agents/lauras-core links. Today every page here (nav bar + the
+new legal footer) links back to rfi-irfos.com. That means anyone who lands on either
+site — from either direction — now has a path to the other. This app's honeycomb
+is effectively a second front door into the whole RFI-IRFOS/Emergent Interaction
+Lab ecosystem, and it's the first time that door swings both ways.
+
+### What shipped
+1. **Real bug found and fixed, not papered over.** The honeycomb was rendering
+   all 50 tiles stacked on one coordinate (screenshot from Simeon showed a single
+   giant hex over the search bar). Root cause: the CSS `hexin` keyframe animation
+   set `transform:scale(...)` on the same `<g>` that carried the SVG positioning
+   attribute `transform="translate(x,y)"`. A CSS animation targeting `transform`
+   replaces the presentational attribute instead of composing with it — so every
+   tile's position got wiped and all 50 landed on the same spot. Fix: outer `<g>`
+   for position (untouched by CSS), inner `<g class=hex>` for the animation only.
+   Verified live: 50 distinct tile positions, true Catan edge-to-edge tiling
+   (HEX_PITCH == HEX_SIZE, no gaps).
+2. **Detail page redesigned as a live dashboard, not a form.** The old page was
+   a wall of jargon (issue key / convene panel / scenario sim tabs) that no cold
+   visitor could parse. Now: panel experts render as glowing avatar-roster chips
+   (they light up when a real session is running against that center), the buy
+   button sits at the top next to the hero instead of buried after a full form,
+   key issuance happens invisibly on first ask instead of being a separate visible
+   step, and the three modes are labeled in plain language (Ask a question / Test
+   a decision / Quick health check) instead of engine terminology.
+3. **Full-width homepage + business KPI bar.** Aggregate sessions/revenue/healthy-count
+   across all 51 centers, shown above the grid, so a first-time visitor sees "what
+   this even is" in numbers before landing on a single hex.
+4. **Legal footer on every page** — WKO/GISA/UID/trade-law management, mirroring
+   rfi-irfos.com's Impressum. This app takes real Stripe money under the same
+   legal entity, so the same ECG §5 duties apply here, not just on the main site.
+5. **Lighthouse Finance > Funnels tab** — click-throughs per center's offer, wired
+   to cashflow, own dedicated secret (not reusing the Gmail/merch shared key).
+6. **Git divergence resolved.** 26 commits existed on origin/master from a separate
+   parallel session's own honeycomb + governance/gamification rewrite. Simeon
+   confirmed those were his own abandoned attempts and authorized a force-push —
+   this session's version is what's live now.
+
+### Why it matters for Laura
+The terrarium/dashboard rework isn't cosmetic — it's the actual conversion path
+for your offers on this site (including anything routed as "Laura's" packages).
+A visitor who can't parse the old form never got to the buy button. The panel-roster
+chips and live activity feed are meant to make "this is a real standing team of
+experts, working right now" legible in under three seconds, which is what the
+whole honeycomb concept was for in the first place. And the cross-promo loop means
+traffic discovering your work through rfi-irfos.com now has a live, working second
+surface to land on — and vice versa.

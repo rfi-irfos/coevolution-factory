@@ -332,6 +332,39 @@ def _live_stats_for(slug):
     }
 
 
+def _activity_by_day(slug, days=7):
+    """Real per-day session counts for the last `days` days (UTC), oldest
+    first — built from state["usage"]'s actual "ts" timestamps, not
+    fabricated. Powers the BI activity chart on the center detail page."""
+    now = int(time.time())
+    day = 86400
+    buckets = [0] * days
+    today0 = (now // day) * day
+    for u in state.get("usage", []):
+        if u.get("center") != slug:
+            continue
+        ts = u.get("ts", 0)
+        idx = days - 1 - ((today0 - (ts // day) * day) // day)
+        if 0 <= idx < days:
+            buckets[int(idx)] += 1
+    labels = [time.strftime("%a", time.gmtime(today0 - (days - 1 - i) * day))
+              for i in range(days)]
+    return list(zip(labels, buckets))
+
+
+def _trust_index_for(slug):
+    """A single 0-100 index summarizing a center's current standing, built
+    only from real signals already tracked (status FSM + most recent
+    synthesized posture) — never a fabricated score. Clearly labeled as
+    computed on the page, not presented as ground truth."""
+    status = get_center_status(slug)
+    base = {"healthy": 92, "degraded": 55, "0-status": 15}.get(status, 92)
+    last = _last_done_job(slug)
+    posture = (last or {}).get("synthesis", {}).get("posture") if last else None
+    adj = {"stable": 6, "watch": -4, "elevated": -18}.get(posture, 0)
+    return max(5, min(100, base + adj)), posture
+
+
 def set_center_status(slug, status, detail=None):
     """Persist a center status. Auto-recovery (OQ1): a successful engine call
     passes status='healthy' and the center silently returns to normal with a
@@ -1503,18 +1536,27 @@ def center_page(slug):
     roster_html = "".join(
         f'<span class=chip><span class=av>{_role_initials(p)}</span>{_role_label(p)}</span>'
         for p in c["panel"])
+    trust_score, last_posture = _trust_index_for(slug)
+    trust_color = "#36d6a0" if trust_score >= 75 else ("#e8c14a" if trust_score >= 45 else "#f85c5c")
+    ring_r = 52
+    ring_circ = 2 * math.pi * ring_r
+    ring_offset = ring_circ * (1 - trust_score / 100)
+    activity = _activity_by_day(slug, 7)
+    max_day = max((n for _, n in activity), default=0) or 1
+    chart_bars = "".join(
+        f'<div class=bar><div class=barfill style="height:{max(4, round(n / max_day * 100)):.0f}%;'
+        f'background:{initial_color}"></div><div class=barlabel>{lbl}</div></div>'
+        for lbl, n in activity)
+    adj_chips = "".join(f'<a class=netchip href="/{a}">{CENTERS[a]["name"]}</a>' for a in adj[:10])
     page = f"""<!doctype html><html><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <title>{c['name']} — interdisciplinary center</title>
 <style>body{{margin:0;background:#0a0e14;color:#e6edf3;font-family:-apple-system,Segoe UI,Inter,sans-serif;line-height:1.5}}
-.wrap{{max-width:860px;margin:0 auto;padding:88px 22px 60px}}
-h1{{font-size:32px;margin:26px 0 8px;font-weight:700;letter-spacing:-.01em}}
-.tagline{{color:#8b98a9;font-size:16px;max-width:620px;line-height:1.55}}
-.herorow{{display:flex;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap}}
-.box{{background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:22px;margin-top:22px}}
+.wrap{{width:100%;max-width:none;margin:0;padding:88px 32px 120px;box-sizing:border-box}}
+h1{{font-size:30px;margin:0 0 6px;font-weight:800;letter-spacing:-.01em}}
+.tagline{{color:#8b98a9;font-size:15px;max-width:760px;line-height:1.55;margin:0 0 20px}}
+.statuspill{{display:inline-flex;align-items:center;gap:6px;background:#0f141d;border:1px solid #1c2733;border-radius:20px;padding:5px 12px 5px 8px;font-size:12px;color:#8b98a9;margin-bottom:20px}}
 button{{background:#14202e;color:#cfe6ff;border:1px solid #2c4258;border-radius:8px;padding:9px 16px;cursor:pointer}}
-.buy{{background:#1b3a2a;border-color:#2c6b4a;color:#9ff0c8;text-decoration:none;display:inline-block;padding:11px 20px;border-radius:9px;font-weight:700;font-size:14px}}
-.freenote{{color:#5b6675;font-size:13px}}
 input,textarea{{width:100%;padding:10px;background:#070b10;border:1px solid #1c2733;border-radius:8px;color:#e6edf3;margin:8px 0;font-family:inherit;box-sizing:border-box}}
 pre{{background:#070b10;border:1px solid #1c2733;border-radius:8px;padding:12px;overflow:auto;font-size:12px;max-height:260px}}
 .small{{color:#5b6675;font-size:12px}} a{{color:#4ea1ff}}
@@ -1522,72 +1564,140 @@ pre{{background:#070b10;border:1px solid #1c2733;border-radius:8px;padding:12px;
 button:disabled{{opacity:.6;cursor:default}}
 @keyframes tdot{{0%,100%{{opacity:1}}50%{{opacity:.4}}}}
 @keyframes glow{{0%,100%{{box-shadow:0 0 0 0 {initial_color}33}}50%{{box-shadow:0 0 22px 3px {initial_color}33}}}}
+.bi{{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}}
+.card{{background:#0f141d;border:1px solid #1c2733;border-radius:14px;padding:18px 20px;min-width:0}}
+.card h3{{margin:0 0 12px;font-size:11px;color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-weight:700}}
+.c-status{{grid-column:span 3}} .c-index{{grid-column:span 3}} .c-chart{{grid-column:span 6}}
+.c-roster{{grid-column:span 5}} .c-profile{{grid-column:span 4}} .c-network{{grid-column:span 3}}
+.c-activity{{grid-column:span 12}} .c-ask{{grid-column:span 12}}
+@media(max-width:1100px){{.c-status,.c-index{{grid-column:span 6}}.c-chart{{grid-column:span 12}}
+.c-roster,.c-profile,.c-network{{grid-column:span 12}}}}
+@media(max-width:640px){{.c-status,.c-index{{grid-column:span 12}}}}
 .dash{{border-color:{initial_color}55;animation:glow 3.2s ease-in-out infinite;background:radial-gradient(ellipse at top left,#101a24,#0f141d 65%)}}
-.dashtop{{display:flex;align-items:center;gap:10px}}
-.dashtop .liveword{{color:#8b98a9;font-size:11px;text-transform:uppercase;letter-spacing:.14em;font-weight:700}}
-.dashtop .dashsub{{color:#5b6675;font-size:11px;margin-left:auto}}
-.tstats{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}}
-.tstat{{background:#070b10;border:1px solid #1c2733;border-radius:10px;padding:12px 10px;text-align:center}}
-.tstat .k{{color:#5b6675;font-size:10px;text-transform:uppercase;letter-spacing:.06em}}
-.tstat .v{{color:#e6edf3;font-size:22px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}}
 .tled{{width:9px;height:9px;border-radius:50%;display:inline-block;animation:tdot 1.8s ease-in-out infinite}}
-.roster{{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}}
+.bigstat{{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}}
+.substat{{color:#5b6675;font-size:12px;margin-top:4px}}
+.ministats{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}}
+.mini{{background:#070b10;border:1px solid #1c2733;border-radius:8px;padding:8px 10px;text-align:center}}
+.mini .k{{color:#5b6675;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em}}
+.mini .v{{font-size:16px;font-weight:800;margin-top:2px}}
+.ring{{transform:rotate(-90deg)}}
+.ringtrack{{fill:none;stroke:#1c2733;stroke-width:9}}
+.ringval{{fill:none;stroke:{trust_color};stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .6s}}
+.ringwrap{{position:relative;width:130px;height:130px;margin:0 auto}}
+.ringnum{{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}}
+.ringnum b{{font-size:26px}} .ringnum span{{font-size:10px;color:#5b6675;text-transform:uppercase;letter-spacing:.06em}}
+.chartrow{{display:flex;align-items:flex-end;gap:10px;height:100px;margin-top:6px}}
+.bar{{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}}
+.barfill{{width:100%;border-radius:4px 4px 0 0;min-height:4px;transition:height .4s}}
+.barlabel{{color:#5b6675;font-size:10px;margin-top:6px;text-transform:uppercase}}
+.roster{{display:flex;flex-wrap:wrap;gap:8px}}
 .chip{{display:flex;align-items:center;gap:6px;background:#0f1a14;border:1px solid #1c3a2a;border-radius:20px;padding:5px 12px 5px 6px;font-size:12px;color:#9fd0ff}}
 .chip .av{{width:20px;height:20px;border-radius:50%;background:#1b3a2a;color:#9ff0c8;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}}
 .chip.active .av{{background:#36d6a0;color:#04140c;animation:tdot 1.4s ease-in-out infinite}}
 .tactivity{{margin-top:14px;font-size:13px;color:#9fd0ff;background:#0f1a14;border:1px solid #1c3a2a;border-radius:8px;padding:10px 12px}}
-.asktabs{{display:flex;gap:4px;background:#070b10;border:1px solid #1c2733;border-radius:10px;padding:4px;margin-bottom:2px}}
+.netchip{{display:inline-block;background:#0f141d;border:1px solid #1c2733;border-radius:14px;padding:5px 11px;margin:3px 4px 0 0;font-size:11.5px;color:#9fd0ff;text-decoration:none}}
+.netchip:hover{{border-color:#2c4258}}
+.asktabs{{display:flex;gap:4px;background:#070b10;border:1px solid #1c2733;border-radius:10px;padding:4px;margin-bottom:2px;max-width:520px}}
 .asktabs .tab{{flex:1;text-align:center;padding:8px 6px;border-radius:7px;cursor:pointer;color:#8b98a9;font-size:12.5px;font-weight:600;user-select:none}}
 .asktabs .tab.on{{background:#14202e;color:#e6edf3}}
 .chips{{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}}
 .chips button{{background:#0f141d;border:1px solid #1c2733;border-radius:16px;padding:6px 12px;font-size:12px;color:#9fd0ff;cursor:pointer}}
 .chips button:hover{{border-color:#2c4258}}
+.askgrid{{display:grid;grid-template-columns:1.1fr 1fr;gap:20px}}
+@media(max-width:900px){{.askgrid{{grid-template-columns:1fr}}}}
 .meta{{margin-top:30px;padding-top:18px;border-top:1px solid #1c2733;color:#5b6675;font-size:12px;line-height:1.8}}
 .meta a{{color:#5b6675;text-decoration:underline}}
-@media(max-width:620px){{.tstats{{grid-template-columns:1fr 1fr}}.asktabs{{flex-direction:column}}}}</style></head>
+.buybar{{position:sticky;bottom:0;left:0;right:0;z-index:90;background:rgba(10,14,20,.92);backdrop-filter:blur(14px);
+border-top:1px solid #1c2733;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;
+gap:16px;flex-wrap:wrap;margin:36px -32px 0}}
+.buy{{background:#1b3a2a;border-color:#2c6b4a;color:#9ff0c8;text-decoration:none;display:inline-block;padding:11px 22px;border-radius:9px;font-weight:700;font-size:14px;white-space:nowrap}}
+.freenote{{color:#5b6675;font-size:13px}}</style></head>
 <body>{_nav_html()}
 <div class=wrap>
 <h1>{c['name']}</h1>
 <p class=tagline>{c['mandate']}.</p>
-<div class=herorow>
-<a class=buy id=buyLink href="{stripe_link}" target="_blank" rel="noopener">Buy sessions — €{c['price']} each →</a>
-<span class=freenote>first {c['free']} sessions free · built for {c['icp']}</span>
-</div>
+<div class=statuspill><span class=tled id=tled style="background:{initial_color}"></span>{html.escape(initial_stats['status'])} · a standing team of {len(c['panel'])} AI experts, working continuously on this problem</div>
 {icp_pain_html}
 {reduced_mode_html}
-<div class="box dash" id=terrarium>
-<div class=dashtop>
-<span class=tled id=tled style="background:{initial_color}"></span>
-<span class=liveword>live right now</span>
-<span class=dashsub>updates every few seconds, no refresh needed</span>
+<div class=bi>
+<div class="card c-status dash">
+<h3>Status</h3>
+<div class=bigstat style="color:{initial_color}" id=tstatus>{html.escape(initial_stats['status'])}</div>
+<div class=substat id=tactivity2>live, checked continuously</div>
+<div class=ministats>
+<div class=mini><div class=k>Sessions</div><div class=v id=tsessions>{initial_stats['sessions']}</div></div>
+<div class=mini><div class=k>Leads</div><div class=v id=tleads>{initial_stats['leads']}</div></div>
 </div>
-<div class=tstats>
-<div class=tstat><div class=k>Status</div><div class=v id=tstatus style="color:{initial_color};font-size:15px">{html.escape(initial_stats['status'])}</div></div>
-<div class=tstat><div class=k>Sessions</div><div class=v id=tsessions>{initial_stats['sessions']}</div></div>
-<div class=tstat><div class=k>Revenue</div><div class=v id=trevenue>€{initial_stats['revenue_eur']:.0f}</div></div>
-<div class=tstat><div class=k>Leads</div><div class=v id=tleads>{initial_stats['leads']}</div></div>
-</div>
-<div class=roster>{roster_html}</div>
-<div class=tactivity id=tactivity>no live session running — try it below and watch this panel light up</div>
 </div>
 
-<div class=box>
+<div class="card c-index">
+<h3>Trust Index</h3>
+<div class=ringwrap>
+<svg width=130 height=130 class=ring>
+<circle class=ringtrack cx=65 cy=65 r={ring_r}></circle>
+<circle class=ringval cx=65 cy=65 r={ring_r} stroke-dasharray="{ring_circ:.1f}" stroke-dashoffset="{ring_offset:.1f}"></circle>
+</svg>
+<div class=ringnum><b>{trust_score}</b><span>/ 100</span></div>
+</div>
+<div class=substat style="text-align:center">computed from live status{f' + last posture ({last_posture})' if last_posture else ''}</div>
+</div>
+
+<div class="card c-chart">
+<h3>Activity — last 7 days</h3>
+<div class=chartrow>{chart_bars}</div>
+<div class=substat>real session counts, not simulated</div>
+</div>
+
+<div class="card c-roster">
+<h3>Standing panel ({len(c['panel'])} experts)</h3>
+<div class=roster>{roster_html}</div>
+<div class=tactivity id=tactivity>no live session right now - ask a question below and watch this light up</div>
+</div>
+
+<div class="card c-profile">
+<h3>Company profile</h3>
+<div class=small style="line-height:1.9">
+<div><b style=color:#e6edf3>Revenue tracked</b>: €<span id=trevenue>{initial_stats['revenue_eur']:.0f}</span></div>
+<div><b style=color:#e6edf3>Price</b>: €{c['price']}/session, first {c['free']} free</div>
+<div><b style=color:#e6edf3>Built for</b>: {c['icp']}</div>
+<div><b style=color:#e6edf3>Disciplines</b>: {len(c['disciplines'])}</div>
+</div>
+</div>
+
+<div class="card c-network">
+<h3>Network ({len(adj)} adjacent)</h3>
+{(f'<div>{adj_chips}</div>') if adj_chips else '<div class=small>no adjacent centers yet</div>'}
+</div>
+
+<div class="card c-ask">
+<h3>Try this company</h3>
+<div class=askgrid>
+<div>
 <div class=asktabs><div class=tab id=t1 class=on>Ask a question</div><div class=tab id=t2>Test a decision</div><div class=tab id=t3>Quick health check</div></div>
 <div style="margin-top:14px"><input id=email placeholder="you@company.com — where we send your free answer"></div>
 <div id=ctxwrap style="display:none"><input id=ctx placeholder="optional: a bit more context"></div>
 <textarea id=doc placeholder="{c['sample_question']}"></textarea>
 {('<div class=chips>' + use_cases_html + '</div>') if use_cases_html else ''}
 <button id=run style="margin-top:12px;width:100%">ask now — first {c['free']} free</button><span id=runlabel style="display:none">Ask now</span>
-<div class=small id=key style="display:none"></div>
 <div class=small id=bill style="margin-top:8px"></div>
-<div class=small style="margin-top:14px">answer</div>
-<div id=out class=out>waiting for your question…</div>
+</div>
+<div>
+<div class=small style="margin-bottom:6px">answer</div>
+<div id=out class=out style="min-height:220px">waiting for your question…</div>
+</div>
+</div>
+</div>
 </div>
 
 <div class=meta>
-Payments via RFI-IRFOS Stripe · <a href="/privacy">Datenschutz</a> · <a href="/briefing/{slug}">this center's autonomous briefings</a>{(' · related: ' + adj_links) if adj_links else ''}
+<a href="/privacy">Datenschutz</a> · <a href="/briefing/{slug}">this center's autonomous briefings</a>{(' · related: ' + adj_links) if adj_links else ''}
 <br>This is a decision-support tool that surfaces expert perspectives - not a substitute for qualified counsel.
 </div>
+</div>
+<div class=buybar>
+<span class=freenote>first {c['free']} sessions free · then €{c['price']}/session · built for {c['icp']}</span>
+<a class=buy id=buyLink href="{stripe_link}" target="_blank" rel="noopener">Buy sessions — €{c['price']} each →</a>
 </div>
 {_footer_html()}
 </body>
@@ -1656,7 +1766,7 @@ var c=COLOR_MAP[s.status]||'#f0883e';
 $('tled').style.background=c;
 var st=$('tstatus');st.textContent=s.status;st.style.color=c;
 $('tsessions').textContent=s.sessions;
-$('trevenue').textContent='€'+Math.round(s.revenue_eur);
+$('trevenue').textContent=Math.round(s.revenue_eur);
 $('tleads').textContent=s.leads;
 var act=$('tactivity');
 document.querySelectorAll('.roster .chip').forEach(function(el){el.classList.toggle('active',!!s.active_job);});
