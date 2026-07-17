@@ -620,6 +620,30 @@ async def trends_discover_handler(request):
     return web.json_response(res)
 
 
+async def trends_scan_handler(request):
+    """Manual trigger for the spawn-agent scan (the (a)/(b)/(c)
+    trends pipeline). Requires a valid center key (WRITE endpoint).
+    Runs factory_spawn_agent.run_spawn_agent() NOW (instead of
+    waiting up to 24h for the daily cron) and returns what
+    it staged. PROMOTION stays Laura-gated in daily_spawn —
+    this endpoint only STAGES candidates, never births centers.
+
+    Honest: this is the "I want to see it scan now" path. The
+    daily 02:00 cron still runs; this is a manual override
+    for Simeon / Laura to inspect the pipeline on demand.
+    """
+    acct, err = await require_key(request, "")
+    if err:
+        return err
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import factory_spawn_agent as F
+        res = await F.run_spawn_agent()
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+    return web.json_response(res)
+
+
 async def observatory(request):
     # CASHFLOW ONLY. No human in the money path.
     by_center = {slug: {"name": c["name"], "sessions": 0, "revenue_eur": 0.0,
@@ -651,6 +675,14 @@ async def observatory(request):
                          "paid_eur": round(b["paid_eur"], 2),
                          "stripe_link": b["stripe_link"]}
                      for s, b in by_center.items()},
+        # FACTORY-FACTORY transparency: what the spawn-agent staged,
+        # and whether Laura let it through. No human needed to SEE this.
+        "spawn_candidates": {
+            slug: {"name": c.get("name"), "mandate": c.get("mandate"),
+                      "status": c.get("status"), "laura_pass": c.get("laura_pass"),
+                      "uncovered_signals": c.get("uncovered_signals", [])}
+            for slug, c in state.get("spawn_candidates", {}).items()
+        },
     })
 
 
@@ -1068,6 +1100,7 @@ app.router.add_post("/evolve", evolve_handler)
 app.router.add_post("/evolve/apply", evolve_apply_handler)
 app.router.add_post("/stripe/webhook", stripe_webhook)
 app.router.add_post("/api/trends/discover", trends_discover_handler)
+app.router.add_post("/api/trends/scan", trends_scan_handler)
 
 # Background task registry so async panel jobs survive the request that
 # spawned them (aiohttp cancels tasks created inside a handler once the
