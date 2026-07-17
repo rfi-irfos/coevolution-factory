@@ -1620,7 +1620,7 @@ animation:railmove 2.2s linear infinite}}
    rows overlap by H*0.25 = 50px (margin-top:-50px). Even rows offset by
    W*0.5 = 88px so hexagons nest into the gaps of the row above. Result:
    a closed honeycomb where hex edges touch, no rectangle gaps. */
-.fgrid{{display:flex;flex-wrap:wrap;justify-content:center;gap:0;max-width:1180px;margin:0 auto}}
+.fgrid{{display:block;max-width:1180px;margin:0 auto}}
 .hexrow{{display:flex;width:100%;justify-content:center;margin-top:-50px}}
 .hexrow:first-child{{margin-top:0}}
 .hexrow:nth-child(even){{margin-left:88px}}
