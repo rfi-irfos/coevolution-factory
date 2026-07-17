@@ -933,6 +933,26 @@ async def observatory(request):
     total_rev = round(sum(b["revenue_eur"] for b in by_center.values()), 2)
     total_paid = round(sum(b["paid_eur"] for b in by_center.values()), 2)
     active = [s for s, b in by_center.items() if b["sessions"] > 0]
+    # Virtual Firm R0hne (Task 4): read-only pipeline snapshot. Labelled as a
+    # VIRTUAL FIRM (agentic, data-processing only) — no real company replaced,
+    # no physical product; staged->launched stays behind the Laura gate.
+    pipeline = state.get("pipeline", {})
+    vf_counts = {s: 0 for s in PIPELINE_STAGES}
+    for rec in pipeline.values():
+        stg = rec.get("stage")
+        if stg in vf_counts:
+            vf_counts[stg] += 1
+    vf_last = None
+    if pipeline:
+        loid, lrec = sorted(pipeline.items(),
+                            key=lambda kv: kv[1].get("created", 0))[-1]
+        vf_last = loid
+    virtual_firm = {
+        "label": "VIRTUAL FIRM (agentic, data-processing only)",
+        "offerings_total": len(pipeline),
+        "stage_counts": vf_counts,
+        "last_offering_id": vf_last,
+    }
     # Inter-center debates (Task 2): count + last resolution summary.
     debates = state.get("debates", {})
     resolved = [d for d in debates.values() if d.get("status") == "done"]
@@ -957,6 +977,7 @@ async def observatory(request):
         "debates_total": len(debates),
         "debates_resolved": len(resolved),
         "last_debate": last_debate,
+        "virtual_firm": virtual_firm,
         # Per-center CRM leads (Task 3): populated ONLY from real inbound
         # sessions + debates. Read-only here; no PII (hash only), no scrape.
         "leads_total": sum(len(v) for v in state.get("leads", {}).values()),

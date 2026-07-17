@@ -63,6 +63,30 @@ async def gate_candidate(cand):
         return False  # Laura error -> no spawn
 
 
+def apply_second_reviewer(cand):
+    """HITL second-reviewer SLOT (OQ2). Laura stays gate #1; this is an
+    ADDITIVE second human sign-off slot, never a bypass.
+
+    Reads env HITL_SECOND_REVIEWER. If set (e.g. a nominated person's id),
+    stamp the (already Laura-passed) candidate record with
+    ``second_reviewer_present=True`` and return an honest log line. If unset,
+    return a 'pending_nomination' log line and stamp nothing — no fake
+    reviewer, no auto-approve. Simeon/Laura nominate the real person later.
+
+    Returns the log string (also used as the test observation point).
+    """
+    reviewer = os.environ.get("HITL_SECOND_REVIEWER")
+    if reviewer:
+        cand["second_reviewer_present"] = True
+        msg = (f"second_reviewer: present (slot='{reviewer}') — additive to "
+               f"Laura gate #1")
+    else:
+        cand["second_reviewer_present"] = False
+        msg = "second_reviewer: pending_nomination"
+    print(f"[governance] {cand.get('slug','?')}: {msg}", flush=True)
+    return msg
+
+
 def promote(st, cand):
     """Register the candidate as a real standing center (mirrors
     /evolve apply: CENTERS + CENTERS_SLUGS + daughter_centers + network)."""
@@ -107,6 +131,8 @@ async def main():
             ok = promote(st, cand)
             cand["status"] = "born" if ok else "duplicate"
             cand["laura_pass"] = True
+            # HITL second-reviewer SLOT (additive; Laura remains gate #1).
+            apply_second_reviewer(cand)
             if ok:
                 promoted.append(slug)
         else:
