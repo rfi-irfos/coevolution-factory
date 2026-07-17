@@ -215,3 +215,84 @@ def lighthouse_cashflow(slugs, base=None):
 def vp_revenue(slug, base=None):
     """Cumulative revenue for a firm (ecocentric-gated, partner-only)."""
     return load_kpi(slug, base).get("revenue_eur", 0.0)
+
+
+# --- Active mycelium collaboration (Simeon Q&A #9, simeon approves) ---------
+# Nature's juice: not just reading trails, but BROADCASTING them. A firm that
+# finds a solution leaves a pheromone trail that pulls other firms toward the
+# problem — no central boss, the network self-organizes like ants. Firms
+# broadcast their strength + solved problems + mandate; gaps get pooled so
+# others can spawn (Q&A #5) instead of duplicating.
+MYCELIUM_ACTIVE = True
+
+
+def broadcast(slug, base=None):
+    """A firm broadcasts its trail into the mycelium (decentral, no boss).
+
+    Writes a broadcast record (vp_strength, problems_solved, mandate, revenue)
+    that any other firm can read to coordinate — find gaps, avoid clones.
+    """
+    k = load_kpi(slug, base)
+    CENTERS = _catalog_centers()
+    broadcast_rec = {
+        "slug": slug,
+        "vp_strength": vp_strength(slug, base=base),
+        "problems_solved": k.get("metrics", {}).get("problems_solved", 0),
+        "mandate": CENTERS.get(slug, {}).get("mandate", ""),
+        "revenue_eur": k.get("revenue_eur", 0.0),
+        "ts": int(__import__("datetime").datetime.now(__import__("datetime").timezone.utc).timestamp()),
+    }
+    k.setdefault("mycelium", {})["broadcast"] = broadcast_rec
+    k.setdefault("history", []).append({"ts": broadcast_rec["ts"], "mycelium_broadcast": True})
+    _save(k, base)
+    return broadcast_rec
+
+
+def broadcast_gap(slug, gap_description, base=None):
+    """A firm found a problem no one covers — pool it in the mycelium.
+
+    Other firms can read gaps and decide to spawn (Q&A #5) rather than
+    duplicate. No central allocator; the trail pulls the right firm.
+    """
+    k = load_kpi(slug, base)
+    gap = {
+        "from": slug,
+        "gap": gap_description,
+        "ts": int(__import__("datetime").datetime.now(__import__("datetime").timezone.utc).timestamp()),
+    }
+    k.setdefault("mycelium", {}).setdefault("gaps", []).append(gap)
+    _save(k, base)
+    return gap
+
+
+def mycelium_index(slugs, base=None):
+    """Collective read of all firms' broadcasts (the living mycelium map).
+
+    Returns {slug: broadcast_rec}. Decentral: each firm wrote its own; we just
+    read the network. Reveals strengths (where trails are strong) and gaps
+    (where no trail exists) — nature's self-organizing coordination.
+    """
+    out = {}
+    for s in slugs:
+        rec = load_kpi(s, base).get("mycelium", {}).get("broadcast")
+        if rec:
+            out[s] = rec
+    return out
+
+
+def _catalog_centers():
+    """Light import of catalog centers (mandate) without hard dependency."""
+    try:
+        import catalog
+        return {s: {"mandate": c.get("mandate", "")} for s, c in catalog.CENTERS_META.items()}
+    except Exception:
+        return {}
+
+
+def mycelium_gaps(slugs, base=None):
+    """Collective read of all pooled gaps across the mycelium."""
+    gaps = []
+    for s in slugs:
+        g = load_kpi(s, base).get("mycelium", {}).get("gaps", [])
+        gaps.extend(g)
+    return gaps
