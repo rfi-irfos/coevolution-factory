@@ -76,6 +76,36 @@ LEAD_SCORE_DIMENSIONS = ["recurrence", "referral", "fit", "no_hard_sell"]
 # Firms begin in hold/uncertainty, not affirm.
 DEFAULT_STATE = "tend"
 
+# 0-status IS the default (Simeon Q&A #6). A "divide by zero" never crashes
+# us: when a signal is undefined / ambiguous, the firm AUTOMATICALLY falls to
+# 0 (tend / hold) and keeps collecting data before acting. There is no
+# "engine down" panic — tend is the safe resting state. Doing nothing is
+# often faster and safer than doing something. This is the power of ternary,
+# and our elevator pitch: "Doing nothing is often faster and safer than
+# doing something."
+ZERO_STATUS_IS_DEFAULT = True
+TEND_ON_UNDEFINED = True  # ambiguous signal -> 0, never an error/panic
+
+
+def resolve_signal(signal):
+    """Map any signal to a firm decision. Never raises.
+
+    signal may be: None, 0, a trit (-1/0/1), or an unclear/ambiguous value.
+    Returns one of: "reject" (-1), "tend" (0, default), "affirm" (1).
+    Undefined / ambiguous -> tend (the firm collects more data, acts later).
+    """
+    if signal is None:
+        return "tend"
+    if isinstance(signal, (int, float)):
+        if signal > 0:
+            return "affirm"
+        if signal < 0:
+            return "reject"
+        return "tend"  # signal == 0 -> hold, the safe default
+    # non-numeric / ambiguous -> never crash, fall to tend
+    return "tend"
+
+
 # Lunar cycle (deterministic, no API).
 LUNAR_PERIOD_DAYS = 29.53059
 # Reference new moon (UTC). Known astronomical value; anchor for all phases.
