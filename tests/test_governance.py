@@ -23,6 +23,13 @@ def test_constants():
     assert G.DEFAULTS["min_legal_paths"] == 3
 
 
+def test_wwnd_bbtr_core_directive():
+    # Simeon's core directive: model on nature, never Silicon Valley
+    assert G.DESIGN_LENS == "wwnd"
+    assert G.NO_SILICON_VALLEY is True
+    assert G.BBTR_PROTOCOL is True
+
+
 def test_lunar_phase_deterministic():
     # reference new moon -> 'new'
     nm = datetime(2026, 7, 14, 10, 43, 0, tzinfo=timezone.utc)

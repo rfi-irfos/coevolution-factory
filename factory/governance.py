@@ -73,6 +73,19 @@ LEAD_HORIZON_YEARS = 50
 NO_HARD_SELL = True  # quality pulls partners; aggression repels them
 LEAD_SCORE_DIMENSIONS = ["recurrence", "referral", "fit", "no_hard_sell"]
 
+# Design lens for everything (Simeon core directive, 2026-07-17):
+# WWND = "What Would Nature Do?" + BBTR = "Back To The Roots" protocol.
+# Before any build/design decision, model it on biology/ecology, NOT Silicon
+# Valley. If unsure how to build, go to a nature reference — it "just runs".
+# Hard bans: growth-hacking, dark patterns, hard-sell, central boss authority,
+# crash-on-undefined, churn-squeeze, redundant clones. These are all already
+# encoded in the constitution below (ecocentric veto, mycelium, tend-default,
+# 50-year partner leads, >=3 paths, distinct daughters).
+DESIGN_LENS = "wwnd"          # What Would Nature Do?
+NO_SILICON_VALLEY = True      # no SV dark patterns, ever
+BBTR_PROTOCOL = True          # Back To The Roots: nature reference first
+
+
 # Firms begin in hold/uncertainty, not affirm.
 DEFAULT_STATE = "tend"
 
