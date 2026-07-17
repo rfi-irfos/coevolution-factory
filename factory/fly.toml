@@ -24,6 +24,14 @@ primary_region = 'fra'
   internal_port = 8091
   processes = ['app']
 
+[[processes]]
+  key = 'app'
+  command = 'python runtime.py'
+
+[[processes]]
+  key = 'briefing'
+  command = 'python daily_brief.py'
+
   [[services.ports]]
     port = 80
     handlers = ['http']
@@ -41,3 +49,9 @@ primary_region = 'fra'
   cpu_kind = 'shared'
   cpus = 1
   memory_mb = 512
+
+# Autonomous briefings: pull real regulatory/security feeds, convene the
+# panel, publish. Runs on a schedule (separate from the daily-evolve cron).
+[deploy.schedule]
+  process = 'briefing'
+  cron = '17 */4 * * *'

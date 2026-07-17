@@ -706,6 +706,7 @@ button:disabled{{opacity:.6;cursor:default}}
 <div class=small style="margin-top:14px">result</div>
 <div id=out class=out>awaiting…</div>
 <a class=buy href="{stripe_link}" target="_blank" rel="noopener">Sponsor this center / buy sessions →</a>
+<div style="margin-top:10px"><a href="/briefing/{slug}" style="color:#9fd0ff;font-size:13px">→ read this center's autonomous briefings</a></div>
 <div class=small style="margin-top:8px">Secure payment via RFI-IRFOS Stripe.</div>
 </div>
 <div style="margin-top:24px"><div class=small>adjacent centers (shared expertise graph):</div>
@@ -766,6 +767,52 @@ async def center_page_handler(request):
     if slug not in CENTERS:
         return web.json_response({"error": "unknown center"}, status=404)
     return web.Response(text=center_page(slug), content_type="text/html")
+
+
+async def briefing_page_handler(request):
+    slug = request.match_info["slug"]
+    if slug not in CENTERS:
+        return web.json_response({"error": "unknown center"}, status=404)
+    st = load_state()
+    briefs = st.get("briefings", {}).get(slug, [])
+    c = CENTERS[slug]
+    cards = "".join(
+        f'<div class=brf>'
+        f'<div class=bhead><a class=bh href="{b["link"]}" target=_blank rel=noreferrer>{b["source"]}</a></div>'
+        f'<div class=btime>{"DEMO — engine key not configured, not convened" if b.get("demo") else "convened panel briefing"} · {time.strftime("%Y-%m-%d", time.gmtime(b["at"]))}</div>'
+        + "".join(
+            f'<div class=bitem><span class=blink>↗ {it["link"] and "source" or ""}</span> '
+            f'<a href="{it["link"]}" target=_blank rel=noreferrer style="color:#9fd0ff;font-size:13px">{it["source"][:90]}</a>'
+            f'<div class=bnote>{it["syn"].get("note","")[:300] or "(no synthesis)"}</div></div>'
+            for it in b["items"])
+        + '</div>'
+        for b in briefs[:8]) or '<div class=bempty>no briefings published yet — the autonomous loop runs on a schedule</div>'
+    return web.Response(text=f"""<!doctype html><html><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>{c['name']} — autonomous briefings</title>
+<style>
+body{{margin:0;background:#0a0e14;color:#e6edf3;font-family:-apple-system,Segoe UI,Inter,sans-serif;line-height:1.5}}
+.wrap{{max-width:860px;margin:0 auto;padding:30px 22px 60px}}
+nav{{border-bottom:1px solid #1c2733;padding:18px 0;margin-bottom:26px}}
+.brand{{font-weight:600}} .ey{{color:#36d6a0;font-size:12px;letter-spacing:.12em;text-transform:uppercase}}
+h1{{font-size:28px;margin:0 0 8px;font-weight:650}}
+.sub{{color:#8b98a9;font-size:15px;max-width:640px;line-height:1.6}}
+.brf{{background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:18px;margin:14px 0}}
+.bhead{{font-weight:600;color:#4ea1ff;font-size:15px;margin-bottom:4px}}
+.bhead a{{color:inherit;text-decoration:none}}
+.btime{{color:#5b6675;font-size:12px;margin-bottom:10px}}
+.bitem{{border-top:1px solid #1c2733;padding:10px 0 4px}}
+.blink{{color:#5b6675;font-size:11px}}
+.bnote{{color:#c7d2e0;font-size:13px;line-height:1.5;margin-top:4px}}
+.bempty{{color:#5b6675;font-size:14px;padding:20px 0}}
+a{{color:#4ea1ff}}
+</style></head><body><nav><div class=wrap><span class=brand>{c['name']}</span> · <span class=small>a CoEvolution AI center</span></div></nav>
+<div class=wrap>
+<div class=ey>autonomous briefing feed</div>
+<h1>{c['name']} — briefings</h1>
+<p class=sub>Standing panel, convened on real regulatory & security signals from public feeds. Published on a schedule, even when no human is online. <a href="/{slug}">→ back to center</a></p>
+{cards}
+</div></body></html>""", content_type="text/html")
 
 
 async def index(request):
@@ -967,6 +1014,7 @@ app.router.add_get("/health", health)
 app.router.add_get("/observatory", observatory)
 app.router.add_get("/network", network)
 app.router.add_get("/{slug}", center_page_handler)
+app.router.add_get("/briefing/{slug}", briefing_page_handler)
 app.router.add_post("/signup", signup)
 app.router.add_post("/api/center", center_session)
 app.router.add_get("/api/center/result/{run_id}", panel_result)
