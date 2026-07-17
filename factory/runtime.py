@@ -904,6 +904,28 @@ async def resolve_session(request):
 
 
 # --------------------------------------------------------------------------
+# Lighthouse cashflow bridge — best-effort, fire-and-forget. If this fails the
+# payment is still recorded locally in state["payments"] above; nothing about
+# accepting the Stripe payment depends on Lighthouse being reachable.
+# --------------------------------------------------------------------------
+LIGHTHOUSE_INGEST_URL = "https://lighthouse-rfi-irfos.fly.dev/lighthouse/api/finance/coevolution-ingest"
+LIGHTHOUSE_COEVOLUTION_KEY = os.environ.get("LIGHTHOUSE_COEVOLUTION_KEY", "")
+
+
+async def _report_to_lighthouse(amount_eur, center, session_id):
+    if not LIGHTHOUSE_COEVOLUTION_KEY or not session_id:
+        return
+    try:
+        async with ClientSession(timeout=ClientTimeout(total=10)) as s:
+            await s.post(LIGHTHOUSE_INGEST_URL,
+                         headers={"X-Inbox-Key": LIGHTHOUSE_COEVOLUTION_KEY},
+                         json={"session_id": session_id, "amount_eur": amount_eur,
+                               "center": center})
+    except (ClientError, asyncio.TimeoutError):
+        pass
+
+
+# --------------------------------------------------------------------------
 # Stripe webhook — REAL, with signature verification when STRIPE_WHSEC set.
 # --------------------------------------------------------------------------
 async def stripe_webhook(request):
@@ -943,6 +965,7 @@ async def stripe_webhook(request):
             "session": obj.get("id"), "link": obj.get("payment_link"),
         })
         save_state(state)
+        asyncio.create_task(_report_to_lighthouse(paid_eur, factory, obj.get("id", "")))
         return web.json_response(
             {"ok": True, "recorded_eur": paid_eur, "center": factory})
     return web.json_response({"ok": True, "ignored": evt})
