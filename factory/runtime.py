@@ -56,6 +56,28 @@ CENTER_SLUGS = list(CENTERS.keys())
 
 JOB_TTL = int(os.environ.get("FT_JOB_TTL", "86400"))  # 24h
 
+# First-party tracking — reuses the same self-hosted Lighthouse pixel/beacon
+# rfi-irfos.com already runs (see LegalPage.tsx / PublicSite.tsx there for the
+# identical pattern). No cookie, no visitor id, one row per pageview or click:
+# path, referrer->source, utm_*, site, section. Disclosed at /privacy.
+TRACK_URL = "https://lighthouse-rfi-irfos.fly.dev/lighthouse/api/track"
+TRACK_SITE = "coevolution-factory"
+
+
+def _tracker_js(section):
+    """JS snippet firing one pageview beacon on load, tagged with `section`
+    (a center slug, or "" for the homepage grid). Plain fetch (not
+    sendBeacon — the backend's JSON extractor expects
+    application/json, sendBeacon defaults to text/plain), fire-and-forget."""
+    return f"""<script>(function(){{
+var q=new URLSearchParams(location.search);
+fetch({json.dumps(TRACK_URL)},{{method:'POST',headers:{{'Content-Type':'application/json'}},
+body:JSON.stringify({{path:location.pathname,referrer:document.referrer,
+utm_source:q.get('utm_source')||'',utm_medium:q.get('utm_medium')||'',
+utm_campaign:q.get('utm_campaign')||'',site:{json.dumps(TRACK_SITE)},
+section:{json.dumps(section)}}})}}).catch(function(){{}});
+}})();</script>"""
+
 
 def load_state():
     if DB.exists():
@@ -1301,9 +1323,9 @@ button:disabled{{opacity:.6;cursor:default}}
 <div class=small id=bill style="margin-top:8px">issue a key above — first runs are free</div></div>
 <div class=small style="margin-top:14px">result</div>
 <div id=out class=out>awaiting…</div>
-<a class=buy href="{stripe_link}" target="_blank" rel="noopener">Sponsor this center / buy sessions →</a>
+<a class=buy id=buyLink href="{stripe_link}" target="_blank" rel="noopener">Sponsor this center / buy sessions →</a>
 <div style="margin-top:10px"><a href="/briefing/{slug}" style="color:#9fd0ff;font-size:13px">→ read this center's autonomous briefings</a></div>
-<div class=small style="margin-top:8px">Secure payment via RFI-IRFOS Stripe.</div>
+<div class=small style="margin-top:8px">Secure payment via RFI-IRFOS Stripe. · <a href="/privacy">Datenschutz</a></div>
 </div>
 <div style="margin-top:24px"><div class=small>adjacent centers (shared expertise graph):</div>
 <div style="margin-top:8px">{adj_links or '—'}</div></div>
@@ -1352,9 +1374,14 @@ function showTab(n){['t1','t2','t3'].forEach(t=>$(t).classList.toggle('on',t===n
  window._tab=n;}
 ['t1','t2','t3'].forEach(t=>$(t).onclick=()=>showTab(t));showTab('t1');
 document.querySelectorAll('.uc').forEach(b=>b.onclick=()=>{const q=b.getAttribute('data-q')||b.textContent;$('doc').value=q;showTab('t1');$('doc').scrollIntoView({behavior:'smooth',block:'center'});});
-$('su').onclick=su;$('run').onclick=run;"""
-    js = js.replace("__SLUG__", slug).replace("__SAMPLE__", json.dumps(c["sample_question"]))
-    return page + "<script>" + js + "</script></body></html>"
+$('su').onclick=su;$('run').onclick=run;
+// Offer click-through beacon — target=_blank so the current tab never unloads,
+// a plain fetch is enough (no keepalive/sendBeacon needed).
+$('buyLink').addEventListener('click',function(){fetch('__TRACK_URL__',{method:'POST',headers:{'Content-Type':'application/json'},
+body:JSON.stringify({path:location.pathname,site:'__TRACK_SITE__',section:slug+':offer_click'})}).catch(function(){});});"""
+    js = (js.replace("__SLUG__", slug).replace("__SAMPLE__", json.dumps(c["sample_question"]))
+          .replace("__TRACK_URL__", TRACK_URL).replace("__TRACK_SITE__", TRACK_SITE))
+    return page + "<script>" + js + "</script>" + _tracker_js(slug) + "</body></html>"
 
 
 
@@ -1588,8 +1615,8 @@ animation:railmove 2.2s linear infinite}}
 <form class=search method=get><input name=q placeholder="Suche nach Problem, Fachgebiet oder Firma (z.B. GDPR, Security, Hiring)" value="{html.escape(q)}"></form>
 <p class=hint>{hint}</p>
 <div class=fgrid>{tiles}</div>
-<p class=foot>Live-Status-Kacheln · statisch gerendert, neu laden zum Aktualisieren · Zahlung sicher via RFI-IRFOS Stripe.</p>
-</div></body></html>"""
+<p class=foot>Live-Status-Kacheln · statisch gerendert, neu laden zum Aktualisieren · Zahlung sicher via RFI-IRFOS Stripe. · <a href="/privacy">Datenschutz</a></p>
+</div>{_tracker_js('search:' + q if q else '')}</body></html>"""
     return web.Response(text=body, content_type="text/html")
 
 
@@ -1739,11 +1766,44 @@ async def evolve_apply_handler(request):
     return web.json_response({"center": slug, "applied": msg, "version": new_v})
 
 
+async def privacy_page(request):
+    return web.Response(text=f"""<!doctype html><html><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>Datenschutz — CoEvolution AI</title>
+<style>body{{margin:0;background:#0a0e14;color:#e6edf3;font-family:-apple-system,Segoe UI,Inter,sans-serif;line-height:1.6}}
+.wrap{{max-width:760px;margin:0 auto;padding:40px 22px 60px}}
+h1{{font-size:26px;font-weight:650;margin:0 0 6px}}
+h2{{font-size:16px;font-weight:600;margin:28px 0 8px;color:#e6edf3}}
+p{{color:#c7d2e0;font-size:14px}}
+code{{background:#0f141d;border:1px solid #1c2733;border-radius:4px;padding:1px 6px;font-size:12.5px}}
+pre{{background:#0f141d;border:1px solid #1c2733;border-radius:8px;padding:12px;overflow:auto;font-size:12px;color:#36d6a0;white-space:pre-wrap;word-break:break-all}}
+a{{color:#4ea1ff}}
+.small{{color:#5b6675;font-size:12px}}</style></head><body><div class=wrap>
+<h1>Datenschutz</h1>
+<p class=small>a CoEvolution AI center · <a href="/">← back to centers</a></p>
+<h2>Cookies</h2>
+<p>We don't use cookies. No cookie banner exists because there is nothing to consent to — nothing is written to or read from your device.</p>
+<h2>What we track</h2>
+<p>Each page you load on this site, and each time you click a center's "Sponsor / buy sessions" button, sends exactly one request to our own self-hosted pixel — the same first-party tracker RFI-IRFOS runs on rfi-irfos.com. The literal request:</p>
+<pre>POST {TRACK_URL}
+{{"path": "/{{center-slug}}", "referrer": "...", "utm_source": "...", "site": "{TRACK_SITE}", "section": "{{center-slug}} or {{center-slug}}:offer_click"}}</pre>
+<p>What lands in our database from that request: the page path, the referring domain normalized into a channel bucket (organic search, direct, referral, linkedin, and so on), the UTM parameters if present, the site tag, and the section tag (which center, and whether it was a pageview or an offer click). That's the full field list: <code>path, source, referrer, utm_source, utm_medium, utm_campaign, site, section</code>.</p>
+<p>No cookie is set. No visitor identifier is ever populated by this site's copy of the pixel, so two visits from the same person land as two independent, unlinked rows, never one growing profile. No IP address column exists in that table. The offer-click beacon exists so we can see which centers people are actually interested in enough to click through to Stripe — that's it, we don't track anything past the click; what you do on Stripe's own checkout page is between you and Stripe.</p>
+<h2>Legal basis</h2>
+<p>Because nothing is stored on or read from your device, the ePrivacy Art. 5(3) cookie-consent trigger does not apply. Because nothing here identifies you individually, this is not personal data processing requiring a GDPR Art. 6 legal basis in the first place — it is anonymous, aggregate usage counting.</p>
+<h2>Payments</h2>
+<p>Payment processing runs through Stripe, linked from RFI-IRFOS's account. We never see or store card details — that is handled entirely by Stripe.</p>
+<h2>Contact</h2>
+<p>Questions: <a href="mailto:rfi.irfos@gmail.com">rfi.irfos@gmail.com</a></p>
+</div></body></html>""", content_type="text/html")
+
+
 app = web.Application()
 app.router.add_get("/", firms_grid)
 app.router.add_get("/firms", firms_grid)
 app.router.add_get("/centers", index)
 app.router.add_get("/discover", discover)
+app.router.add_get("/privacy", privacy_page)
 app.router.add_get("/health", health)
 app.router.add_get("/observatory", observatory)
 app.router.add_get("/network", network)
