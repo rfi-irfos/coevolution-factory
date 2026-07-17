@@ -1561,7 +1561,7 @@ async def firms_grid(request):
             f'<div class=badges>{badge_html}</div>'
             f'<div class=temporal>{T.years_to_north_star(_born(s))}J → 2040</div>'
             f'<a class=book href="/{s}">Buchen →</a>'
-            f'</div>'
+            f'</a>'
         )
 
     STATUS_COLOR = {"healthy": "#36d6a0", "degraded": "#f0883e",

@@ -84,3 +84,43 @@ def test_firms_grid_shows_four_stat_labels():
     assert "REV" in body.upper()
     assert "LEAD" in body.upper()
     assert "GEL" in body.upper()  # "Gelöst" — umlaut-safe substring check
+
+
+def test_firms_grid_hexrows_have_six_tiles_each():
+    """Simeon's Catan-board spec: a closed honeycomb, not a 1-per-row list.
+    The .hexrow wrapper must contain SIX .tile anchors (not 1 tile + a stray
+    .book link from a mismatched </div> instead of </a> — that bug collapsed
+    the grid into a left-aligned column). Parse the HTML to assert structure."""
+    from html.parser import HTMLParser
+
+    class _RowCounter(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.stack = []          # class names of open elements
+            self.row_tile_counts = []
+            self._in_row = False
+            self._row_tiles = 0
+
+        def handle_starttag(self, tag, attrs):
+            d = dict(attrs)
+            cls = d.get("class")
+            if cls == "hexrow":
+                self._in_row = True
+                self._row_tiles = 0
+            if cls == "tile" and self._in_row:
+                self._row_tiles += 1
+            self.stack.append(cls)
+
+        def handle_endtag(self, tag):
+            if self.stack:
+                cls = self.stack.pop()
+                if cls == "hexrow":
+                    self.row_tile_counts.append(self._row_tiles)
+                    self._in_row = False
+
+    _seed()
+    body = _run(R.firms_grid(_FakeRequest())).text
+    p = _RowCounter()
+    p.feed(body)
+    # at least one row must hold the full 6 tiles (ROW=6 in firms_grid)
+    assert max(p.row_tile_counts) == 6, f"max tiles per hexrow = {max(p.row_tile_counts)}, expected 6"
