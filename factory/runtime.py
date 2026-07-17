@@ -1614,15 +1614,16 @@ animation:railmove 2.2s linear infinite}}
 .search input:focus{{border-color:#4ea1ff}}
 .hint{{color:#5b6675;font-size:13px;margin:0 0 22px}}
 /* Catan-board honeycomb: true interlocking hexagons, edge-to-edge.
-   Pointy-top hex: box W=176, H=200. Horizontal center spacing W*0.75=132,
-   so boxes overlap by W-132 = 44px (margin-right:-44px). Vertical center
-   spacing H (rows stack), rows overlap by H*0.5 = 100px (margin-top:-100px).
-   Even rows offset by half a horizontal step = 66px. Result: a closed
-   honeycomb where hex edges actually touch, no rectangle gaps. */
+   Pointy-top hex: box W=176, H=200. Horizontal spacing between centers =
+   W*3/4 = 132, so boxes overlap by W*0.25 = 44px (margin-right:-44px) and
+   the flat side edges touch. Vertical: row centers spaced H*0.75 = 150,
+   rows overlap by H*0.25 = 50px (margin-top:-50px). Even rows offset by
+   W*0.5 = 88px so hexagons nest into the gaps of the row above. Result:
+   a closed honeycomb where hex edges touch, no rectangle gaps. */
 .fgrid{{display:flex;flex-wrap:wrap;justify-content:center;gap:0;max-width:1180px;margin:0 auto}}
-.hexrow{{display:flex;width:100%;justify-content:center;margin-top:-100px}}
+.hexrow{{display:flex;width:100%;justify-content:center;margin-top:-50px}}
 .hexrow:first-child{{margin-top:0}}
-.hexrow:nth-child(even){{margin-left:66px}}
+.hexrow:nth-child(even){{margin-left:88px}}
 .tile{{position:relative;width:176px;height:200px;margin:0 -44px 0 0;overflow:hidden;background:#0f141d;border:1px solid #1c2733;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:transform .2s,box-shadow .2s,z-index .2s;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);padding:26px 18px 18px}}
 .tile:hover{{transform:translateY(-4px) scale(1.02);box-shadow:0 10px 30px rgba(78,161,255,.18);z-index:5}}
 .tile:hover{{border-color:#4ea1ff;transform:translateY(-3px);box-shadow:0 8px 28px rgba(78,161,255,.12)}}
@@ -1649,10 +1650,10 @@ animation:railmove 2.2s linear infinite}}
 .foot{{color:#5b6675;font-size:12px;margin-top:36px}}
 @media(max-width:760px){{
   .hexrow{{flex-direction:column;margin-top:0;margin-left:0 !important}}
-  .tile{{margin:0 0 -100px 0;width:200px;height:210px}}
+  .tile{{margin:0 0 -50px 0;width:200px;height:210px}}
 }}
 @media(max-width:480px){{
-  .tile{{width:90vw;max-width:240px;margin:0 0 -100px 0}}
+  .tile{{width:90vw;max-width:240px;margin:0 0 -50px 0}}
 }}
 </style></head><body><div class=wrap>
 <div class=eyebrow><span class=dot></span>live · 292-agenten-engine</div>
