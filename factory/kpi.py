@@ -296,3 +296,57 @@ def mycelium_gaps(slugs, base=None):
         g = load_kpi(s, base).get("mycelium", {}).get("gaps", [])
         gaps.extend(g)
     return gaps
+
+
+# --- Succession: a firm never dies (Simeon Q&A #12, simeon approves) -------
+# A firm does NOT die. When its trail evaporates (no more partners, no
+# pheromone), it does not vanish — it goes to seed: disperses into the wind,
+# feeding the others. Its KPIs, pheromones, and knowledge spread through the
+# mycelium so other firms grow stronger. Like a tree becoming humus. Nature
+# has no death, only succession. No firm is ever deleted; it transitions to
+# "dispersed" and nourishes the network.
+NO_FIRM_DEATH = True
+DISPERSED_STATE = "dispersed"  # went to seed, feeding the mycelium
+
+
+def disperse_to_wind(slug, base=None):
+    """A firm goes to seed: disperses its knowledge into the wind/mycelium.
+
+    Marks the firm 'dispersed' (never deleted) and broadcasts its accumulated
+    KPIs + pheromones as nourishment for other firms. Returns the dispersed
+    record other firms can absorb.
+    """
+    k = load_kpi(slug, base)
+    k["state"] = DISPERSED_STATE
+    nourishment = {
+        "slug": slug,
+        "pheromones": k.get("pheromones", {}),
+        "metrics": k.get("metrics", {}),
+        "revenue_eur": k.get("revenue_eur", 0.0),
+        "problems_solved": k.get("metrics", {}).get("problems_solved", 0),
+        "ts": int(__import__("datetime").datetime.now(__import__("datetime").timezone.utc).timestamp()),
+    }
+    k.setdefault("mycelium", {})["dispersed"] = nourishment
+    k.setdefault("history", []).append({"ts": nourishment["ts"], "dispersed_to_wind": True})
+    _save(k, base)
+    return nourishment
+
+
+def absorb_nourishment(slug, nourishment, base=None):
+    """Another firm absorbs dispersed knowledge from the wind (succession).
+
+    The receiving firm's trail strengthens from the nourishment it absorbs —
+    the network grows, no one is lost. Returns updated vp_strength.
+    """
+    k = load_kpi(slug, base)
+    # merge pheromones (absorbs the dispersed firm's trail)
+    incoming = nourishment.get("pheromones", {})
+    ph = k.setdefault("pheromones", {})
+    for action, w in incoming.items():
+        ph[action] = ph.get(action, 0.0) + w
+    k.setdefault("history", []).append({
+        "ts": int(__import__("datetime").datetime.now(__import__("datetime").timezone.utc).timestamp()),
+        "absorbed_from": nourishment.get("slug"),
+    })
+    _save(k, base)
+    return vp_strength(slug, base=base)
