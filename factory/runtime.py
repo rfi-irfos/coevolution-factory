@@ -1471,19 +1471,20 @@ async def firms_grid(request):
     index()/observatory()). Each tile shows 4 live stats and a 'Jetzt buchen'
     button linking to that center's page (which carries the Stripe signup).
 
-    Grid-overview note: GELD GENERIERT shows the GLOBAL revenue total (revenue
-    is not tracked per-center in a way that splits cleanly for a marketing tile;
-    splitting a global figure evenly would be misleading, so we show the honest
-    global total on every tile, labelled as the network total).
+    Per-center stats (honest): PROBLEME GELÖST = this center's own usage +
+    its own resolved debates. GELD GENERIERT shows the global network total
+    (revenue is not split per-center in a clean way; an even split would be
+    misleading, so the honest global total is shown, labelled as such).
     """
-    # Global roll-ups (honest network totals for the overview grid).
-    total_sessions = len(state.get("usage", []))
+    usage = state.get("usage", [])
+    deb = state.get("debates", {})
     total_revenue_eur = round(sum(u.get("cost", 0.0)
-                                  for u in state.get("usage", [])), 2)
-    debates = state.get("debates", {})
-    debates_resolved = sum(1 for d in debates.values()
-                           if d.get("status") == "done")
-    problems_solved = total_sessions + debates_resolved
+                                  for u in usage), 2)
+    def _problems_for(slug):
+        n_usage = sum(1 for u in usage if u.get("center") == slug)
+        n_deb = sum(1 for d in deb.values()
+                    if d.get("center") == slug and d.get("status") == "done")
+        return n_usage + n_deb
 
     def _badge(slug):
         status = get_center_status(slug)
@@ -1504,7 +1505,7 @@ async def firms_grid(request):
         f'<div class=v>€{total_revenue_eur}</div>'
         f'<div class=note>Netzwerk gesamt</div></div>'
         f'<div class=stat><div class=k>Probleme Gelöst</div>'
-        f'<div class=v>{problems_solved}</div></div>'
+        f'<div class=v>{_problems_for(s)}</div></div>'
         f'<div class=stat><div class=k>Produkte Vermarktet</div>'
         f'<div class=v>{len(c.get("use_cases", []))}</div></div>'
         f'</div>'
@@ -1514,7 +1515,7 @@ async def firms_grid(request):
 
     body = f"""<!doctype html><html><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
-<title>CoEvolution Firm Grid — 50 autonome Firmen</title>
+<title>CoEvolution Firm Grid — {len(CENTERS)} autonome Firmen</title>
 <style>
 body{{margin:0;background:#0a0e14;color:#e6edf3;font-family:-apple-system,Segoe UI,Inter,sans-serif;line-height:1.5}}
 .wrap{{max-width:1180px;margin:0 auto;padding:40px 24px 60px}}
