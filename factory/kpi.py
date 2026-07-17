@@ -431,3 +431,59 @@ def inherit_genetics(child_slug, parent_slugs, base=None):
     })
     _save(k, base)
     return vp_strength(child_slug, base=base)
+
+
+# --- Onboarding: a new firm forages its way in (Simeon Q&A #14, simeon approves)
+# No instant adult. Like an ant colony: the Queen lays the genome (inherit_
+# genetics), a worker mentors the larva (absorb_nourishment), then the new
+# firm must FORAGE — earn its first real pheromone trails through its own
+# 12h pings + A/B/C. Until it finds its first partner trail it is 'larva';
+# after that it is autonomous. FORAGING = self-earned trails, not inherited.
+ONBOARDING_PHASES = ["inherit_dna", "mentor_adoption", "foraging"]
+LARVA_STATE = "larva"
+FORAGING_STATE = "foraging"
+AUTONOMOUS_STATE = "autonomous"
+
+
+def onboard_firm(child_slug, parent_slugs, mentor_slug, base=None):
+    """3-phase bootstrap: inherit DNA -> mentor adopts -> forage for real trails.
+
+    Returns the onboarding record. The firm is 'larva' until it earns its
+    first partner pheromone via foraging; then 'autonomous'.
+    """
+    # phase 1: DNA from the Queen's strongest parents
+    inherited = inherit_genetics(child_slug, parent_slugs, base=base)
+    # phase 2: mentor (an existing firm) feeds the larva
+    mentor = load_kpi(mentor_slug, base)
+    mentor_food = {
+        "slug": mentor_slug,
+        "pheromones": mentor.get("pheromones", {}),
+    }
+    absorb_nourishment(child_slug, mentor_food, base=base)
+    # phase 3: foraging — firm must earn its own first trail
+    k = load_kpi(child_slug, base)
+    k["onboarding"] = {
+        "phases": ONBOARDING_PHASES,
+        "phase": "foraging",
+        "state": LARVA_STATE,
+        "inherited_strength": inherited,
+        "mentor": mentor_slug,
+        "ts": int(__import__("datetime").datetime.now(__import__("datetime").timezone.utc).timestamp()),
+    }
+    _save(k, base)
+    return k["onboarding"]
+
+
+def mark_foraged(child_slug, base=None):
+    """A firm earned its first real (partner) pheromone via foraging.
+
+    Promotes larva -> autonomous. This is the ONLY graduation: self-earned
+    trail, not inherited DNA. Returns the new state.
+    """
+    k = load_kpi(child_slug, base)
+    if k.get("onboarding"):
+        k["onboarding"]["state"] = AUTONOMOUS_STATE
+        k["onboarding"]["phase"] = "autonomous"
+    k["state"] = AUTONOMOUS_STATE
+    _save(k, base)
+    return k.get("state")
