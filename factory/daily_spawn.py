@@ -26,6 +26,7 @@ except Exception:
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import factory_spawn_agent as F
+import runtime as R
 
 
 def load_state():
@@ -156,6 +157,25 @@ def promote(st, cand):
     CENTER_NETWORK.setdefault(slug, [])
     st.setdefault("centers", {})[slug] = {"version": 1, "is_daughter": True}
     st.setdefault("daughter_centers", {})[slug] = spec
+    return True
+
+
+def capacity_ok():
+    """True if we may promote more daughters this cycle.
+
+    Respects the VF_MAX_DAUGHTERS cap (default 10) and refuses while any
+    center is in 0-status (engine unreachable) so we never scale into a
+    degraded state. The env var is read live (not cached at import) so it
+    can be toggled per-test / per-deployment.
+    """
+    max_daughters = int(os.environ.get("VF_MAX_DAUGHTERS", "10"))
+    daughters = len(R.state.get("daughter_centers", {}))
+    if daughters >= max_daughters:
+        return False
+    # refuse if any center is in 0-status (engine down)
+    for rec in R.state.get("center_status", {}).values():
+        if rec.get("status") == "0-status":
+            return False
     return True
 
 

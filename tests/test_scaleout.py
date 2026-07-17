@@ -1,9 +1,9 @@
-"""Scale-out Task 1: batched Laura gate over staged candidates.
+"""Scale-out tests (Tasks 1 & 2).
 
-ONE Laura MCP call reviews all staged candidates and returns a {slug: bool}
-pass-map. Falls back to per-candidate gate_candidate if Laura errors.
+conftest.py freezes FT_STATE_DIR to a temp dir so state.json is isolated,
+and puts factory/ on sys.path so `import daily_spawn` / `import runtime` work.
 
-conftest.py freezes FT_STATE_DIR to a temp dir, so state.json is isolated.
+TDD discipline: write failing test -> implement -> green.
 """
 import asyncio
 import json
@@ -14,6 +14,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "factory"))
 
 import daily_spawn as DS
 
+
+# --- Task 1: batched Laura gate over staged candidates ---------------------
 
 def test_batch_gate_returns_passmap(monkeypatch):
     """One Laura call reviewing all staged candidates returns {slug: bool}.
@@ -36,3 +38,36 @@ def test_batch_gate_returns_passmap(monkeypatch):
     monkeypatch.setattr(DS, "mcp_laura_review_plan", fake)
     out = asyncio.run(DS.batch_gate_candidates(cands))
     assert out == {"a": True, "b": False}
+
+
+# --- Task 2: capacity / health pre-check -----------------------------------
+
+def test_capacity_ok_respects_cap(monkeypatch):
+    """capacity_ok() must respect VF_MAX_DAUGHTERS and refuse at cap,
+    but allow when below cap — reading the env live (so setenv works)."""
+    import runtime as R
+
+    monkeypatch.setenv("VF_MAX_DAUGHTERS", "2")
+
+    # at cap -> refuse
+    R.state["daughter_centers"] = {"d1": {}, "d2": {}}
+    assert DS.capacity_ok() is False
+
+    # below cap -> ok
+    R.state["daughter_centers"] = {"d1": {}}
+    assert DS.capacity_ok() is True
+
+
+def test_capacity_ok_refuses_on_zero_status(monkeypatch):
+    """capacity_ok() must refuse while any center is in 0-status
+    (engine down) even when below the daughter cap."""
+    import runtime as R
+
+    monkeypatch.setenv("VF_MAX_DAUGHTERS", "10")
+    R.state["daughter_centers"] = {"d1": {}}
+    R.state["center_status"] = {"some-center": {"status": "0-status"}}
+    assert DS.capacity_ok() is False
+
+    # clear the 0-status -> ok
+    R.state["center_status"] = {}
+    assert DS.capacity_ok() is True
