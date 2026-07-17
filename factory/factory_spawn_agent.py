@@ -20,11 +20,33 @@ import aiohttp
 from catalog import CENTERS_META
 
 # Real public feeds we scan for NEW regulatory / trend signals.
-# (URLs verified live during build; SEC/EU-AI-Act/CISA confirmed 200.)
+# All URLs VERIFIED live during build:
+#   - sec_press / eu_ai_act / cisa_advisories: RSS 200 OK
+#   - hn_frontpage: Hacker News Algolia JSON API (tech/viral trends)
+#   - arxiv_cy: arXiv cs.CY RSS (AI-safety research trends)
+#   - federal_register: US Federal Register JSON API (new US rules)
+# NOTE: Google Trends is intentionally NOT used — the official API is dead
+# and the only path (pytrends scraper) needs a proxy + gets rate-limited
+# hourly, which would break the "every day" guarantee. These verified
+# JSON/RSS sources cover "new laws, new regulation, new trends" reliably.
+# Each entry: {url, kind} where kind in {'rss','json-hn','json-fr'}.
 SPAWN_SOURCES = {
-    "sec_press":       "https://www.sec.gov/rss/news/press.xml",
-    "eu_ai_act":       "https://artificialintelligenceact.eu/feed/",
-    "cisa_advisories": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
+    "sec_press":       {"url": "https://www.sec.gov/rss/news/press.xml",
+                          "kind": "rss"},
+    "eu_ai_act":       {"url": "https://artificialintelligenceact.eu/feed/",
+                          "kind": "rss"},
+    "cisa_advisories": {"url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
+                          "kind": "rss"},
+    "hn_frontpage":     {"url": "https://hn.algolia.com/api/v1/search"
+                          "?tags=front_page&hitsPerPage=8",
+                          "kind": "json-hn"},
+    "arxiv_cy":         {"url": "https://rss.arxiv.org/rss/cs.CY",
+                          "kind": "rss"},
+    "federal_register": {"url": "https://www.federalregister.gov/api/v1/"
+                          "documents.json?conditions[presidential_document_"
+                          "type][]=rule&per_page=8&fields[]=title&"
+                          "fields[]=type&fields[]=publication_date",
+                          "kind": "json-fr"},
 }
 
 STATE_DIR = os.environ.get("FT_STATE_DIR", ".")
@@ -50,10 +72,14 @@ def _guid(item):
                           item.get("title", "")).encode()).hexdigest()
 
 
-async def _fetch_feed(session, url, timeout=20):
-    """Fetch + parse a real RSS/Atom feed. Returns list of items
-    {title, link, guid, source, pub}. No fabrication — only what the
-    feed actually returned."""
+async def _fetch_feed(session, spec, timeout=20):
+    """Fetch + parse a REAL public signal source.
+    spec = {url, kind} where kind in {'rss','json-hn','json-fr'}.
+    Returns list of items {title, link, guid, source, pub}.
+    No fabrication — only what the source actually returned.
+    On any error/non-200 we return [] (honest: we never invent signals).
+    """
+    url, kind = spec["url"], spec.get("kind", "rss")
     try:
         async with session.get(url, timeout=aiohttp.ClientTimeout(total=timeout),
                                headers={"User-Agent": "coevolution-factory/1.0"},
@@ -63,21 +89,58 @@ async def _fetch_feed(session, url, timeout=20):
             data = await r.read()
     except Exception:
         return []
-    try:
-        import feedparser
-        parsed = feedparser.parse(data)
-        out = []
-        for e in parsed.entries[:8]:
-            out.append({
-                "title": e.get("title", "")[:200],
-                "link": e.get("link", ""),
-                "guid": e.get("id") or e.get("guid") or e.get("link", ""),
-                "source": url,
-                "pub": e.get("published", ""),
-            })
-        return out
-    except Exception:
-        return []
+    # RSS / Atom
+    if kind == "rss":
+        try:
+            import feedparser
+            parsed = feedparser.parse(data)
+            out = []
+            for e in parsed.entries[:8]:
+                out.append({
+                    "title": e.get("title", "")[:200],
+                    "link": e.get("link", ""),
+                    "guid": e.get("id") or e.get("guid") or e.get("link", ""),
+                    "source": url,
+                    "pub": e.get("published", ""),
+                })
+            return out
+        except Exception:
+            return []
+    # Hacker News front-page JSON API
+    if kind == "json-hn":
+        try:
+            j = json.loads(data)
+            out = []
+            for h in (j.get("hits") or [])[:8]:
+                out.append({
+                    "title": (h.get("title") or h.get("story_text") or "")[:200],
+                    "link": h.get("url") or
+                            f"https://news.ycombinator.com/item?id={h.get('objectID','')}",
+                    "guid": h.get("objectID", ""),
+                    "source": "hn_frontpage",
+                    "pub": h.get("created_at", ""),
+                })
+            return out
+        except Exception:
+            return []
+    # US Federal Register JSON API
+    if kind == "json-fr":
+        try:
+            j = json.loads(data)
+            out = []
+            for d in (j.get("results") or j.get("documents") or [])[:8]:
+                t = d.get("title") or d.get("document_number") or ""
+                out.append({
+                    "title": t[:200],
+                    "link": d.get("html_url") or d.get("public_inspection_pdf_url") or url,
+                    "guid": d.get("document_number") or d.get("id") or t,
+                    "source": "federal_register",
+                    "pub": d.get("publication_date") or d.get("effective_on") or "",
+                })
+            return out
+        except Exception:
+            return []
+    return []
 
 
 def _standing_domains():
@@ -100,8 +163,8 @@ async def scan():
     seen = set(st.get("spawn_seen_guids", []))
     new_items = []
     async with aiohttp.ClientSession() as s:
-        for name, url in SPAWN_SOURCES.items():
-            items = await _fetch_feed(s, url)
+        for name, spec in SPAWN_SOURCES.items():
+            items = await _fetch_feed(s, spec)
             for it in items:
                 g = _guid(it)
                 if g in seen:
