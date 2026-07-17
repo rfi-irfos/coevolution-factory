@@ -1464,6 +1464,89 @@ h1{{font-size:30px;font-weight:650;margin:0 0 10px;letter-spacing:-.01em}}
 <div class=grid>{cards}</div></div></body></html>""", content_type="text/html")
 
 
+async def firms_grid(request):
+    """Task 7 (Simeon's promo idea): a public, Instagram-style Firm Grid at
+    GET /firms. One tile per center, rendered ONCE from live state — no polling
+    loop, no JS fetch, no auto-refresh. Calm Palantir palette (same tokens as
+    index()/observatory()). Each tile shows 4 live stats and a 'Jetzt buchen'
+    button linking to that center's page (which carries the Stripe signup).
+
+    Grid-overview note: GELD GENERIERT shows the GLOBAL revenue total (revenue
+    is not tracked per-center in a way that splits cleanly for a marketing tile;
+    splitting a global figure evenly would be misleading, so we show the honest
+    global total on every tile, labelled as the network total).
+    """
+    # Global roll-ups (honest network totals for the overview grid).
+    total_sessions = len(state.get("usage", []))
+    total_revenue_eur = round(sum(u.get("cost", 0.0)
+                                  for u in state.get("usage", [])), 2)
+    debates = state.get("debates", {})
+    debates_resolved = sum(1 for d in debates.values()
+                           if d.get("status") == "done")
+    problems_solved = total_sessions + debates_resolved
+
+    def _badge(slug):
+        status = get_center_status(slug)
+        color = "#4ea1ff" if status == "healthy" else "#f0883e"
+        return (f'<span class=badge style="color:{color};'
+                f'border-color:{color}">{html.escape(status)}</span>')
+
+    tiles = "".join(
+        f'<div class=tile>'
+        f'<div class=thead>'
+        f'<span class=tname>{html.escape(c["name"])}</span>{_badge(s)}'
+        f'</div>'
+        f'<div class=vp>{html.escape((c.get("value_prop") or c["mandate"])[:150])}</div>'
+        f'<div class=grid4>'
+        f'<div class=stat><div class=k>Agents Active</div>'
+        f'<div class=v>{len(c["panel"])}</div></div>'
+        f'<div class=stat><div class=k>Geld Generiert</div>'
+        f'<div class=v>€{total_revenue_eur}</div>'
+        f'<div class=note>Netzwerk gesamt</div></div>'
+        f'<div class=stat><div class=k>Probleme Gelöst</div>'
+        f'<div class=v>{problems_solved}</div></div>'
+        f'<div class=stat><div class=k>Produkte Vermarktet</div>'
+        f'<div class=v>{len(c.get("use_cases", []))}</div></div>'
+        f'</div>'
+        f'<a class=book href="/{s}">Jetzt buchen →</a>'
+        f'</div>'
+        for s, c in CENTERS.items())
+
+    body = f"""<!doctype html><html><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>CoEvolution Firm Grid — 50 autonome Firmen</title>
+<style>
+body{{margin:0;background:#0a0e14;color:#e6edf3;font-family:-apple-system,Segoe UI,Inter,sans-serif;line-height:1.5}}
+.wrap{{max-width:1180px;margin:0 auto;padding:40px 24px 60px}}
+h1{{font-size:30px;font-weight:650;margin:0 0 8px;letter-spacing:-.01em}}
+.lede{{color:#8b98a9;font-size:15px;max-width:720px;margin:0 0 26px}}
+.lede a{{color:#4ea1ff;text-decoration:none}}
+.fgrid{{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}}
+.tile{{background:#0f141d;border:1px solid #1c2733;border-radius:14px;padding:18px;display:flex;flex-direction:column;transition:border-color .2s,transform .2s}}
+.tile:hover{{border-color:#2c4258;transform:translateY(-2px)}}
+.thead{{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}}
+.tname{{color:#4ea1ff;font-weight:600;font-size:15px}}
+.badge{{display:inline-block;border:1px solid;border-radius:10px;padding:1px 9px;font-size:11px;font-weight:600;letter-spacing:.02em;white-space:nowrap}}
+.vp{{color:#8b98a9;font-size:12.5px;line-height:1.45;margin-bottom:14px;min-height:54px}}
+.grid4{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}}
+.stat{{background:#070b10;border:1px solid #1c2733;border-radius:10px;padding:10px 12px}}
+.stat .k{{color:#5b6675;font-size:10px;text-transform:uppercase;letter-spacing:.06em}}
+.stat .v{{color:#e6edf3;font-size:20px;font-weight:650;margin-top:2px;font-variant-numeric:tabular-nums}}
+.stat .note{{color:#5b6675;font-size:10px;margin-top:1px}}
+.book{{margin-top:auto;background:#1b3a2a;border:1px solid #2c6b4a;color:#9ff0c8;text-decoration:none;text-align:center;padding:10px 16px;border-radius:9px;font-weight:600;font-size:14px;transition:background .2s}}
+.book:hover{{background:#234c37}}
+.foot{{color:#5b6675;font-size:12px;margin-top:36px}}
+@media(max-width:900px){{.fgrid{{grid-template-columns:repeat(2,1fr)}}}}
+@media(max-width:560px){{.fgrid{{grid-template-columns:1fr}}}}
+</style></head><body><div class=wrap>
+<h1>CoEvolution Firm Grid — {len(CENTERS)} autonome Firmen</h1>
+<p class=lede>Jede Kachel ist eine eigenständige, autonome Firma über die 292-Agenten-Engine — Live-Status, Umsatz und gelöste Probleme, einmal aus dem State gerendert (kein Flicker, keine Polling-Schleife). <a href="/">→ Centers</a> · <a href="/observatory">→ Observatory</a></p>
+<div class=fgrid>{tiles}</div>
+<p class=foot>Live status tiles · statisch gerendert, neu laden zum Aktualisieren · Zahlung sicher via RFI-IRFOS Stripe.</p>
+</div></body></html>"""
+    return web.Response(text=body, content_type="text/html")
+
+
 async def discover(request):
     """JSON discovery: filter centers by problem/discipline/name. Powers a
     lightweight client-side filter without a full page reload."""
@@ -1612,6 +1695,7 @@ async def evolve_apply_handler(request):
 
 app = web.Application()
 app.router.add_get("/", index)
+app.router.add_get("/firms", firms_grid)
 app.router.add_get("/discover", discover)
 app.router.add_get("/health", health)
 app.router.add_get("/observatory", observatory)
