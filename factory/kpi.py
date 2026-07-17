@@ -350,3 +350,84 @@ def absorb_nourishment(slug, nourishment, base=None):
     })
     _save(k, base)
     return vp_strength(slug, base=base)
+
+
+# --- Hive Mind (Simeon Q&A #13, simeon approves) ----------------------------
+# No string theory — this is an ANT COLONY. The Queen secures survival: she is
+# the living GENOME of the economy (collective memory / DNA). She flies from
+# hive to hive, fertilizing other colonies (genetic recombination). The HIVE
+# MIND is the collective intelligence — every firm is a neuron; the Queen
+# carries the DNA that flows through the network. Nature, not Silicon Valley.
+HIVE_MIND = True
+QUEEN_STATE = "flying"  # she travels hive->hive, fertilizing
+
+
+def collective_memory_path(base=None):
+    base = base or os.environ.get("FT_STATE_DIR", ".")
+    return os.path.join(base, "kpi", "_hive_genome.yaml")
+
+
+def record_collective_memory(nourishment, base=None):
+    """The Queen records dispersed knowledge into the hive genome (DNA).
+
+    Cumulative, never overwritten — like DNA accumulating across generations.
+    Returns the genome record count.
+    """
+    p = collective_memory_path(base)
+    gen = {}
+    if os.path.exists(p):
+        try:
+            with open(p) as f:
+                gen = yaml.safe_load(f) or {}
+        except Exception:
+            gen = {}
+    gen.setdefault("dna", []).append(nourishment)
+    gen.setdefault("generations", 0)
+    gen["generations"] += 1
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, "w") as f:
+        yaml.safe_dump(gen, f, sort_keys=False)
+    return gen["generations"]
+
+
+def queen_fly(parent_slugs, base=None):
+    """The Queen flies hive->hive, fertilizing: returns the genetic mix of the
+    strongest parents (crossover material for a new daughter).
+
+    Reads each parent's trail strength, returns a combined genetic profile the
+    spawn gate (Q&A #5) can use to inherit the best traits. No central boss —
+    the Queen is a carrier, not a ruler.
+    """
+    genetics = {}
+    for s in parent_slugs:
+        k = load_kpi(s, base)
+        genetics[s] = {
+            "vp_strength": vp_strength(s, base=base),
+            "pheromones": k.get("pheromones", {}),
+            "revenue_eur": k.get("revenue_eur", 0.0),
+        }
+    # strongest parents contribute most to the inherited mix
+    ranked = sorted(genetics.items(), key=lambda kv: kv[1]["vp_strength"], reverse=True)
+    return {"queen_state": QUEEN_STATE, "genetics": dict(ranked),
+            "strongest_parent": ranked[0][0] if ranked else None}
+
+
+def inherit_genetics(child_slug, parent_slugs, base=None):
+    """A new daughter inherits a genetic mix from the strongest parents (crossover).
+
+    The child absorbs the top parents' pheromone trails — nature's recombination.
+    Returns the child's starting vp_strength after inheritance.
+    """
+    mix = queen_fly(parent_slugs, base=base)
+    top = [s for s, _ in list(mix["genetics"].items())[:max(1, len(parent_slugs)//2)]]
+    k = load_kpi(child_slug, base)
+    ph = k.setdefault("pheromones", {})
+    for s in top:
+        for action, w in mix["genetics"][s]["pheromones"].items():
+            ph[action] = ph.get(action, 0.0) + w * 0.5  # diluted inheritance
+    k.setdefault("history", []).append({
+        "ts": int(__import__("datetime").datetime.now(__import__("datetime").timezone.utc).timestamp()),
+        "inherited_from": top,
+    })
+    _save(k, base)
+    return vp_strength(child_slug, base=base)
