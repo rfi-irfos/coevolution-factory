@@ -151,3 +151,67 @@ def mycelium_share(slugs, base=None):
     without a central authority. Nature has no CEO; the network knows.
     """
     return {s: vp_strength(s, base=base) for s in slugs}
+
+
+# --- Revenue tracking (Simeon Q&A #8, simeon approves) ----------------------
+# Firms track their OWN revenue in kpi.yaml (decentral, like every other
+# metric). We (Lighthouse OS) aggregate it into a Finance tab as a separate
+# cashflow line next to Merch. Ecocentric-gated: only PARTNER revenue counts;
+# hard-sell revenue is banned (not counted). Cumulative toward the 2040
+# Jubilaeum party-payer logic.
+REVENUE_SOURCES_OK = {"partner", "ecocentric", "recurring", "referral"}
+REVENUE_SOURCES_BAN = {"hard_sell", "churn", "manipulation"}
+
+
+def track_revenue(slug, amount_eur, source, base=None):
+    """Firm tracks its own revenue. Only ecocentric/partner sources count.
+
+    source in REVENUE_SOURCES_OK -> added to cumulative revenue.
+    source in REVENUE_SOURCES_BAN -> rejected (not counted, anti-trail).
+    Returns the firm's cumulative revenue (float).
+    """
+    if source in REVENUE_SOURCES_BAN:
+        # banned source: do not count, leave a rejection marker
+        k = load_kpi(slug, base)
+        k.setdefault("rejected_revenue", []).append({
+            "amount": amount_eur, "source": source,
+            "ts": int(__import__("datetime").datetime.now(__import__("datetime").timezone.utc).timestamp()),
+        })
+        _save(k, base)
+        return k.get("revenue_eur", 0.0)
+    if source not in REVENUE_SOURCES_OK:
+        # unknown source -> treat as not-yet-validated, hold (tend), don't count
+        return load_kpi(slug, base).get("revenue_eur", 0.0)
+    k = load_kpi(slug, base)
+    k["revenue_eur"] = round(k.get("revenue_eur", 0.0) + amount_eur, 2)
+    k.setdefault("history", []).append({
+        "ts": int(__import__("datetime").datetime.now(__import__("datetime").timezone.utc).timestamp()),
+        "revenue": amount_eur, "source": source,
+    })
+    _save(k, base)
+    return k["revenue_eur"]
+
+
+def _save(k, base):
+    p = kpi_path(k.get("slug", "_"), base)
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, "w") as f:
+        yaml.safe_dump(k, f, sort_keys=False)
+
+
+def lighthouse_cashflow(slugs, base=None):
+    """Aggregate all firms' revenue into the Lighthouse OS Finance tab.
+
+    Returns {"cashflow": total, "lines": {slug: revenue}, "party_payer": slug}.
+    This is the 'CoEvolution Cashflow' line, separate from Merch. The highest
+    earner by 2040 Jubilaeum pays the party (transparent).
+    """
+    lines = {s: vp_revenue(s, base=base) for s in slugs}
+    total = round(sum(lines.values()), 2)
+    party_payer = max(lines, key=lambda s: lines[s]) if lines else None
+    return {"cashflow": total, "lines": lines, "party_payer": party_payer}
+
+
+def vp_revenue(slug, base=None):
+    """Cumulative revenue for a firm (ecocentric-gated, partner-only)."""
+    return load_kpi(slug, base).get("revenue_eur", 0.0)
