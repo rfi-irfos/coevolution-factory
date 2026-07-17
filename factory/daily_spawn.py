@@ -63,6 +63,48 @@ async def gate_candidate(cand):
         return False  # Laura error -> no spawn
 
 
+async def batch_gate_candidates(cands):
+    """ONE Laura MCP call reviewing all staged candidates. Returns {slug: bool}.
+
+    Falls back to per-candidate gate_candidate on any exception (so a single
+    Laura error does not kill the whole batch -- the old serial path still works).
+
+    Accepts two Laura response shapes:
+      - {"verdicts": {slug: {"flags": [...]}}}  -> per-candidate verdict
+      - {"flags": [...]}                          -> top-level list (conservative:
+                                                     all-or-nothing -- any flag blocks
+                                                     every candidate)
+    """
+    if mcp_laura_review_plan is None:
+        return {s: False for s in cands}  # Laura offline -> no spawn
+    try:
+        res = mcp_laura_review_plan(
+            title="AutoCenter spawn batch review",
+            text=json.dumps([
+                {
+                    "slug": s,
+                    "name": c.get("name"),
+                    "mandate": c.get("mandate"),
+                    "uncovered_signals": c.get("uncovered_signals", []),
+                }
+                for s, c in cands.items()
+            ], indent=2),
+            metadata={"kind": "factory-spawn-batch", "count": len(cands)},
+        )
+        if isinstance(res, dict) and "verdicts" in res:
+            verdicts = res["verdicts"]
+            return {
+                s: (verdicts.get(s, {}).get("flags", []) == [])
+                for s in cands
+            }
+        # single top-level flags list -> all-or-nothing (conservative)
+        flags = res.get("flags", []) if isinstance(res, dict) else []
+        return {s: (len(flags) == 0) for s in cands}
+    except Exception:
+        # fallback: per-candidate (serial) so one Laura error doesn't kill all
+        return {s: await gate_candidate(c) for s, c in cands.items()}
+
+
 def apply_second_reviewer(cand):
     """HITL second-reviewer SLOT (OQ2). Laura stays gate #1; this is an
     ADDITIVE second human sign-off slot, never a bypass.
