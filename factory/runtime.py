@@ -183,13 +183,38 @@ def save_state(s):
     DB.write_text(json.dumps(s, indent=2))
 
 
+def _normalize_center(slug, c):
+    """Daughter centers spawned autonomously (see factory_spawn_agent.py /
+    state["daughter_centers"]) carry a much sparser field set than the 50
+    seed centers in catalog.py — e.g. no icp/resilient/price/panel at
+    spawn time. Direct c['icp']-style access on a sparse daughter crashes
+    center_page()/firms_grid() with a KeyError (confirmed live 2026-07-17).
+    Fill in sane, honestly-labeled defaults instead of guessing values.
+    Applied once at rehydration time below, so every downstream consumer
+    of CENTERS[slug] — not just center_page() — gets a safe dict."""
+    parent = CENTERS.get(c.get("parent")) if c.get("parent") else None
+    d = dict(c)
+    d.setdefault("mandate", c.get("mandate") or "Autonomous daughter center — mandate still forming")
+    d.setdefault("resilient", (parent or {}).get("resilient") or "Standing, crisis-resistant by construction — inherits the network's Laura-gated spawn discipline")
+    d.setdefault("panel", (parent or {}).get("panel") or [])
+    d.setdefault("disciplines", (parent or {}).get("disciplines") or [])
+    d.setdefault("price", (parent or {}).get("price", 0))
+    d.setdefault("free", (parent or {}).get("free", 1))
+    d.setdefault("icp", (parent or {}).get("icp") or "organizations covered by this center's mandate")
+    d.setdefault("sample_question", (parent or {}).get("sample_question") or "What does this center currently cover?")
+    d.setdefault("value_prop", c.get("value_prop"))
+    d.setdefault("use_cases", c.get("use_cases") or [])
+    d.setdefault("icp_pain", c.get("icp_pain"))
+    return d
+
+
 state = load_state()
 
 # Rehydrate autonomous daughter centers (formed at runtime via the Laura-gated
 # /evolve flow) so they survive restarts. They live in state.json, not catalog.py.
 for _dslug, _dspec in state.get("daughter_centers", {}).items():
     if _dslug not in CENTERS:
-        CENTERS[_dslug] = _dspec
+        CENTERS[_dslug] = _normalize_center(_dslug, _dspec)
         CENTER_SLUGS.append(_dslug)
         _parent = _dspec.get("parent")
         if _parent:
@@ -1384,7 +1409,7 @@ async def center_live(request):
 
 
 def center_page(slug):
-    c = CENTERS[slug]
+    c = _normalize_center(slug, CENTERS[slug])
     stripe_link = link_for_factory(slug, c["price"])
     panel_list = ", ".join(c["panel"])
     disc_list = ", ".join(c["disciplines"])
@@ -1646,8 +1671,8 @@ async def index(request):
     q = request.query.get("q", "").strip().lower()
     if q:
         matches = {s: c for s, c in CENTERS.items()
-                   if q in c["name"].lower() or q in c["mandate"].lower()
-                   or any(q in d.lower() for d in c["disciplines"])}
+                   if q in c["name"].lower() or q in (c.get("mandate") or "").lower()
+                   or any(q in d.lower() for d in c.get("disciplines") or [])}
     else:
         matches = dict(CENTERS.items())
     cards = "".join(
@@ -1713,8 +1738,8 @@ async def firms_grid(request):
     items = list(CENTERS.items())
     if q:
         items = [(s, c) for s, c in items
-                 if q in c["name"].lower() or q in c["mandate"].lower()
-                 or any(q in d.lower() for d in c["disciplines"])]
+                 if q in c["name"].lower() or q in (c.get("mandate") or "").lower()
+                 or any(q in d.lower() for d in c.get("disciplines") or [])]
 
     pad = HEX_SIZE + 20
     if items:
@@ -1823,10 +1848,10 @@ async def discover(request):
     q = (request.query.get("q") or "").strip().lower()
     out = []
     for s, c in CENTERS.items():
-        if not q or q in c["name"].lower() or q in c["mandate"].lower() \
-                or any(q in d.lower() for d in c["disciplines"]):
-            out.append({"slug": s, "name": c["name"], "mandate": c["mandate"],
-                        "disciplines": c["disciplines"],
+        if not q or q in c["name"].lower() or q in (c.get("mandate") or "").lower() \
+                or any(q in d.lower() for d in c.get("disciplines") or []):
+            out.append({"slug": s, "name": c["name"], "mandate": c.get("mandate") or "",
+                        "disciplines": c.get("disciplines") or [],
                         "adjacent": CENTER_NETWORK.get(s, [])})
     return web.json_response({"query": q, "count": len(out), "centers": out})
 
