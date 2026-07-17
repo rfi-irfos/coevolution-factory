@@ -62,8 +62,10 @@ def load_state():
         s = json.loads(DB.read_text())
         s.setdefault("jobs", {})
         s.setdefault("spawned_teams", {})
+        s.setdefault("leads", {})
         return s
-    return {"keys": {}, "usage": [], "jobs": {}, "spawned_teams": {}}
+    return {"keys": {}, "usage": [], "jobs": {}, "spawned_teams": {},
+            "leads": {}}
 
 
 def prune_old(s):
@@ -347,6 +349,30 @@ async def center_session(request):
                               "poll": f"/api/center/result/{run_id}"})
 
 
+def add_lead(center, kind, ref, text, outcome=None):
+    """Record a CRM lead for a center from REAL visitor traffic ONLY.
+
+    A lead is an honest, no-PII memory of an inbound question or debate:
+
+        {ts, kind:'session'|'debate', ref:run_id, question_hash,
+         outcome, center}
+
+    The raw ``text`` is NEVER stored — only its SHA-256 hex digest
+    (``question_hash``) so we can attribute/de-dupe inbound interest without
+    retaining any PII. No external scrape, no fabricated contacts.
+    """
+    digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    lead = {
+        "ts": int(time.time()),
+        "kind": kind,
+        "ref": ref,
+        "question_hash": digest,
+        "outcome": outcome,
+        "center": center,
+    }
+    state.setdefault("leads", {}).setdefault(center, []).append(lead)
+
+
 async def run_panel_job(run_id, center, text, panel, c, acct):
     """Background worker: convene the panel via the engine, synthesize, store."""
     try:
@@ -377,6 +403,10 @@ async def run_panel_job(run_id, center, text, panel, c, acct):
         fac_state.setdefault("sessions_log", []).append(
             {"ts": int(time.time()), "panel": panel, "cost": cost,
              "posture": synth.get("posture")})
+        # CRM lead (Task 3): record this REAL inbound session as a lead for
+        # the center. Never stores the raw question — only its hash.
+        add_lead(center, "session", run_id, text,
+                 outcome=synth.get("posture"))
         # cross-center tension propagation (metadata only, no fabrication)
         shared = propagate_tensions(center, synth, CENTER_NETWORK)
         # emergence: does this panel's findings reveal a competence gap that
@@ -531,6 +561,10 @@ async def run_debate_job(run_id, center, text, pooled_panel, adjacent,
             "cross_center_tensions": shared,
             "advanced_offering": advanced,
         })
+        # CRM lead (Task 3): record this REAL inbound debate as a lead for the
+        # center. Never stores the raw question — only its hash.
+        add_lead(center, "debate", run_id, text,
+                 outcome=synth.get("posture"))
     except Exception as e:
         state["debates"][run_id].update({"status": "error", "error": str(e)})
     save_state(state)
@@ -923,6 +957,11 @@ async def observatory(request):
         "debates_total": len(debates),
         "debates_resolved": len(resolved),
         "last_debate": last_debate,
+        # Per-center CRM leads (Task 3): populated ONLY from real inbound
+        # sessions + debates. Read-only here; no PII (hash only), no scrape.
+        "leads_total": sum(len(v) for v in state.get("leads", {}).values()),
+        "leads": {slug: len(state.get("leads", {}).get(slug, []))
+                  for slug in by_center},
         "stripe_account": "RFI-IRFOS (verified link pool, %d links)" % len(STRIPE_LINKS),
         "cashflow": {s: {"name": b["name"], "sessions": b["sessions"],
                          "revenue_eur": round(b["revenue_eur"], 2),
