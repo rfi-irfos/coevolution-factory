@@ -401,6 +401,150 @@ async def run_panel_job(run_id, center, text, panel, c, acct):
     save_state(state)
 
 
+# --------------------------------------------------------------------------
+# Inter-center debate convener (Virtual Firm R0hne, Task 2).
+#
+# POST /api/center/debate?center=<slug>  body {text}
+#   - requires the center's entitlement key
+#   - pulls ADJACENT centers from CENTER_NETWORK (OQ3: adjacent-only quorum;
+#     firm-wide is a later flag)
+#   - convenes a POOLED panel = this center's own panel + every adjacent
+#     center's panel
+#   - runs engine_synthesize on the pooled panel, stores the resolution in
+#     state['debates'][run_id]
+#   - advances any related offering's pipeline stage idea -> debate
+#   - surfaces a debate count + last resolution in /observatory
+# --------------------------------------------------------------------------
+def _build_pooled_panel(center):
+    """Pooled panel = the center's own panel + adjacent centers' panels.
+
+    Adjacent agents are appended (de-duplicated) so a debate invitation always
+    reaches the adjacent centers' disciplines (OQ3 quorum)."""
+    c = CENTERS.get(center, {})
+    pooled = list(c.get("panel", []))
+    for adj in CENTER_NETWORK.get(center, []):
+        adj_meta = CENTERS.get(adj)
+        if not adj_meta:
+            continue
+        for a in adj_meta.get("panel", []):
+            if a not in pooled:
+                pooled.append(a)
+    return pooled
+
+
+async def debate_session(request):
+    """Convene an inter-center debate. Returns a run_id immediately; the
+    pooled-panel review runs in the background. Poll the result endpoint for
+    the resolution."""
+    center = request.query.get("center", "")
+    c = CENTERS.get(center)
+    if not c:
+        return web.json_response({"error": "unknown center"}, status=404)
+    acct, err = await require_key(request, center)
+    if err:
+        return err
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+    text = (body.get("text") or "").strip()
+    if not text:
+        return web.json_response({"error": "missing 'text'"}, status=400)
+
+    adjacent = CENTER_NETWORK.get(center, [])
+    pooled_panel = _build_pooled_panel(center)
+
+    run_id = "debate_" + secrets.token_hex(10)
+    state.setdefault("debates", {})[run_id] = {
+        "center": center,
+        "adjacent": adjacent,
+        "pooled_panel": pooled_panel,
+        "text": text[:500],
+        "status": "queued",
+        "created": int(time.time()),
+        "resolution": None,
+        "error": None,
+    }
+    save_state(state)
+
+    # Advance a related offering (idea -> debate) once the debate resolves.
+    related = None
+    for oid, rec in state.get("pipeline", {}).items():
+        if rec.get("center") == center and rec.get("stage") == "idea":
+            related = oid
+            break
+
+    spawn_background(
+        run_debate_job(run_id, center, text, pooled_panel, adjacent,
+                       c, acct, related))
+    return web.json_response({
+        "run_id": run_id,
+        "status": "queued",
+        "center": center,
+        "adjacent": adjacent,
+        "pooled_panel_size": len(pooled_panel),
+        "poll": f"/api/center/debate/result/{run_id}"})
+
+
+async def run_debate_job(run_id, center, text, pooled_panel, adjacent,
+                         c, acct, related_oid):
+    """Background worker: run the pooled-panel debate, store resolution,
+    advance a related offering's pipeline stage idea -> debate."""
+    try:
+        if DEMO_MODE:
+            synth = {"posture": "demo", "panel_size": len(pooled_panel),
+                     "disciplines_fired": 0,
+                     "disciplines_silent": pooled_panel,
+                     "flags": [], "notes": [], "conflicts": [],
+                     "flag_count": 0, "note_count": 0,
+                     "demo_note": "engine key not configured — connect FT_ENGINE_KEY"}
+            upstream_status = "demo"
+        else:
+            upstream, status, detail = await call_engine(text, pooled_panel)
+            if upstream is None:
+                state["debates"][run_id].update(
+                    {"status": "error",
+                     "error": f"engine unreachable: {detail}"})
+                save_state(state)
+                return
+            synth = await engine_synthesize(upstream, pooled_panel,
+                                            ENGINE_URL, ENGINE_KEY)
+            upstream_status = status
+
+        # Advance a related offering's pipeline (idea -> debate).
+        advanced = None
+        if related_oid:
+            try:
+                advance_pipeline(related_oid, "debate")
+                advanced = related_oid
+            except Exception:
+                advanced = None
+
+        # Cross-center tension propagation (metadata only, no fabrication).
+        shared = propagate_tensions(center, synth, CENTER_NETWORK)
+
+        state["debates"][run_id].update({
+            "status": "done",
+            "resolution": synth,
+            "upstream_status": upstream_status,
+            "demo": DEMO_MODE,
+            "cross_center_tensions": shared,
+            "advanced_offering": advanced,
+        })
+    except Exception as e:
+        state["debates"][run_id].update({"status": "error", "error": str(e)})
+    save_state(state)
+
+
+async def debate_result(request):
+    """Poll endpoint for an async debate run."""
+    run_id = request.match_info.get("run_id", "")
+    rec = state.get("debates", {}).get(run_id)
+    if not rec:
+        return web.json_response({"error": "unknown run_id"}, status=404)
+    return web.json_response(rec)
+
+
 async def panel_result(request):
     """Poll endpoint for an async panel run."""
     run_id = request.match_info.get("run_id", "")
@@ -755,12 +899,30 @@ async def observatory(request):
     total_rev = round(sum(b["revenue_eur"] for b in by_center.values()), 2)
     total_paid = round(sum(b["paid_eur"] for b in by_center.values()), 2)
     active = [s for s, b in by_center.items() if b["sessions"] > 0]
+    # Inter-center debates (Task 2): count + last resolution summary.
+    debates = state.get("debates", {})
+    resolved = [d for d in debates.values() if d.get("status") == "done"]
+    last_debate = None
+    if debates:
+        last = sorted(debates.values(),
+                      key=lambda d: d.get("created", 0), reverse=True)[0]
+        last_debate = {
+            "run_id": next((rid for rid, d in debates.items() if d is last),
+                           None),
+            "center": last.get("center"),
+            "adjacent": last.get("adjacent"),
+            "status": last.get("status"),
+            "posture": (last.get("resolution") or {}).get("posture"),
+        }
     return web.json_response({
         "centers_total": len(by_center),
         "centers_active": len(active),
         "total_sessions": total_sessions,
         "total_revenue_eur": total_rev,
         "total_paid_eur": total_paid,
+        "debates_total": len(debates),
+        "debates_resolved": len(resolved),
+        "last_debate": last_debate,
         "stripe_account": "RFI-IRFOS (verified link pool, %d links)" % len(STRIPE_LINKS),
         "cashflow": {s: {"name": b["name"], "sessions": b["sessions"],
                          "revenue_eur": round(b["revenue_eur"], 2),
@@ -1214,6 +1376,8 @@ app.router.add_post("/api/center/resolve", resolve_session)
 app.router.add_post("/api/center/spawn", spawn_session)
 app.router.add_get("/api/center/team/{team_id}", team_result)
 app.router.add_post("/api/center/propose", propose_session)
+app.router.add_post("/api/center/debate", debate_session)
+app.router.add_get("/api/center/debate/result/{run_id}", debate_result)
 app.router.add_post("/evolve", evolve_handler)
 app.router.add_post("/evolve/apply", evolve_apply_handler)
 app.router.add_post("/stripe/webhook", stripe_webhook)
