@@ -19,18 +19,21 @@ from pathlib import Path
 import aiohttp
 from catalog import CENTERS_META
 
-# Real public feeds we scan for NEW regulatory / trend signals.
-# All URLs VERIFIED live during build:
+# Static BASE sources — verified live during build (no API key needed).
 #   - sec_press / eu_ai_act / cisa_advisories: RSS 200 OK
 #   - hn_frontpage: Hacker News Algolia JSON API (tech/viral trends)
 #   - arxiv_cy: arXiv cs.CY RSS (AI-safety research trends)
 #   - federal_register: US Federal Register JSON API (new US rules)
-# NOTE: Google Trends is intentionally NOT used — the official API is dead
-# and the only path (pytrends scraper) needs a proxy + gets rate-limited
-# hourly, which would break the "every day" guarantee. These verified
-# JSON/RSS sources cover "new laws, new regulation, new trends" reliably.
-# Each entry: {url, kind} where kind in {'rss','json-hn','json-fr'}.
-SPAWN_SOURCES = {
+# Additional feeds live in TREND_SOURCES.json (persisted in the /data
+# volume) so a human (Simeon / Laura) can ADD more via the
+# /api/trends/discover endpoint (factory_spawn_agent.discover_feed)
+# without a code deploy. Feedly search (needs a key, set via
+# `fly secrets set TREND_API_KEY=...`) is layered on top when present.
+#
+# NOTE: Google Trends is intentionally NOT used — dead API; only path is
+# a proxy-needing scraper that gets rate-limited hourly -> would break
+# the "every day" guarantee. Feedly search (legit, keyed) replaces it.
+STATIC_SOURCES = {
     "sec_press":       {"url": "https://www.sec.gov/rss/news/press.xml",
                           "kind": "rss"},
     "eu_ai_act":       {"url": "https://artificialintelligenceact.eu/feed/",
@@ -48,6 +51,9 @@ SPAWN_SOURCES = {
                           "fields[]=type&fields[]=publication_date",
                           "kind": "json-fr"},
 }
+
+# How many extra feeds a discover/add call may persist.
+MAX_TREND_SOURCES = 200
 
 STATE_DIR = os.environ.get("FT_STATE_DIR", ".")
 ENGINE_URL = os.environ.get("FT_ENGINE_URL", "https://lauras-agents-api.fly.dev")
@@ -140,6 +146,32 @@ async def _fetch_feed(session, spec, timeout=20):
             return out
         except Exception:
             return []
+    # Feedly search API (keyed, legit — replaces Google Trends)
+    if kind == "json-feedly":
+        try:
+            key = spec.get("api_key", "")
+            hdrs = {"Authorization": f"Bearer {key}"} if key else {}
+            async with session.get(url, headers=hdrs,
+                                   timeout=aiohttp.ClientTimeout(total=20),
+                                   ssl=False) as r:
+                if r.status != 200:
+                    return []
+                j = await r.json()
+            out = []
+            for f in (j.get("results") or [])[:8]:
+                u = f.get("feedId", "").replace("feed/", "")
+                if not u.startswith("http"):
+                    u = "https://" + u if u else url
+                out.append({
+                    "title": f.get("title", "")[:200],
+                    "link": u,
+                    "guid": f.get("feedId", u),
+                    "source": "feedly_search",
+                    "pub": "",
+                })
+            return out
+        except Exception:
+            return []
     return []
 
 
@@ -157,13 +189,80 @@ def _standing_domains():
     return doms
 
 
+def load_trend_sources():
+    """Merge STATIC_SOURCES (code) + TREND_SOURCES.json (volume,
+    human-curated via /api/trends/discover) + optional Feedly
+    search (when TREND_API_KEY is set). Returns {name: {url, kind}}.
+
+    Honest: Feedly is ONLY used if a key is present (set via
+    `fly secrets set TREND_API_KEY=...`, never in code/repo). Without
+    it, we scan the static + human-added feeds only — no scraper.
+    """
+    src = dict(STATIC_SOURCES)
+    # human-curated feeds (persisted in the volume)
+    p = Path(STATE_DIR) / "trend_sources.json"
+    try:
+        extra = json.loads(p.read_text())
+        for k, v in (extra or {}).items():
+            if isinstance(v, dict) and v.get("url"):
+                src[k] = v
+    except Exception:
+        pass
+    # optional Feedly search (keyed, legit — replaces Google Trends)
+    key = os.environ.get("TREND_API_KEY", "")
+    if key:
+        src["feedly_search"] = {
+            "url": "https://cloud.feedly.com/v3/search/feeds?query="
+                   "regulation%20OR%20compliance%20OR%20ai%20policy",
+            "kind": "json-feedly", "api_key": key,
+        }
+    return src
+
+
+async def discover_feed(url, name=None):
+    """Validate that `url` is a REAL RSS/Atom feed, then persist it to
+    TREND_SOURCES.json (volume). Returns {ok, reason, name}.
+
+    Honest: we fetch + parse; if it is NOT a feed we reject it.
+    We never store a non-feed URL. Capped at MAX_TREND_SOURCES.
+    This is the (c) path: a human (Simeon/Laura) pastes a feed
+    URL, the agent validates + adds it — no scraper, no API key.
+    """
+    try:
+        async with aiohttp.ClientSession() as s:
+            async with s.get(url, timeout=aiohttp.ClientTimeout(total=20),
+                               headers={"User-Agent": "coevolution-factory/1.0"},
+                               ssl=False) as r:
+                if r.status != 200:
+                    return {"ok": False, "reason": f"http {r.status}"}
+                data = await r.read()
+    except Exception as e:
+        return {"ok": False, "reason": f"fetch error: {e}"}
+    # must look like a feed
+    head = data[:500].lower()
+    if b"<rss" not in data and b"<feed" not in data and b"<rdf" not in data:
+        return {"ok": False, "reason": "not a feed (no rss/atom tag)"}
+    p = Path(STATE_DIR) / "trend_sources.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        extra = json.loads(p.read_text())
+    except Exception:
+        extra = {}
+    if len(extra) >= MAX_TREND_SOURCES:
+        return {"ok": False, "reason": "trend source cap reached"}
+    slug = name or ("feed-" + hashlib.sha1(url.encode()).hexdigest()[:8])
+    extra[slug] = {"url": url, "kind": "rss", "added": int(time.time())}
+    p.write_text(json.dumps(extra, indent=2))
+    return {"ok": True, "name": slug, "url": url}
+
+
 async def scan():
     """Scan real feeds, return only NEW items (deduped by GUID in state)."""
     st = load_state()
     seen = set(st.get("spawn_seen_guids", []))
     new_items = []
     async with aiohttp.ClientSession() as s:
-        for name, spec in SPAWN_SOURCES.items():
+        for name, spec in load_trend_sources().items():
             items = await _fetch_feed(s, spec)
             for it in items:
                 g = _guid(it)

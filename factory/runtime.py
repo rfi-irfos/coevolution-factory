@@ -29,7 +29,7 @@
 #  GET  /health
 #  POST /stripe/webhook              -> real Stripe webhook (WHSEC-verified)
 
-import os, json, secrets, time, asyncio, hmac, hashlib
+import os, json, secrets, time, asyncio, hmac, hashlib, sys
 from pathlib import Path
 from aiohttp import web, ClientSession, ClientError, ClientTimeout
 
@@ -591,6 +591,35 @@ async def stripe_webhook(request):
     return web.json_response({"ok": True, "ignored": evt})
 
 
+async def trends_discover_handler(request):
+    """Human-curated feed add (the (c) path): Simeon / Laura
+    paste a REAL RSS/Atom URL; the agent validates it IS a feed
+    and persists it to TREND_SOURCES.json (volume). No scraper,
+    no API key. If Feedly search is desired, the key is set
+    via `fly secrets set TREND_API_KEY=...` (never in code/chat).
+
+    Honest governance: this is a WRITE endpoint, so it requires a
+    valid center key (same as /api/center) — no anonymous feed adds.
+    """
+    acct, err = await require_key(request, "")
+    if err:
+        return err
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+    url = (body.get("url") or "").strip()
+    if not url.startswith("http"):
+        return web.json_response({"error": "missing url"}, status=400)
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import factory_spawn_agent as F
+    res = await F.discover_feed(url, body.get("name"))
+    if not res.get("ok"):
+        return web.json_response(
+            {"error": res.get("reason", "rejected")}, status=400)
+    return web.json_response(res)
+
+
 async def observatory(request):
     # CASHFLOW ONLY. No human in the money path.
     by_center = {slug: {"name": c["name"], "sessions": 0, "revenue_eur": 0.0,
@@ -1038,6 +1067,7 @@ app.router.add_post("/api/center/propose", propose_session)
 app.router.add_post("/evolve", evolve_handler)
 app.router.add_post("/evolve/apply", evolve_apply_handler)
 app.router.add_post("/stripe/webhook", stripe_webhook)
+app.router.add_post("/api/trends/discover", trends_discover_handler)
 
 # Background task registry so async panel jobs survive the request that
 # spawned them (aiohttp cancels tasks created inside a handler once the
