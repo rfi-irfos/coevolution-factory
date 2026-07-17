@@ -122,9 +122,63 @@ def apply_version(state, slug, new_spec, changelog, laura_ok):
     return cur + 1, "applied v" + str(cur + 1)
 
 
+# ---- 2b. VALUE-PROP EVOLVE: learn real questions from telemetry -----
+import re as _re
+
+def extract_use_cases(slug, state, max_cases=3, min_len=24):
+    """Pull the REAL questions visitors typed (state['jobs'] text) for this
+    center and surface the most representative ones as use-cases. Data-grounded,
+    deterministic — no LLM, no fabrication. Returns a list of strings
+    (cleaned, de-duplicated, capped)."""
+    jobs = state.get("jobs", {})
+    seen, out = set(), []
+    for j in jobs.values():
+        if j.get("center") != slug:
+            continue
+        t = (j.get("text") or "").strip()
+        if len(t) < min_len or len(t) > 240:
+            continue
+        t = _re.sub(r"\s+", " ", t).strip()
+        key = t.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        # skip pure engine-test boilerplate
+        if "legitimate interest" in key and "unencrypted" in key:
+            continue
+        out.append(t)
+        if len(out) >= max_cases:
+            break
+    return out
+
+
+def evolve_valueprop(slug, state):
+    """Recursive value-prop improvement (data-grounded, Laura-gated):
+      - if real visitor questions exist and differ from the curated use_cases,
+        propose importing the top N as live use-cases.
+      - never invents; only promotes what a human actually typed.
+    Returns (new_valueprop_block, changelog)."""
+    cur = state.setdefault("centers", {}).get(slug, {})
+    cur_uses = set(cur.get("use_cases", []))
+    discovered = extract_use_cases(slug, state)
+    fresh = [d for d in discovered if d not in cur_uses]
+    changelog = []
+    if not fresh:
+        changelog.append("value-prop stable (no new real questions)")
+        return None, changelog
+    merged = sorted(set(cur_uses) | set(fresh))[:6]
+    new_block = dict(cur.get("use_cases_meta", {}))
+    new_block["use_cases"] = merged
+    changelog.append(f"value-prop: imported {len(fresh)} real visitor question(s) as use-cases")
+    return new_block, changelog
+
+
 if __name__ == "__main__":
     st = load_state()
     for slug, spec in CENTERS_META.items():
         tel = telemetry(slug, st)
         new_spec, log = evolve_panel(slug, spec, tel)
         print(f"{slug}: sessions={tel['sessions']} rev={tel['revenue_eur']} -> {log}")
+        _, vp_log = evolve_valueprop(slug, st)
+        if vp_log and vp_log[0] != "value-prop stable (no new real questions)":
+            print(f"    value-prop: {vp_log}")

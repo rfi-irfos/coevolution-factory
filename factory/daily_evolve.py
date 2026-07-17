@@ -62,11 +62,11 @@ def laura_gate(changelog_text):
 
 def main():
     log = {"ts": int(time.time()), "proposed": 0, "applied": 0, "blocked": []}
-    # 1. propose
+    # 1. propose (panel rewrite, tested on live engine)
     ev = post("/evolve?all=1")
     proposals = [p for p in ev.get("proposals", []) if p.get("staged")]
     log["proposed"] = len(proposals)
-    # 2. gate + apply
+    # 2. gate + apply (panels)
     for p in proposals:
         slug = p["center"]
         text = f"Center {slug} self-improvement proposal: " + "; ".join(p["changelog"])
@@ -78,6 +78,24 @@ def main():
         else:
             log["blocked"].append({"center": slug, "reason": summary})
             print(f"  BLOCKED {slug}: {summary}")
+    # 2b. value-prop recursion: promote real visitor questions (Laura-gated)
+    from evolve import evolve_valueprop, load_state, save_state
+    from catalog import CENTERS_META
+    st = load_state()
+    for slug in CENTERS_META.keys():
+        new_block, vp_log = evolve_valueprop(slug, st)
+        if not new_block:
+            continue
+        text = f"Center {slug} value-prop proposal: " + "; ".join(vp_log)
+        passed, summary = laura_gate(text)
+        if passed:
+            st.setdefault("centers", {}).setdefault(slug, {})["use_cases"] = new_block["use_cases"]
+            save_state(st)
+            log["applied"] += 1
+            print(f"  VP-APPLIED {slug}: {vp_log}")
+        else:
+            log["blocked"].append({"center": slug, "reason": "vp: " + summary})
+            print(f"  VP-BLOCKED {slug}: {summary}")
     # 3. cashflow snapshot
     obs = get("/observatory")
     log["cashflow"] = {"total_sessions": obs.get("total_sessions"),

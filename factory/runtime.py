@@ -637,6 +637,19 @@ def center_page(slug):
     adj_links = "".join(
         f'<a href="/{a}"><b>{CENTERS[a]["name"]}</b></a>'
         for a in adj[:8])
+    # typical-questions + icp-pain blocks (built as plain strings, not in
+    # the f-string, to avoid nested-comprehension f-string syntax limits)
+    ucs = c.get("use_cases") or []
+    use_cases_html = "".join(
+        '<button type=button class=uc style="display:block;width:100%;'
+        'text-align:left;margin:6px 0;background:#0f141d;border:1px solid '
+        '#1c2733;border-radius:8px;padding:10px 12px;color:#e6edf3;'
+        'cursor:pointer;font:inherit;font-size:13px" '
+        f'data-q="{uc.replace(chr(34), "&quot;")}">{uc}</button>'
+        for uc in ucs) if ucs else ""
+    icp_pain_html = (
+        f'<div style="margin-top:12px;font-size:13px;color:#ffb38a">'
+        f'⚠ {c["icp_pain"]}</div>') if c.get("icp_pain") else ""
     page = f"""<!doctype html><html><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <title>{c['name']} — interdisciplinary center</title>
@@ -674,6 +687,13 @@ button:disabled{{opacity:.6;cursor:default}}
 <div class=val>📡 continuous standing posture check</div>
 </div>
 <div style="margin-top:14px;font-size:13px;color:#9fd0ff">price: first {c['free']} sessions free, then <b>EUR {c['price']}/session</b> · built for {c['icp']}</div>
+</div>
+{icp_pain_html}
+<div style="margin-top:18px"><div class=small style="color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-size:11px">typical questions this center answers</div>
+<div style="margin-top:8px">
+{use_cases_html}
+</div>
+<div class=small style="margin-top:6px;color:#5b6675">click a question to drop it into the panel ↓</div>
 </div>
 <div class=box>
 <div class=tab id=t1 class=on>1 · Convene panel</div><div class=tab id=t2>2 · Scenario sim</div><div class=tab id=t3>3 · Standing check</div>
@@ -734,6 +754,7 @@ function showTab(n){['t1','t2','t3'].forEach(t=>$(t).classList.toggle('on',t===n
  $('doc').placeholder=n==='t1'?__SAMPLE__:(n==='t2'?'PROPOSED ACTION — e.g. we ship X without a DPIA':'standing check needs no input');
  window._tab=n;}
 ['t1','t2','t3'].forEach(t=>$(t).onclick=()=>showTab(t));showTab('t1');
+document.querySelectorAll('.uc').forEach(b=>b.onclick=()=>{const q=b.getAttribute('data-q')||b.textContent;$('doc').value=q;showTab('t1');$('doc').scrollIntoView({behavior:'smooth',block:'center'});});
 $('su').onclick=su;$('run').onclick=run;"""
     js = js.replace("__SLUG__", slug).replace("__SAMPLE__", json.dumps(c["sample_question"]))
     return page + "<script>" + js + "</script></body></html>"
