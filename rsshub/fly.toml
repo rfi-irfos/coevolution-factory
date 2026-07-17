@@ -1,0 +1,47 @@
+# fly.toml — CoEvolution RSSHub (open-source feed generator)
+#
+# Honest: this is the DIYgod/RSSHub Docker image (diygod/rsshub),
+# the world's largest RSS network. We self-host it on Fly so the
+# factory_spawn_agent can DISCOVER real feeds for any topic
+# (regulation, compliance, ai-policy, ...) WITHOUT a Feedly paywall
+# and WITHOUT any scraper/proxy. This is the (a) path from the
+# "trends" discussion: the agent finds feeds itself, via RSSHub
+# routes (https://docs.rsshub.app), not via Google-Trends scraping.
+#
+# No API key. No credential. Pure open source, 2026-style.
+app = 'coevolution-rsshub'
+primary_region = 'fra'
+
+[build]
+  image = 'diygod/rsshub:latest'
+
+[env]
+  # RSSHub runs on port 1200 inside the container
+  PORT = '1200'
+  # keep routes cached a bit (less upstream load)
+  CACHE_TTL = '300'
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 1200
+  processes = ['app']
+  [services.healthchecks]
+    grace_period = "60s"
+    interval = "30s"
+    timeout = "10s"
+    path = "/"
+  [[services.ports]]
+    port = 80
+    handlers = ['http']
+  [[services.ports]]
+    port = 443
+    handlers = ['tls', 'http']
+  [services.concurrency]
+    type = 'connections'
+    hard_limit = 100
+    soft_limit = 50
+
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256

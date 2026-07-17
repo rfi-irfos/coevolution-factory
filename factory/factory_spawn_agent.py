@@ -172,6 +172,39 @@ async def _fetch_feed(session, spec, timeout=20):
             return out
         except Exception:
             return []
+    # CoEvolution RSSHub (self-hosted, open-source, no paywall, no
+    # scraper) — the agent discovers real feeds for ANY topic by
+    # hitting RSSHub routes (https://docs.rsshub.app). This is the
+    # (a) path: the agent finds feeds ITSELF, replacing Google
+    # Trends (which needs a proxy+scraper and breaks "every day").
+    if kind == "json-rsshub":
+        try:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=25),
+                                   ssl=False) as r:
+                if r.status != 200:
+                    return []
+                j = await r.json()
+            out = []
+            # RSSHub wraps feed lists in {result: [...]} or returns
+            # a single feed directly.
+            items = j.get("result") if isinstance(j, dict) else None
+            if items is None:
+                items = j if isinstance(j, list) else [j]
+            for f in (items or [])[:8]:
+                if isinstance(f, dict):
+                    u = f.get("url") or f.get("feed_url") or url
+                else:
+                    u = str(f)
+                out.append({
+                    "title": (f.get("title") if isinstance(f, dict) else "")[:200],
+                    "link": u,
+                    "guid": u,
+                    "source": "rsshub",
+                    "pub": "",
+                })
+            return out
+        except Exception:
+            return []
     return []
 
 
@@ -191,12 +224,16 @@ def _standing_domains():
 
 def load_trend_sources():
     """Merge STATIC_SOURCES (code) + TREND_SOURCES.json (volume,
-    human-curated via /api/trends/discover) + optional Feedly
-    search (when TREND_API_KEY is set). Returns {name: {url, kind}}.
+    human-curated via /api/trends/discover) + CoEvolution RSSHub
+    (self-hosted, open-source, NO paywall, NO scraper) + optional
+    Feedly search (only when TREND_API_KEY is set).
 
-    Honest: Feedly is ONLY used if a key is present (set via
-    `fly secrets set TREND_API_KEY=...`, never in code/repo). Without
-    it, we scan the static + human-added feeds only — no scraper.
+    Returns {name: {url, kind}}.
+
+    Honest: RSSHub is the DEFAULT discovery path now (the (a)
+    from the trends discussion: the agent finds feeds ITSELF by
+    hitting RSSHub routes — no Google-Trends scraper, no paywall).
+    Feedly is only a fallback if a key is provided.
     """
     src = dict(STATIC_SOURCES)
     # human-curated feeds (persisted in the volume)
@@ -208,7 +245,17 @@ def load_trend_sources():
                 src[k] = v
     except Exception:
         pass
-    # optional Feedly search (keyed, legit — replaces Google Trends)
+    # CoEvolution RSSHub (self-hosted, open-source) — DEFAULT discovery
+    rsshub = os.environ.get("RSSHUB_URL",
+                            "https://coevolution-rsshub.fly.dev")
+    # a few broad regulatory/trend topics the agent can search itself
+    src["rsshub_regulation"] = {
+        "url": f"{rsshub}/rsshub/feed/regulation%20OR%20compliance",
+        "kind": "json-rsshub"}
+    src["rsshub_aipolicy"] = {
+        "url": f"{rsshub}/rsshub/feed/ai%20policy%20OR%20ai%20act",
+        "kind": "json-rsshub"}
+    # optional Feedly search (keyed, only if provided)
     key = os.environ.get("TREND_API_KEY", "")
     if key:
         src["feedly_search"] = {
