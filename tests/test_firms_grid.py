@@ -55,8 +55,8 @@ def test_firms_grid_returns_200_html():
     assert ("Firm Grid" in body) or ("Firmen" in body)
     # at least one real center name renders
     assert "GDPRGuard Center" in body
-    # a 'Jetzt buchen' book button links to the center page (Stripe signup)
-    assert "Jetzt buchen" in body
+    # a 'Buchen' book button links to the center page (Stripe signup)
+    assert "Buchen" in body
     assert 'href="/gdpr-guard"' in body
 
 
@@ -69,17 +69,18 @@ def test_firms_grid_is_static_no_fetch_loop():
     assert "setTimeout" not in body
     # calm Palantir palette reused from index()/observatory()
     assert "#0a0e14" in body
-    # responsive CSS grid (not a JS layout)
-    assert "grid-template-columns" in body
+    # responsive honeycomb (flex, not JS layout)
+    assert "display:flex" in body
+    assert "clip-path:polygon" in body  # true hexagon shape
 
 
 def test_firms_grid_shows_four_stat_labels():
-    """Each tile surfaces the 4 promised live zones: Sessions/Revenue/Leads/Gelöst
+    """Each tile surfaces the 4 promised live zones: Sess/Rev/Lead/Gelöst
     (Simeon's explicit spec 2026-07-17: 'in vier zonen aufgeteilt in sessions
     und revenue und leads und so')."""
     _seed()
     body = _run(R.firms_grid(_FakeRequest())).text
-    assert "SESSIONS" in body.upper()
-    assert "REVENUE" in body.upper()
-    assert "LEADS" in body.upper()
+    assert "SESS" in body.upper()
+    assert "REV" in body.upper()
+    assert "LEAD" in body.upper()
     assert "GEL" in body.upper()  # "Gelöst" — umlaut-safe substring check

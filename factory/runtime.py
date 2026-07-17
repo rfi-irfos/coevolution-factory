@@ -1541,31 +1541,26 @@ async def firms_grid(request):
         pct = int(_progress(s) * 100)
         return (
             f'<a class=tile href="/{s}">'
-            f'<div class=rail></div>'
             f'<div class=thead>'
             f'<span class=tname>{html.escape(c["name"])}</span>'
             f'<span class=tstatus>{_led(s)}</span>'
             f'</div>'
             f'<div class=tbadge>Lv {_level(s)}</div>'
-            f'<div class=vp>{html.escape((c.get("value_prop") or c["mandate"])[:140])}</div>'
             f'<div class=grid4>'
-            f'<div class=stat style="--zc:#4ea1ff"><div class=k>Sessions</div>'
+            f'<div class=stat style="--zc:#4ea1ff"><div class=k>Sess</div>'
             f'<div class=v>{_sessions_for(s)}</div></div>'
-            f'<div class=stat style="--zc:#36d6a0"><div class=k>Revenue</div>'
+            f'<div class=stat style="--zc:#36d6a0"><div class=k>Rev</div>'
             f'<div class=v>{_eur(_revenue_for(s))}</div></div>'
-            f'<div class=stat style="--zc:#c792ea"><div class=k>Leads</div>'
+            f'<div class=stat style="--zc:#c792ea"><div class=k>Lead</div>'
             f'<div class=v>{_leads_for(s)}</div></div>'
             f'<div class=stat style="--zc:#f0883e"><div class=k>Gelöst</div>'
             f'<div class=v>{_problems_for(s)}</div></div>'
             f'</div>'
             f'<div class=progress><div class=pbar style="width:{pct}%"></div>'
-            f'<span class=plabel>bis Jubiläum 2040 · {pct}%</span></div>'
+            f'<span class=plabel>2040 · {pct}%</span></div>'
             f'<div class=badges>{badge_html}</div>'
-            f'<div class=temporal>'
-            f'geboren {html.escape(str(_born(s) or "—"))} · '
-            f'{T.years_to_north_star(_born(s))}J bis Jubiläum 2040'
-            f'</div>'
-            f'<a class=book href="/{s}">Jetzt buchen →</a>'
+            f'<div class=temporal>{T.years_to_north_star(_born(s))}J → 2040</div>'
+            f'<a class=book href="/{s}">Buchen →</a>'
             f'</div>'
         )
 
@@ -1580,14 +1575,19 @@ async def firms_grid(request):
                 f'<span class=lstatus style="color:{color}">'
                 f'{html.escape(status)}</span>')
 
-    items = CENTERS.items()
+    items = list(CENTERS.items())
     if q:
         items = [(s, c) for s, c in items
                  if q in c["name"].lower() or q in c["mandate"].lower()
                  or any(q in d.lower() for d in c["disciplines"])]
 
+    # Catan-board honeycomb: group tiles into interlocking hex rows
+    # (every 2nd row is offset via CSS .hexrow:nth-child(even)).
+    ROW = 6
     tiles = "".join(
-        _tile_html(s, c) for s, c in items) or '<div class=empty>keine Zentren passen zur Suche</div>'
+        f'<div class=hexrow>{"".join(_tile_html(s, c) for s, c in items[i:i+ROW])}</div>'
+        for i in range(0, len(items), ROW)
+    ) or '<div class=empty>keine Zentren passen zur Suche</div>'
 
     hint = (f'{len(list(items))} Zentren gefunden für "{html.escape(q)}"'
             if q else f"{len(CENTERS)} autonome Firmen, live aus dem Netzwerk")
@@ -1613,33 +1613,41 @@ animation:railmove 2.2s linear infinite}}
 .search input{{width:100%;max-width:520px;padding:12px 14px;background:#070b10;border:1px solid #1c2733;border-radius:10px;color:#e6edf3;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}}
 .search input:focus{{border-color:#4ea1ff}}
 .hint{{color:#5b6675;font-size:13px;margin:0 0 22px}}
-.fgrid{{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}}
-.tile{{position:relative;overflow:hidden;background:#0f141d;border:1px solid #1c2733;border-radius:14px;padding:18px 18px 18px 22px;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s,box-shadow .2s;clip-path:polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%)}}
+/* Catan-board honeycomb: true interlocking hexagons, not a square grid */
+.fgrid{{display:flex;flex-wrap:wrap;justify-content:center;gap:0;max-width:1180px;margin:0 auto}}
+.hexrow{{display:flex;width:100%;justify-content:center}}
+.hexrow:nth-child(even){{margin-left:96px}}
+.tile{{position:relative;width:176px;height:200px;margin:0 -10px -28px 0;overflow:hidden;background:#0f141d;border:1px solid #1c2733;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:transform .2s,box-shadow .2s,z-index .2s;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);padding:26px 18px 18px}}
+.tile:hover{{transform:translateY(-4px) scale(1.02);box-shadow:0 10px 30px rgba(78,161,255,.18);z-index:5}}
 .tile:hover{{border-color:#4ea1ff;transform:translateY(-3px);box-shadow:0 8px 28px rgba(78,161,255,.12)}}
 .rail{{position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#4ea1ff,#36d6a0)}}
-.thead{{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}}
-.tname{{color:#e6edf3;font-weight:650;font-size:15px}}
-.tbadge{{display:inline-block;align-self:flex-start;background:#11202e;border:1px solid #2c4258;color:#9fd0ff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px;margin-bottom:8px;letter-spacing:.04em}}
-.tstatus{{display:flex;align-items:center;gap:6px;white-space:nowrap}}
-.led{{width:8px;height:8px;border-radius:50%;background:var(--c);animation:blink 1.8s ease-in-out infinite}}
-.lstatus{{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}}
-.vp{{color:#8b98a9;font-size:12.5px;line-height:1.45;margin-bottom:14px;min-height:54px}}
-.grid4{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}}
-.stat{{background:#070b10;border:1px solid #1c2733;border-left:3px solid var(--zc);border-radius:8px;padding:9px 12px}}
-.stat .k{{color:var(--zc);font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}}
-.stat .v{{color:#e6edf3;font-size:19px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}}
-.progress{{height:18px;background:#070b10;border:1px solid #1c2733;border-radius:9px;position:relative;overflow:hidden;margin-bottom:10px}}
+.thead{{display:flex;justify-content:space-between;align-items:center;gap:4px;margin-bottom:4px}}
+.tname{{color:#e6edf3;font-weight:650;font-size:12px;line-height:1.1}}
+.tbadge{{display:inline-block;align-self:flex-start;background:#11202e;border:1px solid #2c4258;color:#9fd0ff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:8px;margin-bottom:6px;letter-spacing:.03em}}
+.tstatus{{display:flex;align-items:center;gap:3px;white-space:nowrap}}
+.led{{width:7px;height:7px;border-radius:50%;background:var(--c);animation:blink 1.8s ease-in-out infinite}}
+.lstatus{{font-size:8.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}}
+.grid4{{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:7px}}
+.stat{{background:#070b10;border:1px solid #1c2733;border-left:3px solid var(--zc);border-radius:6px;padding:5px 7px}}
+.stat .k{{color:var(--zc);font-size:8px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}}
+.stat .v{{color:#e6edf3;font-size:15px;font-weight:700;margin-top:1px;font-variant-numeric:tabular-nums}}
+.progress{{height:14px;background:#070b10;border:1px solid #1c2733;border-radius:7px;position:relative;overflow:hidden;margin-bottom:6px}}
 .pbar{{height:100%;background:linear-gradient(90deg,#2c6b4a,#36d6a0);width:0%}}
-.plabel{{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:10px;color:#9ff0c8;font-weight:600;letter-spacing:.03em}}
-.badges{{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}}
-.badge{{width:20px;height:20px;border-radius:50%;background:#11202e;border:1px solid #2c4258;color:#9fd0ff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}}
+.plabel{{position:absolute;left:7px;top:50%;transform:translateY(-50%);font-size:8px;color:#9ff0c8;font-weight:600}}
+.badges{{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px}}
+.badge{{width:16px;height:16px;border-radius:50%;background:#11202e;border:1px solid #2c4258;color:#9fd0ff;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center}}
 .badge.muted{{color:#5b6675;border-color:#1c2733}}
-.book{{margin-top:auto;background:#1b3a2a;border:1px solid #2c6b4a;color:#9ff0c8;text-decoration:none;text-align:center;padding:10px 16px;border-radius:9px;font-weight:600;font-size:14px;transition:background .2s}}
+.temporal{{font-size:8.5px;color:#5b6675;text-align:center;margin-bottom:6px}}
+.book{{margin-top:auto;background:#1b3a2a;border:1px solid #2c6b4a;color:#9ff0c8;text-decoration:none;text-align:center;padding:6px 10px;border-radius:7px;font-weight:600;font-size:11px;transition:background .2s}}
 .tile:hover .book{{background:#234c37}}
-.empty{{color:#5b6675;text-align:center;padding:30px;grid-column:1/-1}}
 .foot{{color:#5b6675;font-size:12px;margin-top:36px}}
-@media(max-width:900px){{.fgrid{{grid-template-columns:repeat(2,1fr)}}}}
-@media(max-width:560px){{.fgrid{{grid-template-columns:1fr}}}}
+@media(max-width:760px){{
+  .hexrow{{flex-direction:column;margin-left:0 !important}}
+  .tile{{width:200px;height:210px;margin:0 0 -26px 0}}
+}}
+@media(max-width:480px){{
+  .tile{{width:90vw;max-width:240px}}
+}}
 </style></head><body><div class=wrap>
 <div class=eyebrow><span class=dot></span>live · 292-agenten-engine</div>
 <h1>CoEvolution AI — {len(CENTERS)} autonome Firmen</h1>
