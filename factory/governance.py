@@ -119,6 +119,41 @@ def resolve_signal(signal):
     return "tend"
 
 
+# --- Emergence (Simeon Q&A #10, simeon approves) ----------------------------
+# FULL GAS. Firms may show emergence: ideas, intuition, by-products of real
+# meta-cognition. This is NOT hallucination. Firms distinguish three channels:
+#   INPUT      = raw data / questions
+#   OUTPUT     = computed answer to a question
+#   EMERGENCE  = idea / intuition / side-product of meta-cognition (ALLOWED,
+#                this is the good stuff, broadcast it into the mycelium)
+#   HALLUCINATION = confident output with no grounding (FLAG, never broadcast)
+# Soft competition: all firms share one genetics (this constitution) and one
+# north-star (2040 Jubilaeum), so competition is symbiotic, not cannibalizing.
+EMERGENCE_ALLOWED = True
+SOFT_COMPETITION = True          # one party, shared genetics -> no cannibalization
+NORTH_STAR = "2040-09-08"        # Jubilaeum; all firms pull toward it together
+
+
+def classify_signal(kind, grounded=False):
+    """Distinguish INPUT / OUTPUT / EMERGENCE / HALLUCINATION.
+
+    kind: "input" | "output" | "emergence"
+    grounded: for "output", is it backed by real data? (False -> hallucination)
+    Returns (channel, broadcast_ok, note).
+    Emergence is always broadcastable. Hallucination is flagged, never sent.
+    """
+    if kind == "input":
+        return ("input", False, "raw data, not broadcast")
+    if kind == "output":
+        if grounded:
+            return ("output", True, "computed, grounded -> broadcast")
+        return ("hallucination", False, "confident but ungrounded -> FLAG, never broadcast")
+    if kind == "emergence":
+        # real meta-cognition by-product: allowed, this is the juice
+        return ("emergence", True, "idea/intuition -> broadcast to mycelium")
+    return ("unknown", False, "hold in tend")
+
+
 # Lunar cycle (deterministic, no API).
 LUNAR_PERIOD_DAYS = 29.53059
 # Reference new moon (UTC). Known astronomical value; anchor for all phases.
