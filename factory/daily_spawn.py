@@ -179,6 +179,24 @@ def capacity_ok():
     return True
 
 
+def network_daughters(parent, new_slugs):
+    """Link co-spawned daughters to each other (bidirectional) and to the
+    parent in CENTER_NETWORK (adjacency is bidirectional). Idempotent:
+    re-running with the same slugs never duplicates an edge."""
+    for s in new_slugs:
+        R.CENTER_NETWORK.setdefault(s, [])
+        # daughter <-> parent
+        if parent:
+            if parent not in R.CENTER_NETWORK[s]:
+                R.CENTER_NETWORK[s].append(parent)
+            if s not in R.CENTER_NETWORK.setdefault(parent, []):
+                R.CENTER_NETWORK[parent].append(s)
+        # daughter <-> daughter (co-spawned in this cycle)
+        for o in new_slugs:
+            if o != s and o not in R.CENTER_NETWORK[s]:
+                R.CENTER_NETWORK[s].append(o)
+
+
 async def main():
     # 1. scan + stage
     scan_res = await F.run_spawn_agent()

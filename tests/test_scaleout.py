@@ -1,4 +1,4 @@
-"""Scale-out tests (Tasks 1 & 2).
+"""Scale-out tests (Tasks 1, 2 & 3).
 
 conftest.py freezes FT_STATE_DIR to a temp dir so state.json is isolated,
 and puts factory/ on sys.path so `import daily_spawn` / `import runtime` work.
@@ -71,3 +71,31 @@ def test_capacity_ok_refuses_on_zero_status(monkeypatch):
     # clear the 0-status -> ok
     R.state["center_status"] = {}
     assert DS.capacity_ok() is True
+
+
+# --- Task 3: auto-network co-spawned daughters -----------------------------
+
+def test_network_daughters_links_both_ways():
+    """Co-spawned daughters link to each other (both ways) and to the
+    parent in CENTER_NETWORK."""
+    import runtime as R
+
+    R.CENTER_NETWORK.clear()
+    DS.network_daughters("gdpr-guard", ["da", "db"])
+    assert "db" in R.CENTER_NETWORK["da"]
+    assert "da" in R.CENTER_NETWORK["db"]
+    assert "da" in R.CENTER_NETWORK["gdpr-guard"]
+
+
+def test_network_daughters_is_idempotent():
+    """Re-running network_daughters with the same slugs never duplicates
+    an edge (no repeated entries in CENTER_NETWORK adjacency lists)."""
+    import runtime as R
+
+    R.CENTER_NETWORK.clear()
+    DS.network_daughters("gdpr-guard", ["da", "db"])
+    DS.network_daughters("gdpr-guard", ["da", "db"])  # second call
+    assert R.CENTER_NETWORK["da"].count("db") == 1
+    assert R.CENTER_NETWORK["db"].count("da") == 1
+    assert R.CENTER_NETWORK["gdpr-guard"].count("da") == 1
+    assert R.CENTER_NETWORK["gdpr-guard"].count("db") == 1
