@@ -69,3 +69,29 @@ def test_evaluate_ecocentric_pass_serves_whole():
 def test_evaluate_ecocentric_veto_nobody():
     verdict, _ = G.evaluate_ecocentric(-1, -1)
     assert verdict == "veto"
+
+
+def test_score_lead_partner_compounds():
+    # brings referrals -> 'partner' tier, high score
+    score, tier = G.score_lead(recurrence=5, referral=2, fit=0.9)
+    assert tier == "partner"
+    assert score > 0.8
+
+
+def test_score_lead_rejects_hard_sell():
+    # we never hard-sell; a pushed lead is disqualified
+    score, tier = G.score_lead(recurrence=10, referral=10, fit=1.0,
+                               hard_sell_attempt=True)
+    assert tier == "rejected_hard_sell"
+    assert score == 0.0
+
+
+def test_score_lead_no_fit_cold():
+    score, tier = G.score_lead(recurrence=0, referral=0, fit=0.0)
+    assert tier == "no_fit"
+    assert score == 0.0
+
+
+def test_score_lead_recurring_tier():
+    score, tier = G.score_lead(recurrence=4, referral=0, fit=0.8)
+    assert tier == "recurring"

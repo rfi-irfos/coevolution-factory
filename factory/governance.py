@@ -58,6 +58,21 @@ ORIENTATION = "ecocentric"  # not "human-centered"
 ECOCENTRIC_CHECK = "ternary_veto"
 ECOCENTRIC_VETO = "hard"  # a self-serving action is vetoed regardless of other dims
 
+# What a LEAD actually is (Simeon's definition, 2026-07-17):
+# A lead is NOT a churn-risk subscription we squeeze. A lead is a recurring
+# PARTNER we still have in 50 years, who refers NEW leads by word-of-mouth
+# because the fit is real — not because we hard-sell. Quality compounds;
+# aggression does not. Firms never "try hard"; they are useful (Wall-E / eco),
+# and partners arrive on their own. We do not sell people junk they don't need.
+LEAD_DEFINITION = (
+    "recurring_partner_not_churn_risk: brings referral leads via real fit, "
+    "not via hard-sell; still ours in 50 years"
+)
+LEAD_QUALITY_METRIC = "referral_coefficient"  # partners earned per partner (word-of-mouth)
+LEAD_HORIZON_YEARS = 50
+NO_HARD_SELL = True  # quality pulls partners; aggression repels them
+LEAD_SCORE_DIMENSIONS = ["recurrence", "referral", "fit", "no_hard_sell"]
+
 # Firms begin in hold/uncertainty, not affirm.
 DEFAULT_STATE = "tend"
 
@@ -146,3 +161,32 @@ def evaluate_ecocentric(human_trit, eco_trit, systemic_trit=None):
     if human_trit <= 0 and eco_trit <= 0:
         return ("veto", "serves nobody; reject")
     return ("pass", "serves the whole, not only the self")
+
+
+def score_lead(recurrence=0, referral=0, fit=0.0, hard_sell_attempt=False):
+    """Score a lead the Simeon way — not churn-risk, but 50-year partner.
+
+    Dimensions (all privacy-first, no PII, no engine call):
+      recurrence : how many times this partner returned (0 = one-off)
+      referral   : partners this lead has already referred (word-of-mouth)
+      fit        : 0..1 how well our offering matches their real need
+      hard_sell_attempt: did WE push? (true -> disqualifies; we don't chase)
+    Returns (0..1 score, tier).
+    """
+    if hard_sell_attempt:
+        # we never hard-sell; a lead born from our pushing is not a real partner
+        return (0.0, "rejected_hard_sell")
+    if fit <= 0.0:
+        return (0.0, "no_fit")
+    # quality compounds: recurrence + referral dominate; fit is the gate
+    raw = (recurrence * 0.35) + (referral * 0.45) + (fit * 0.20)
+    score = round(min(raw, 1.0), 3)
+    if referral >= 1:
+        tier = "partner"          # brings others -> compounding
+    elif recurrence >= 3:
+        tier = "recurring"
+    elif fit >= 0.7:
+        tier = "fit"
+    else:
+        tier = "cold"
+    return (score, tier)
