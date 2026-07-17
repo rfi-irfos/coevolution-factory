@@ -29,7 +29,7 @@
 #  GET  /health
 #  POST /stripe/webhook              -> real Stripe webhook (WHSEC-verified)
 
-import os, json, secrets, time, asyncio, hmac, hashlib, sys
+import os, json, secrets, time, asyncio, hmac, hashlib, sys, html
 from pathlib import Path
 from aiohttp import web, ClientSession, ClientError, ClientTimeout
 
@@ -1131,7 +1131,7 @@ def center_page(slug):
                 '<div class=small style="text-transform:uppercase;'
                 'letter-spacing:.1em;font-size:11px;color:#e8c14a">'
                 'last known synthesis (cached)</div>'
-                f'<pre>{json.dumps(cached, indent=2)[:2000]}</pre></div>')
+                '<pre>{html.escape(json.dumps(cached, indent=2)[:2000])}</pre></div>')
         reduced_mode_html = (
             '<div class=box style="border-color:#6b4a2c;background:#1a1710;'
             'margin-top:18px">'
@@ -1344,7 +1344,8 @@ async def index(request):
         f'<div class=cmandate>{c["mandate"]}</div>'
         f'</a>'
         for s, c in matches.items())
-    hint = f'{len(matches)} centers match "{q}"' if q else f"{len(matches)} standing interdisciplinary centers"
+    hint = (f'{len(matches)} centers match "{html.escape(q)}"'
+            if q else f"{len(matches)} standing interdisciplinary centers")
     return web.Response(text=f"""<!doctype html><html><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <title>CoEvolution AI — 50 interdisciplinary centers</title>
@@ -1370,7 +1371,7 @@ h1{{font-size:30px;font-weight:650;margin:0 0 10px;letter-spacing:-.01em}}
 </style></head><body><div class=wrap>
 <h1>50 autonomous interdisciplinary centers</h1>
 <p class=lede>Each a distinct, crisis-resistant standing body of experts, convened across the live 292-agent engine. We only track the cashflow. <a href="/observatory">→ Observatory</a> · <a href="/network">→ Center network</a></p>
-<form class=search method=get><input name=q placeholder="search by problem, discipline or center (e.g. GDPR, security, hiring)" value="{q}"></form>
+<form class=search method=get><input name=q placeholder="search by problem, discipline or center (e.g. GDPR, security, hiring)" value="{html.escape(q)}"></form>
 <p class=hint>{hint}</p>
 <div class=grid>{cards}</div></div></body></html>""", content_type="text/html")
 
