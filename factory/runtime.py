@@ -96,6 +96,44 @@ backdrop-filter:blur(16px);border-bottom:1px solid #1c2733}}
 
 
 # --------------------------------------------------------------------------
+# Legal footer — CoEvolution Factory takes real payments (Stripe) under the
+# same legal entity as rfi-irfos.com, so Austrian ECG (E-Commerce-Gesetz)
+# §5 Impressum duties apply here too, not just on the main site. Mirrors
+# the identity block from PublicSite.tsx's <footer> (WKO membership, GISA,
+# UID, trade-law management, address) rather than inventing a lighter one —
+# legal/reference links point at rfi-irfos.com's actual pages since this
+# product doesn't have its own Impressum/AGB, it shares RFI-IRFOS's.
+# --------------------------------------------------------------------------
+def _footer_html():
+    return """<footer class=sitefoot><div class=footwrap>
+<div class=footlinks>
+<a href="https://rfi-irfos.com/#p/impressum" target=_blank rel=noreferrer>Legal Notice</a>
+<a href="https://rfi-irfos.com/#p/datenschutz" target=_blank rel=noreferrer>Privacy Policy</a>
+<a href="https://rfi-irfos.com/#p/agb" target=_blank rel=noreferrer>Terms</a>
+<a href="/privacy">This site's tracking disclosure</a>
+<a href="https://rfi-irfos.com" target=_blank rel=noreferrer>rfi-irfos.com ↗</a>
+</div>
+<div class=footbadges>
+<span class=footbadge>WKO MEMBER · GewO § 32 · Automatic Data Processing</span>
+<span class=footbadge>REGULATED NOT-FOR-PROFIT · ZVR 1015608684 · GISA 39261441 · UID ATU83405245</span>
+</div>
+<p class=footfine>Trade-Law Management: Simeon-Andreas Johann Manfred Kepp &middot; Elisabethinergasse 25/10, 8020 Graz &middot; GLN 9110038490191</p>
+<p class=footfine>&copy; 2026 RFI-IRFOS &middot; UID ATU83405245 &middot; Steuernummer 68 696/8736 &middot; Graz, Austria &middot; CoEvolution Factory is an RFI-IRFOS product</p>
+</div>
+<style>
+.sitefoot{border-top:1px solid #1c2733;margin-top:50px;padding:34px 22px 40px;text-align:center}
+.footwrap{max-width:900px;margin:0 auto}
+.footlinks{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-bottom:18px}
+.footlinks a{color:#5b6675;font-size:12px;text-decoration:none}
+.footlinks a:hover{color:#9fd0ff}
+.footbadges{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.footbadge{display:inline-flex;align-items:center;border:1px solid #1c2733;border-radius:4px;padding:5px 12px;background:#0f141d;
+font-family:monospace;font-size:10px;color:#5b6675;letter-spacing:.05em}
+.footfine{font-family:monospace;font-size:10px;color:#3a4552;letter-spacing:.05em;margin:4px 0}
+</style></footer>"""
+
+
+# --------------------------------------------------------------------------
 # Honeycomb layout — axial hex-coordinate spiral (the same ring-by-ring
 # construction Catan itself uses to lay out a hex board), computed once
 # server-side. CENTER_NETWORK is a dense expertise-adjacency graph (10-20
@@ -1548,9 +1586,11 @@ button:disabled{{opacity:.6;cursor:default}}
 
 <div class=meta>
 Payments via RFI-IRFOS Stripe · <a href="/privacy">Datenschutz</a> · <a href="/briefing/{slug}">this center's autonomous briefings</a>{(' · related: ' + adj_links) if adj_links else ''}
-<br>This is a decision-support tool that surfaces expert perspectives — not a substitute for qualified counsel.
+<br>This is a decision-support tool that surfaces expert perspectives - not a substitute for qualified counsel.
 </div>
-</div></body>
+</div>
+{_footer_html()}
+</body>
 """
     js = r"""const $=id=>document.getElementById(id);const slug='__SLUG__';
 function esc(s){return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
@@ -1686,7 +1726,9 @@ a{{color:#4ea1ff}}
 <div style="margin:18px 0"><a class=buy href="{sub_link}" target="_blank" rel="noopener">Subscribe to this center's autonomous briefing feed →</a>
 <div class=small style="margin-top:8px">A standing panel, briefed on real regulatory signals — delivered as it publishes. Secure payment via RFI-IRFOS Stripe.</div></div>
 {cards}
-</div></body></html>""", content_type="text/html")
+</div>
+{_footer_html()}
+</body></html>""", content_type="text/html")
 
 
 async def index(request):
@@ -1733,7 +1775,9 @@ h1{{font-size:30px;font-weight:650;margin:0 0 10px;letter-spacing:-.01em}}
 <p class=lede>Each a distinct, crisis-resistant standing body of experts, convened across the live 292-agent engine. We only track the cashflow. <a href="/observatory">→ Observatory</a> · <a href="/network">→ Center network</a></p>
 <form class=search method=get><input name=q placeholder="search by problem, discipline or center (e.g. GDPR, security, hiring)" value="{html.escape(q)}"></form>
 <p class=hint>{hint}</p>
-<div class=grid>{cards}</div></div></body></html>""", content_type="text/html")
+<div class=grid>{cards}</div></div>
+{_footer_html()}
+</body></html>""", content_type="text/html")
 
 
 HEX_SIZE = 74         # center-to-vertex, px — the polygon's own geometry
@@ -1887,6 +1931,7 @@ var ld=g.querySelector('[data-k=leads]');if(ld)ld.textContent=s.leads;
 }});}}).catch(function(){{}});}}
 setInterval(poll,10000);
 }})();</script>
+{_footer_html()}
 {_tracker_js('search:' + q if q else '')}</body></html>"""
     return web.Response(text=body, content_type="text/html")
 
@@ -2066,7 +2111,9 @@ a{{color:#4ea1ff}}
 <p>Payment processing runs through Stripe, linked from RFI-IRFOS's account. We never see or store card details — that is handled entirely by Stripe.</p>
 <h2>Contact</h2>
 <p>Questions: <a href="mailto:rfi.irfos@gmail.com">rfi.irfos@gmail.com</a></p>
-</div></body></html>""", content_type="text/html")
+</div>
+{_footer_html()}
+</body></html>""", content_type="text/html")
 
 
 app = web.Application()
