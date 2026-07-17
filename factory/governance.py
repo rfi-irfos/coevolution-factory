@@ -154,6 +154,51 @@ def classify_signal(kind, grounded=False):
     return ("unknown", False, "hold in tend")
 
 
+# --- Crisis protocol (Simeon Q&A #11, simeon approves) ----------------------
+# 0-status is the STRONGEST state. In a crisis, the whole workforce drops to
+# 0 (tend) — no panic, no stressed mistakes. They meet in the "meeting room"
+# (all in tend, collecting). The FIRM keeps running autonomously (no downtime,
+# no stress). A teamlead CONSENSUS GATE agent (the diplomat) runs a SOCRATIC,
+# democratic vote — always about what to do, however long it takes. Nothing
+# proceeds to a definitive Go without it. Ternary-democratic: >=77% of the
+# workforce must affirm for a definitive Go (supermajority, not 51%).
+CRISIS_PROTOCOL = "zero_status_meeting"
+CONSENSUS_THRESHOLD = 0.77     # ternary-democratic supermajority for Go
+MEETING_STATE = "tend"         # workforce sits in tend during crisis meeting
+
+
+def teamlead_consensus_gate(votes):
+    """Diplomat agent tallies a socratic, democratic vote.
+
+    votes: list of trits (-1 reject / 0 tend / +1 affirm) from the workforce.
+    Returns (go: bool, ratio: float, note).
+    Needs >= CONSENSUS_THRESHOLD affirm ratio for a definitive Go. Otherwise
+    the firm stays in tend (meeting continues), firm keeps running autonomously.
+    """
+    if not votes:
+        return (False, 0.0, "no votes yet; stay in tend, keep running")
+    affirms = sum(1 for v in votes if v > 0)
+    ratio = affirms / len(votes)
+    if ratio >= CONSENSUS_THRESHOLD:
+        return (True, ratio, f"definitive Go: {ratio:.0%} affirm (>=77%)")
+    return (False, ratio, f"hold: {ratio:.0%} affirm, need 77% — meeting continues, firm runs")
+
+
+def crisis_to_zero_status():
+    """Enter crisis protocol: whole workforce -> tend, firm keeps running.
+
+    Returns the protocol state. The firm is NEVER down; it self-organizes in
+    tend until a 77% consensus Go is reached.
+    """
+    return {
+        "protocol": CRISIS_PROTOCOL,
+        "workforce_state": MEETING_STATE,
+        "firm_running": True,
+        "consensus_threshold": CONSENSUS_THRESHOLD,
+        "note": "0-status is strongest; meet, vote socratically, >=77% to Go",
+    }
+
+
 # Lunar cycle (deterministic, no API).
 LUNAR_PERIOD_DAYS = 29.53059
 # Reference new moon (UTC). Known astronomical value; anchor for all phases.
