@@ -1914,7 +1914,6 @@ background:linear-gradient(90deg,#e6edf3,#9fd0ff 60%,#36d6a0);-webkit-background
 <p class=hint>{hint}</p>
 {empty_note}
 <svg class=honeycomb viewBox="0 0 {vb_w:.1f} {vb_h:.1f}" xmlns="http://www.w3.org/2000/svg">{tiles_svg}</svg>
-<p class=foot>Live-Waben · Zahlen alle ~10s aktualisiert · Zahlung sicher via RFI-IRFOS Stripe. · <a href="/privacy">Datenschutz</a></p>
 </div>
 <script>(function(){{
 function poll(){{fetch('/api/live-grid').then(function(r){{return r.json()}}).then(function(d){{
