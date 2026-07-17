@@ -37,6 +37,7 @@ from catalog import CENTERS_META, CENTER_NETWORK, _REG
 from stripe_links import STRIPE_LINKS, link_for_factory
 from synthesis import local_synthesize, engine_synthesize, propagate_tensions, detect_emergence, propose_daughter
 import temporal as T  # noqa: E402  (mandatory temporal cognition: anchors + ts_id)
+from kpi import vp_strength  # noqa: E402  (pheromone trail strength for gamification)
 HERE = Path(__file__).parent
 # State lives on a mounted volume (/data) when present, so all machines share
 # one cashflow/key store instead of diverging per-instance.
@@ -1219,6 +1220,7 @@ def center_page(slug):
     panel_list = ", ".join(c["panel"])
     disc_list = ", ".join(c["disciplines"])
     adj = CENTER_NETWORK.get(slug, [])
+    born_at = state.get("centers", {}).get(slug, {}).get("born_at", "—")
     # 0-status resilience: if the center is degraded/0-status, render an honest
     # "reduced mode" banner and surface its last cached synthesis — NEVER a
     # fabricated fresh verdict.
@@ -1269,7 +1271,7 @@ nav{{border-bottom:1px solid #1c2733;padding:18px 0}}
 .brand{{font-weight:600}} .ey{{color:#36d6a0;font-size:12px;letter-spacing:.12em;text-transform:uppercase}}
 h1{{font-size:32px;margin:30px 0 10px;font-weight:650}}
 .sub{{color:#8b98a9;font-size:16px;max-width:640px;line-height:1.6}}
-.box{{background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:22px;margin-top:26px}}
+.box{{background:#0f141d;border:1px solid #1c2733;border-radius:14px;padding:22px;margin-top:26px;clip-path:polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%)}}
 button{{background:#14202e;color:#cfe6ff;border:1px solid #2c4258;border-radius:8px;padding:9px 16px;cursor:pointer}}
 .buy{{background:#1b3a2a;border-color:#2c6b4a;color:#9ff0c8;text-decoration:none;display:inline-block;padding:10px 18px;border-radius:8px;margin-top:14px}}
 input,textarea{{width:100%;padding:10px;background:#070b10;border:1px solid #1c2733;border-radius:8px;color:#e6edf3;margin:8px 0;font-family:inherit}}
@@ -1296,7 +1298,8 @@ button:disabled{{opacity:.6;cursor:default}}
 <div class=val>🔁 simulate a decision before you ship it</div>
 <div class=val>📡 continuous standing posture check</div>
 </div>
-<div style="margin-top:14px;font-size:13px;color:#9fd0ff">price: first {c['free']} sessions free, then <b>EUR {c['price']}/session</b> · built for {c['icp']}</div>
+<div style="margin-top:14px;font-size:13px;color:#9fd0ff">price: first {c['free']} sessions free, then <b>EUR {float(c['price']):.2f}/session</b> · built for {c['icp']}</div>
+<div style="margin-top:6px;font-size:12px;color:#5b6675">geboren {html.escape(str(born_at))} · {T.years_to_north_star(born_at)}J bis Jubiläum 2040</div>
 </div>
 {icp_pain_html}
 {reduced_mode_html}
@@ -1462,8 +1465,8 @@ h1{{font-size:30px;font-weight:650;margin:0 0 10px;letter-spacing:-.01em}}
 .search input{{width:100%;max-width:520px;padding:12px 14px;background:#070b10;border:1px solid #1c2733;border-radius:10px;color:#e6edf3;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}}
 .search input:focus{{border-color:#2c4258}}
 .hint{{color:#5b6675;font-size:13px;margin:0 0 22px}}
-.grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}}
-.card{{display:block;background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:16px 16px 14px;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s}}
+.cgrid{{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}}
+.card{{display:block;background:#0f141d;border:1px solid #1c2733;border-radius:14px;padding:16px 16px 14px;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s;clip-path:polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%)}}
 .card:hover{{border-color:#2c4258;transform:translateY(-2px)}}
 .ctop{{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}}
 .cname{{color:#4ea1ff;font-weight:600;font-size:15px}}
@@ -1476,7 +1479,7 @@ h1{{font-size:30px;font-weight:650;margin:0 0 10px;letter-spacing:-.01em}}
 <p class=lede>Each a distinct, crisis-resistant standing body of experts, convened across the live 292-agent engine. We only track the cashflow. <a href="/observatory">→ Observatory</a> · <a href="/network">→ Center network</a></p>
 <form class=search method=get><input name=q placeholder="search by problem, discipline or center (e.g. GDPR, security, hiring)" value="{html.escape(q)}"></form>
 <p class=hint>{hint}</p>
-<div class=grid>{cards}</div></div></body></html>""", content_type="text/html")
+<div class=cgrid>{cards}</div></div></body></html>""", content_type="text/html")
 
 
 async def firms_grid(request):
@@ -1512,6 +1515,60 @@ async def firms_grid(request):
                     if d.get("center") == slug and d.get("status") == "done")
         return _sessions_for(slug) + n_deb
 
+    # ---- gamification (honeycomb hive, not SV squares) ----
+    import ui_gamify as UG
+
+    def _eur(v):
+        return f"€{float(v):.2f}"
+
+    def _born(slug):
+        return state.get("centers", {}).get(slug, {}).get("born_at")
+
+    def _level(slug):
+        return UG.firm_level(slug, _problems_for(slug), vp_strength(slug))
+
+    def _progress(slug):
+        return UG.jubilee_progress(_born(slug))
+
+    def _badges(slug):
+        return UG.achievements(slug, _problems_for(slug),
+                               vp_strength(slug), _revenue_for(slug))
+
+    def _tile_html(s, c):
+        badge_html = "".join(
+            f'<span class=badge title="{html.escape(btxt)}">{bcode[:1].upper()}</span>'
+            for bcode, btxt in _badges(s)) or '<span class=badge muted>—</span>'
+        pct = int(_progress(s) * 100)
+        return (
+            f'<a class=tile href="/{s}">'
+            f'<div class=rail></div>'
+            f'<div class=thead>'
+            f'<span class=tname>{html.escape(c["name"])}</span>'
+            f'<span class=tstatus>{_led(s)}</span>'
+            f'</div>'
+            f'<div class=tbadge>Lv {_level(s)}</div>'
+            f'<div class=vp>{html.escape((c.get("value_prop") or c["mandate"])[:140])}</div>'
+            f'<div class=grid4>'
+            f'<div class=stat style="--zc:#4ea1ff"><div class=k>Sessions</div>'
+            f'<div class=v>{_sessions_for(s)}</div></div>'
+            f'<div class=stat style="--zc:#36d6a0"><div class=k>Revenue</div>'
+            f'<div class=v>{_eur(_revenue_for(s))}</div></div>'
+            f'<div class=stat style="--zc:#c792ea"><div class=k>Leads</div>'
+            f'<div class=v>{_leads_for(s)}</div></div>'
+            f'<div class=stat style="--zc:#f0883e"><div class=k>Gelöst</div>'
+            f'<div class=v>{_problems_for(s)}</div></div>'
+            f'</div>'
+            f'<div class=progress><div class=pbar style="width:{pct}%"></div>'
+            f'<span class=plabel>bis Jubiläum 2040 · {pct}%</span></div>'
+            f'<div class=badges>{badge_html}</div>'
+            f'<div class=temporal>'
+            f'geboren {html.escape(str(_born(s) or "—"))} · '
+            f'{T.years_to_north_star(_born(s))}J bis Jubiläum 2040'
+            f'</div>'
+            f'<a class=book href="/{s}">Jetzt buchen →</a>'
+            f'</div>'
+        )
+
     STATUS_COLOR = {"healthy": "#36d6a0", "degraded": "#f0883e",
                      "0-status": "#f85c5c"}
 
@@ -1530,30 +1587,7 @@ async def firms_grid(request):
                  or any(q in d.lower() for d in c["disciplines"])]
 
     tiles = "".join(
-        f'<a class=tile href="/{s}">'
-        f'<div class=rail></div>'
-        f'<div class=thead>'
-        f'<span class=tname>{html.escape(c["name"])}</span>'
-        f'<span class=tstatus>{_led(s)}</span>'
-        f'</div>'
-        f'<div class=vp>{html.escape((c.get("value_prop") or c["mandate"])[:140])}</div>'
-        f'<div class=grid4>'
-        f'<div class=stat style="--zc:#4ea1ff"><div class=k>Sessions</div>'
-        f'<div class=v>{_sessions_for(s)}</div></div>'
-        f'<div class=stat style="--zc:#36d6a0"><div class=k>Revenue</div>'
-        f'<div class=v>€{_revenue_for(s)}</div></div>'
-        f'<div class=stat style="--zc:#c792ea"><div class=k>Leads</div>'
-        f'<div class=v>{_leads_for(s)}</div></div>'
-        f'<div class=stat style="--zc:#f0883e"><div class=k>Gelöst</div>'
-        f'<div class=v>{_problems_for(s)}</div></div>'
-        f'</div>'
-        f'<div class=temporal>'
-        f'geboren {html.escape(str(state.get("centers", {}).get(s, {}).get("born_at", "—")))} · '
-        f'{T.years_to_north_star(state.get("centers", {}).get(s, {}).get("born_at"))}J bis Jubiläum 2040'
-        f'</div>'
-        f'<a class=book href="/{s}">Jetzt buchen →</a>'
-        f'</div>'
-        for s, c in items) or '<div class=empty>keine Zentren passen zur Suche</div>'
+        _tile_html(s, c) for s, c in items) or '<div class=empty>keine Zentren passen zur Suche</div>'
 
     hint = (f'{len(list(items))} Zentren gefunden für "{html.escape(q)}"'
             if q else f"{len(CENTERS)} autonome Firmen, live aus dem Netzwerk")
@@ -1579,20 +1613,27 @@ animation:railmove 2.2s linear infinite}}
 .search input{{width:100%;max-width:520px;padding:12px 14px;background:#070b10;border:1px solid #1c2733;border-radius:10px;color:#e6edf3;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}}
 .search input:focus{{border-color:#4ea1ff}}
 .hint{{color:#5b6675;font-size:13px;margin:0 0 22px}}
-.fgrid{{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}}
-.tile{{position:relative;overflow:hidden;background:#0f141d;border:1px solid #1c2733;border-radius:14px;padding:18px 18px 18px 22px;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s,box-shadow .2s}}
+.fgrid{{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}}
+.tile{{position:relative;overflow:hidden;background:#0f141d;border:1px solid #1c2733;border-radius:14px;padding:18px 18px 18px 22px;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s,box-shadow .2s;clip-path:polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%)}}
 .tile:hover{{border-color:#4ea1ff;transform:translateY(-3px);box-shadow:0 8px 28px rgba(78,161,255,.12)}}
 .rail{{position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#4ea1ff,#36d6a0)}}
 .thead{{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}}
 .tname{{color:#e6edf3;font-weight:650;font-size:15px}}
+.tbadge{{display:inline-block;align-self:flex-start;background:#11202e;border:1px solid #2c4258;color:#9fd0ff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px;margin-bottom:8px;letter-spacing:.04em}}
 .tstatus{{display:flex;align-items:center;gap:6px;white-space:nowrap}}
 .led{{width:8px;height:8px;border-radius:50%;background:var(--c);animation:blink 1.8s ease-in-out infinite}}
 .lstatus{{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}}
 .vp{{color:#8b98a9;font-size:12.5px;line-height:1.45;margin-bottom:14px;min-height:54px}}
-.grid4{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}}
+.grid4{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}}
 .stat{{background:#070b10;border:1px solid #1c2733;border-left:3px solid var(--zc);border-radius:8px;padding:9px 12px}}
 .stat .k{{color:var(--zc);font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}}
 .stat .v{{color:#e6edf3;font-size:19px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}}
+.progress{{height:18px;background:#070b10;border:1px solid #1c2733;border-radius:9px;position:relative;overflow:hidden;margin-bottom:10px}}
+.pbar{{height:100%;background:linear-gradient(90deg,#2c6b4a,#36d6a0);width:0%}}
+.plabel{{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:10px;color:#9ff0c8;font-weight:600;letter-spacing:.03em}}
+.badges{{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}}
+.badge{{width:20px;height:20px;border-radius:50%;background:#11202e;border:1px solid #2c4258;color:#9fd0ff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}}
+.badge.muted{{color:#5b6675;border-color:#1c2733}}
 .book{{margin-top:auto;background:#1b3a2a;border:1px solid #2c6b4a;color:#9ff0c8;text-decoration:none;text-align:center;padding:10px 16px;border-radius:9px;font-weight:600;font-size:14px;transition:background .2s}}
 .tile:hover .book{{background:#234c37}}
 .empty{{color:#5b6675;text-align:center;padding:30px;grid-column:1/-1}}

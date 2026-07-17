@@ -101,5 +101,10 @@ def cognition(born_epoch, last_action_ts=None):
 
 def years_to_north_star(from_ts=None):
     """Motivation metric: years until the anniversary party."""
-    from_ts = int(from_ts if from_ts is not None else time.time())
+    if from_ts is None or from_ts == "—":
+        from_ts = time.time()
+    try:
+        from_ts = int(from_ts)
+    except (TypeError, ValueError):
+        from_ts = time.time()
     return round((_NORTH_STAR_EPOCH - from_ts) / (365.25 * 86400), 2)
