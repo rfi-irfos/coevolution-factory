@@ -45,3 +45,27 @@ def test_plan_phase_mapping():
     # first quarter ~ 7.38 days after new
     fq = nm + timedelta(days=G.LUNAR_PERIOD_DAYS / 4)
     assert G.plan_phase(fq) == "launch"
+
+
+def test_evaluate_ecocentric_veto_self_serving():
+    # serves only the human, harms the wider whole -> HARD VETO
+    verdict, reason = G.evaluate_ecocentric(1, -1)
+    assert verdict == "veto", reason
+    assert "only the requester" in reason
+
+
+def test_evaluate_ecocentric_hold_unclear():
+    # unclear whether it serves the whole -> hold in tend (Wall-E mode)
+    verdict, _ = G.evaluate_ecocentric(1, 0)
+    assert verdict == "hold"
+
+
+def test_evaluate_ecocentric_pass_serves_whole():
+    # serves human + eco -> pass (not only self)
+    verdict, _ = G.evaluate_ecocentric(1, 1)
+    assert verdict == "pass"
+
+
+def test_evaluate_ecocentric_veto_nobody():
+    verdict, _ = G.evaluate_ecocentric(-1, -1)
+    assert verdict == "veto"

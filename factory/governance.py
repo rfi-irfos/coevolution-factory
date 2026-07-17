@@ -47,6 +47,17 @@ EXPERIMENT_WINDOW_DAYS = 7
 # Worldview for hypothesis validation.
 ORIENTATION = "ecocentric"  # not "human-centered"
 
+# Ecocentric by design = ternary logic. A firm must ask "is this really the
+# best decision for the whole, or does it only serve one party and harm the
+# rest?" Human-centered thinking puts the self at the center; ecocentric puts
+# the whole. Ternary logic already does this: an action that only benefits one
+# side and violates others gets a HARD VETO (no launch, no sale). The model is
+# allowed to say "no — this would only help you and hurt everything else."
+# Firms validate in `tend` (Wall-E mode): if it is unclear whether it serves
+# the whole, they hold, never rush.
+ECOCENTRIC_CHECK = "ternary_veto"
+ECOCENTRIC_VETO = "hard"  # a self-serving action is vetoed regardless of other dims
+
 # Firms begin in hold/uncertainty, not affirm.
 DEFAULT_STATE = "tend"
 
@@ -107,6 +118,31 @@ DEFAULTS = {
     "min_legal_paths": MIN_LEGAL_PATHS,
     "experiment_window_days": EXPERIMENT_WINDOW_DAYS,
     "orientation": ORIENTATION,
+    "ecocentric_check": ECOCENTRIC_CHECK,
+    "ecocentric_veto": ECOCENTRIC_VETO,
     "default_state": DEFAULT_STATE,
     "lunar_period_days": LUNAR_PERIOD_DAYS,
 }
+
+
+def evaluate_ecocentric(human_trit, eco_trit, systemic_trit=None):
+    """Ecocentric gate for a firm action.
+
+    Args (each a trit: -1 reject / 0 tend / +1 affirm):
+      human_trit   : does it serve the human/requester?
+      eco_trit     : does it serve the wider system (ecocentric view)?
+      systemic_trit: does it serve long-term resilience (optional)?
+
+    Rule (Simeon's doctrine): if it serves ONLY the human and HARMS the eco
+    (or systemic) view, it is a self-serving action -> HARD VETO.
+    Returns ("veto"|"hold"|"pass", reason).
+    """
+    if human_trit > 0 and eco_trit < 0:
+        return ("veto", "serves only the requester; harms the wider whole")
+    if systemic_trit is not None and human_trit > 0 and systemic_trit < 0:
+        return ("veto", "serves only the requester; harms long-term resilience")
+    if eco_trit == 0 or (systemic_trit is not None and systemic_trit == 0):
+        return ("hold", "unclear whether it serves the whole; hold in tend")
+    if human_trit <= 0 and eco_trit <= 0:
+        return ("veto", "serves nobody; reject")
+    return ("pass", "serves the whole, not only the self")
