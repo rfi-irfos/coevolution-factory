@@ -103,6 +103,90 @@ for _dslug, _dspec in state.get("daughter_centers", {}).items():
 
 
 # --------------------------------------------------------------------------
+# Resilience / 0-status subsystem (Task 1)
+#
+# Per-center status FSM persisted in state["center_status"]. A center never
+# 500s/offlines on an engine error: it drops to "degraded" (or an explicit
+# "0-status") and is served from its last cached synthesis in an honest
+# "reduced mode". It auto-recovers to "healthy" on the next successful engine
+# call (OQ1: no human intervention needed for recovery — only spawning/money
+# stay Laura-gated).
+# --------------------------------------------------------------------------
+VALID_CENTER_STATUS = ("healthy", "degraded", "0-status")
+
+
+def get_center_status(slug):
+    """Return a center's persisted status, defaulting to 'healthy' (a center
+    we have never heard from is assumed operational)."""
+    rec = state.get("center_status", {}).get(slug)
+    if not rec:
+        return "healthy"
+    return rec.get("status", "healthy")
+
+
+def set_center_status(slug, status, detail=None):
+    """Persist a center status. Auto-recovery (OQ1): a successful engine call
+    passes status='healthy' and the center silently returns to normal with a
+    log line — no human resume required."""
+    if status not in VALID_CENTER_STATUS:
+        raise ValueError(f"invalid center status: {status!r}")
+    prev = get_center_status(slug)
+    rec = state.setdefault("center_status", {})
+    rec[slug] = {"status": status, "detail": detail, "updated": int(time.time())}
+    save_state(state)
+    if prev != status:
+        print(f"[resilience] center {slug}: {prev} -> {status}"
+              + (f" ({detail})" if detail else ""), flush=True)
+    return rec[slug]
+
+
+# Per-offering product pipeline (Virtual Firm R0hne). Offerings move through
+# idea -> debate -> prototype -> staged -> launched. "launched" is always
+# Laura-gated at the staged->launched transition (wired in Task 4); this module
+# only provides the store + seed/advance primitives.
+PIPELINE_STAGES = ["idea", "debate", "prototype", "staged", "launched"]
+
+
+def seed_offering(center, idea_text):
+    """Create a new offering at the 'idea' stage. Returns the new offering id."""
+    pipeline = state.setdefault("pipeline", {})
+    oid = "offer_" + secrets.token_hex(8)
+    pipeline[oid] = {
+        "center": center,
+        "idea": (idea_text or "")[:500],
+        "stage": "idea",
+        "created": int(time.time()),
+        "updated": int(time.time()),
+    }
+    save_state(state)
+    return oid
+
+
+def advance_pipeline(offering_id, stage):
+    """Move an offering to a new (valid) pipeline stage. Persisted."""
+    if stage not in PIPELINE_STAGES:
+        raise ValueError(f"invalid pipeline stage: {stage!r}")
+    pipeline = state.setdefault("pipeline", {})
+    rec = pipeline.get(offering_id)
+    if rec is None:
+        raise KeyError(f"unknown offering: {offering_id}")
+    rec["stage"] = stage
+    rec["updated"] = int(time.time())
+    save_state(state)
+    return rec
+
+
+def _last_done_job(slug):
+    """Return the most recent 'done' job for a center (for reduced-mode cache
+    serving). Returns None if none exists."""
+    jobs = state.get("jobs", {})
+    for j in reversed(list(jobs.values())):
+        if j.get("center") == slug and j.get("status") == "done":
+            return j
+    return None
+
+
+# --------------------------------------------------------------------------
 # Engine call: convene a real panel through the live engine. The engine
 # returns per-agent responses; we then run a deterministic cross-synthesis
 # locally (collation of the panel's own findings — no extra LLM call, no
@@ -278,6 +362,9 @@ async def run_panel_job(run_id, center, text, panel, c, acct):
             if upstream is None:
                 state["jobs"][run_id].update(
                     {"status": "error", "error": f"engine unreachable: {detail}"})
+                # 0-status resilience: degrade the center but DO NOT offline it.
+                set_center_status(center, "degraded",
+                                  detail=f"engine unreachable: {detail}")
                 save_state(state)
                 return
             synth = await engine_synthesize(upstream, panel, ENGINE_URL, ENGINE_KEY)
@@ -304,8 +391,13 @@ async def run_panel_job(run_id, center, text, panel, c, acct):
              "adjacent_centers": CENTER_NETWORK.get(center, []),
              "emergence": emergence,
              "billed_eur": cost})
+        # 0-status auto-recover (OQ1): a successful engine call returns the
+        # center to 'healthy' with no human intervention.
+        set_center_status(center, "healthy", detail="engine call succeeded")
     except Exception as e:
         state["jobs"][run_id].update({"status": "error", "error": str(e)})
+        # engine-side failure degrades the center but keeps it served.
+        set_center_status(center, "degraded", detail=str(e))
     save_state(state)
 
 
@@ -700,6 +792,31 @@ def center_page(slug):
     panel_list = ", ".join(c["panel"])
     disc_list = ", ".join(c["disciplines"])
     adj = CENTER_NETWORK.get(slug, [])
+    # 0-status resilience: if the center is degraded/0-status, render an honest
+    # "reduced mode" banner and surface its last cached synthesis — NEVER a
+    # fabricated fresh verdict.
+    center_status = get_center_status(slug)
+    reduced_mode_html = ""
+    if center_status in ("degraded", "0-status"):
+        last = _last_done_job(slug)
+        cached = last.get("synthesis") if last else None
+        cached_html = ""
+        if cached:
+            cached_html = (
+                '<div class=box style="border-color:#6b4a2c;margin-top:18px">'
+                '<div class=small style="text-transform:uppercase;'
+                'letter-spacing:.1em;font-size:11px;color:#e8c14a">'
+                'last known synthesis (cached)</div>'
+                f'<pre>{json.dumps(cached, indent=2)[:2000]}</pre></div>')
+        reduced_mode_html = (
+            '<div class=box style="border-color:#6b4a2c;background:#1a1710;'
+            'margin-top:18px">'
+            '<div style="color:#e8c14a;font-weight:600">⚠ Operating in reduced '
+            f'mode — engine temporarily unreachable (status: {center_status}).</div>'
+            '<div class="small" style="margin-top:6px;color:#c9b48a">Showing the '
+            'last known synthesis. No fresh verdict is fabricated while the '
+            'center is degraded.</div>'
+            '</div>' + cached_html)
     adj_links = "".join(
         f'<a href="/{a}"><b>{CENTERS[a]["name"]}</b></a>'
         for a in adj[:8])
@@ -755,6 +872,7 @@ button:disabled{{opacity:.6;cursor:default}}
 <div style="margin-top:14px;font-size:13px;color:#9fd0ff">price: first {c['free']} sessions free, then <b>EUR {c['price']}/session</b> · built for {c['icp']}</div>
 </div>
 {icp_pain_html}
+{reduced_mode_html}
 <div style="margin-top:18px"><div class=small style="color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-size:11px">typical questions this center answers</div>
 <div style="margin-top:8px">
 {use_cases_html}
