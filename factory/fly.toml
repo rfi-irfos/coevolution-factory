@@ -1,7 +1,6 @@
 # fly.toml app configuration file generated for coevolution-factory-sparkling-mountain-1802 on 2026-07-16T21:59:09+02:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
 
 app = 'coevolution-factory-sparkling-mountain-1802'
 primary_region = 'fra'
@@ -41,6 +40,10 @@ primary_region = 'fra'
   key = 'briefing'
   command = 'python daily_brief.py'
 
+[[processes]]
+  key = 'spawn'
+  command = 'python daily_spawn.py'
+
   [[services.ports]]
     port = 80
     handlers = ['http']
@@ -59,8 +62,19 @@ primary_region = 'fra'
   cpus = 1
   memory_mb = 512
 
-# Autonomous briefings: pull real regulatory/security feeds, convene the
-# panel, publish. Runs on a schedule (separate from the daily-evolve cron).
-[deploy.schedule]
+# Autonomous schedules (separate from the daily-evolve cron job that
+# runs via `fly machine exec` / the Hermes cron).
+#
+# 1. Briefings: pull real regulatory/security feeds, convene the panel,
+#    publish. Every 4h.
+# 2. FACTORY-FACTORY: scan real trends/regulation, detect gaps, STAGE a
+#    candidate daughter-center. LAURA-GATED before promotion (the
+#    daily_spawn cron calls mcp_laura_review_plan; only 0-FLAG candidates
+#    are born). Runs daily at 02:00, before daily_evolve (03:00).
+[[deploy.schedules]]
   process = 'briefing'
   cron = '17 */4 * * *'
+
+[[deploy.schedules]]
+  process = 'spawn'
+  cron = '0 2 * * *'
