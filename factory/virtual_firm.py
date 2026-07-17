@@ -91,6 +91,71 @@ def route_lead_to_pipeline(center, lead):
     }
 
 
+def _debate_resolved_for(center):
+    """True if the center has at least one RESOLVED debate (real evidence)."""
+    for rec in R.state.get("debates", {}).values():
+        if rec.get("center") == center and rec.get("status") == "resolved":
+            return True
+    return False
+
+
+# Readiness threshold: a prototype only stages once REAL demand is evidenced.
+# Doctrine: no auto-promotion on thin air — needs a resolved debate AND a
+# minimum of real leads. Tunable via env without a code change.
+import os as _os
+STAGE_MIN_LEADS = int(_os.environ.get("VF_STAGE_MIN_LEADS", "3"))
+
+
+def promote_prototype_to_staged(center):
+    """Close the loop: a 'prototype' offering advances to 'staged' ONLY when
+    real demand is evidenced (a resolved debate AND >= STAGE_MIN_LEADS real
+    leads for the center). Staging registers a spawn_candidate so Laura's
+    daily_spawn gate (#1) can consider it. This function NEVER launches.
+
+    Returns {advanced: bool, offering_id, stage, reason}.
+    """
+    oid, rec = _offering_for(center)
+    if oid is None or rec is None:
+        return {"advanced": False, "offering_id": None, "stage": None,
+                "reason": "no offering for center"}
+    if rec.get("stage") != "prototype":
+        return {"advanced": False, "offering_id": oid,
+                "stage": rec.get("stage"),
+                "reason": "no prototype-stage offering"}
+
+    lead_count = len(R.state.get("leads", {}).get(center, []))
+    if not _debate_resolved_for(center):
+        return {"advanced": False, "offering_id": oid, "stage": "prototype",
+                "reason": "no resolved debate yet (need real deliberation)"}
+    if lead_count < STAGE_MIN_LEADS:
+        return {"advanced": False, "offering_id": oid, "stage": "prototype",
+                "reason": f"only {lead_count}/{STAGE_MIN_LEADS} real leads"}
+
+    R.advance_pipeline(oid, "staged")
+
+    # Register a spawn_candidate for the Laura gate. status='staged' is exactly
+    # what daily_spawn.gate_candidate() looks for. laura_pass stays False until
+    # Laura clears it — this module never self-approves.
+    cands = R.state.setdefault("spawn_candidates", {})
+    cand_slug = f"{center}-vf-{oid[-6:]}"
+    cands[cand_slug] = {
+        "name": f"{R.CENTERS.get(center, {}).get('name', center)} — Virtual Firm offering",
+        "mandate": rec.get("idea", "")[:200],
+        "parent": center,
+        "status": "staged",
+        "laura_pass": False,
+        "source": "virtual_firm_pipeline",
+        "offering_id": oid,
+        "uncovered_signals": [f"{lead_count} real leads", "resolved debate"],
+        "created": int(time.time()),
+    }
+    R.save_state(R.state)
+    return {"advanced": True, "offering_id": oid, "stage": "staged",
+            "reason": f"staged: resolved debate + {lead_count} leads; "
+                      f"spawn_candidate '{cand_slug}' queued for Laura gate",
+            "candidate": cand_slug}
+
+
 def stage_counts(center=None):
     """Count offerings per pipeline stage (optionally filtered to a center)."""
     counts = {s: 0 for s in R.PIPELINE_STAGES}
@@ -114,6 +179,11 @@ def orchestrate(center):
     for lead in leads:
         route_lead_to_pipeline(center, lead)
 
+    # Close the loop: try to advance a ready prototype -> staged (readiness-
+    # gated: resolved debate + real leads). Never launches; staging only
+    # queues a spawn_candidate for the Laura gate.
+    stage_result = promote_prototype_to_staged(center)
+
     counts = stage_counts(center)
     last_offering = None
     center_offerings = [
@@ -132,6 +202,7 @@ def orchestrate(center):
         "stage_counts": counts,
         "offerings_total": len(center_offerings),
         "last_offering": last_offering,
+        "stage_transition": stage_result,
         "launch_gate": "staged->launched requires Laura (gate #1); "
                        "never auto-launched by the Virtual Firm orchestrator",
     }
