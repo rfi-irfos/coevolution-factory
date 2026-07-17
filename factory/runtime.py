@@ -77,20 +77,21 @@ def _nav_html(active=""):
         on = " style=color:#e6edf3;font-weight:700" if key == active else ""
         return f'<a href="{href}"{on}>{html.escape(label)}</a>'
     return f"""<nav class=sitenav><div class=navwrap>
-<a class=brand href="/"><span class=word>RFI-IRFOS</span>
-<svg width="46" height="16" viewBox="0 0 54 18" fill="none" style="margin-left:6px;overflow:visible">
+<a class=brand href="/">
+<svg width="22" height="18" viewBox="0 0 54 18" fill="none" style="overflow:visible;flex-shrink:0">
 <polyline points="0,9 12,9 16,2 20,16 24,2 28,9 54,9" stroke="{RFI_TEAL}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-</svg><span class=sub>CoEvolution AI</span></a>
+</svg><span class=word>CoEvolution&nbsp;Factory</span>
+<span class=sub>by RFI-IRFOS</span></a>
 <div class=navlinks>{link('/', 'Centers', 'centers')}{link('/observatory', 'Observatory', 'observatory')}
 {link('/network', 'Network', 'network')}<a href="https://rfi-irfos.com" target=_blank rel=noreferrer>rfi-irfos.com ↗</a></div>
 </div></nav>
 <style>
 .sitenav{{position:fixed;top:0;left:0;right:0;z-index:100;height:64px;background:rgba(10,14,20,.85);
 backdrop-filter:blur(16px);border-bottom:1px solid #1c2733}}
-.navwrap{{max-width:1200px;margin:0 auto;height:64px;padding:0 22px;display:flex;align-items:center;justify-content:space-between}}
-.brand{{display:flex;align-items:center;text-decoration:none;gap:2px}}
-.brand .word{{font-weight:800;font-size:14px;letter-spacing:.06em;color:#e6edf3}}
-.brand .sub{{margin-left:12px;font-size:11px;color:#5b6675;letter-spacing:.04em;border-left:1px solid #1c2733;padding-left:12px}}
+.navwrap{{max-width:none;margin:0;height:64px;padding:0 28px;display:flex;align-items:center;justify-content:space-between}}
+.brand{{display:flex;align-items:center;text-decoration:none;gap:8px}}
+.brand .word{{font-weight:800;font-size:16px;letter-spacing:-.01em;color:#e6edf3}}
+.brand .sub{{margin-left:6px;font-size:11px;color:#5b6675;letter-spacing:.04em;border-left:1px solid #1c2733;padding-left:10px}}
 .navlinks{{display:flex;gap:26px;align-items:center}}
 .navlinks a{{color:#8b98a9;font-size:13px;font-weight:600;text-decoration:none;letter-spacing:.02em}}
 .navlinks a:hover{{color:#e6edf3}}
@@ -1433,7 +1434,7 @@ def center_page(slug):
         reduced_mode_html = (
             '<div class=box style="border-color:#6b4a2c;background:#1a1710;'
             'margin-top:18px">'
-            '<div style="color:#e8c14a;font-weight:600">⚠ Operating in reduced '
+            '<div style="color:#e8c14a;font-weight:600">Operating in reduced '
             f'mode — engine temporarily unreachable (status: {center_status}).</div>'
             '<div class="small" style="margin-top:6px;color:#c9b48a">Showing the '
             'last known synthesis. No fresh verdict is fabricated while the '
@@ -1454,7 +1455,7 @@ def center_page(slug):
         for uc in ucs) if ucs else ""
     icp_pain_html = (
         f'<div style="margin-top:12px;font-size:13px;color:#ffb38a">'
-        f'⚠ {c["icp_pain"]}</div>') if c.get("icp_pain") else ""
+        f'{c["icp_pain"]}</div>') if c.get("icp_pain") else ""
     initial_stats = _live_stats_for(slug)
     initial_color = STATUS_COLOR.get(initial_stats["status"], "#f0883e")
     page = f"""<!doctype html><html><head><meta charset=utf-8>
@@ -1495,9 +1496,9 @@ button:disabled{{opacity:.6;cursor:default}}
 <p class=sub>{c['mandate']}.<br><br><b>Why crisis-resistant:</b> {c['resilient']}<br><br><span style=color:#8b98a9>The engine is a decision-support tool that surfaces expert perspectives; it is not a substitute for qualified counsel.</span></p>
 <div class=box style="border-color:#2c6b4a">
 <div class=valrow>
-<div class=val>🛡 <b>{len(c['panel'])} experts</b> across {len(c['disciplines'])} disciplines review your question</div>
-<div class=val>🔁 simulate a decision before you ship it</div>
-<div class=val>📡 continuous standing posture check</div>
+<div class=val><b>{len(c['panel'])} experts</b> across {len(c['disciplines'])} disciplines review your question</div>
+<div class=val>simulate a decision before you ship it</div>
+<div class=val>continuous standing posture check</div>
 </div>
 <div style="margin-top:14px;font-size:13px;color:#9fd0ff">price: first {c['free']} sessions free, then <b>EUR {c['price']}/session</b> · built for {c['icp']}</div>
 </div>
@@ -1714,8 +1715,8 @@ h1{{font-size:30px;font-weight:650;margin:0 0 10px;letter-spacing:-.01em}}
 <div class=grid>{cards}</div></div></body></html>""", content_type="text/html")
 
 
-HEX_SIZE = 64        # center-to-vertex, px — the polygon's own geometry
-HEX_PITCH = 70        # center-to-center spacing used in the axial->pixel math (> HEX_SIZE = visible seams, like a real board)
+HEX_SIZE = 74         # center-to-vertex, px — the polygon's own geometry
+HEX_PITCH = HEX_SIZE  # true edge-to-edge Catan tiling — pitch == size means adjacent hexes share an edge exactly, no gaps/no overlap
 HEX_POINTS = " ".join(
     f"{HEX_SIZE * math.cos(math.radians(60 * i - 30)):.1f},"
     f"{HEX_SIZE * math.sin(math.radians(60 * i - 30)):.1f}"
@@ -1783,6 +1784,15 @@ async def firms_grid(request):
     hint = (f'{len(items)} Zentren gefunden für "{html.escape(q)}"'
             if q else f"{len(CENTERS)} autonome Firmen, live aus dem Netzwerk")
 
+    # aggregate business KPI bar — sum the same live-stat functions each tile
+    # already calls, once, so a visitor sees "what is this even" answered in
+    # numbers before they land on a single hex.
+    all_stats = [_live_stats_for(s) for s in CENTER_SLUGS]
+    kpi_sessions = sum(s["sessions"] for s in all_stats)
+    kpi_revenue = sum(s["revenue_eur"] for s in all_stats)
+    kpi_leads = sum(s["leads"] for s in all_stats)
+    kpi_healthy = sum(1 for s in all_stats if s["status"] == "healthy")
+
     body = f"""<!doctype html><html><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <title>CoEvolution AI — {len(CENTERS)} autonome Firmen, live</title>
@@ -1790,18 +1800,23 @@ async def firms_grid(request):
 @keyframes hexin{{0%{{opacity:0;transform:scale(.55)}}70%{{opacity:1}}100%{{opacity:1;transform:scale(1)}}}}
 @keyframes blink{{0%,100%{{opacity:1}}50%{{opacity:.4}}}}
 body{{margin:0;background:#0a0e14;color:#e6edf3;font-family:-apple-system,Segoe UI,Inter,sans-serif;line-height:1.5}}
-.wrap{{max-width:1220px;margin:0 auto;padding:88px 24px 60px}}
+.wrap{{width:100%;max-width:none;margin:0;padding:88px 40px 60px;box-sizing:border-box}}
 .eyebrow{{color:#36d6a0;font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}}
 .eyebrow .dot{{width:7px;height:7px;border-radius:50%;background:#36d6a0;animation:blink 1.6s ease-in-out infinite}}
 h1{{font-size:32px;font-weight:700;margin:0 0 10px;letter-spacing:-.01em;
 background:linear-gradient(90deg,#e6edf3,#9fd0ff 60%,#36d6a0);-webkit-background-clip:text;background-clip:text;color:transparent}}
 .lede{{color:#8b98a9;font-size:15px;max-width:720px;margin:0 0 22px}}
 .lede a{{color:#4ea1ff;text-decoration:none}}
+.kpibar{{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:0 0 26px}}
+.kpi{{background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:16px 18px}}
+.kpi .k{{color:#5b6675;font-size:11px;text-transform:uppercase;letter-spacing:.08em}}
+.kpi .v{{color:#e6edf3;font-size:24px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}}
+@media(max-width:820px){{.kpibar{{grid-template-columns:1fr 1fr}}}}
 .search{{margin:0 0 8px}}
 .search input{{width:100%;max-width:520px;padding:12px 14px;background:#070b10;border:1px solid #1c2733;border-radius:10px;color:#e6edf3;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}}
 .search input:focus{{border-color:#4ea1ff}}
 .hint{{color:#5b6675;font-size:13px;margin:0 0 22px}}
-.honeycomb{{display:block;width:100%;height:auto;overflow:visible}}
+.honeycomb{{display:block;width:100%;max-width:1600px;margin:0 auto;height:auto;overflow:visible}}
 .hex{{animation:hexin .5s cubic-bezier(.2,.9,.3,1.2) both}}
 .hex a{{display:block;text-decoration:none;color:inherit;cursor:pointer}}
 .hexshape{{fill:#0f141d;stroke-width:1.5;transition:fill .2s,stroke-width .2s;paint-order:stroke}}
@@ -1817,6 +1832,12 @@ background:linear-gradient(90deg,#e6edf3,#9fd0ff 60%,#36d6a0);-webkit-background
 <div class=eyebrow><span class=dot></span>live · 292-agenten-engine</div>
 <h1>CoEvolution AI — {len(CENTERS)} autonome Firmen</h1>
 <p class=lede>Jede Wabe ist eine eigenständige, autonome Firma — klick rein für die volle Terrarium-Ansicht mit Live-Status, Sessions und laufenden Panels. <a href="/observatory">→ Observatory</a> · <a href="/network">→ Center-Netzwerk</a></p>
+<div class=kpibar>
+<div class=kpi><div class=k>Firmen im Netzwerk</div><div class=v>{len(CENTERS)}</div></div>
+<div class=kpi><div class=k>Healthy</div><div class=v style="color:#36d6a0">{kpi_healthy}/{len(CENTERS)}</div></div>
+<div class=kpi><div class=k>Sessions gesamt</div><div class=v>{kpi_sessions}</div></div>
+<div class=kpi><div class=k>Umsatz gesamt</div><div class=v>€{kpi_revenue:.0f}</div></div>
+</div>
 <form class=search method=get><input name=q placeholder="Suche nach Problem, Fachgebiet oder Firma (z.B. GDPR, Security, Hiring)" value="{html.escape(q)}"></form>
 <p class=hint>{hint}</p>
 {empty_note}
