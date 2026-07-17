@@ -553,13 +553,18 @@ async def stripe_webhook(request):
     raw = await request.read()
     if STRIPE_WHSEC:
         sig = request.headers.get("Stripe-Signature", "")
-        # Stripe signed-payload format: t=<ts>,v1=<hmac>
-        m = __import__("re").search(r"t=(\d+),v1=([0-9a-f]+)", sig or "")
+        # Stripe signed-payload format: t=<ts>,v1=<base64-hmac>
+        import base64 as _b64
+        m = __import__("re").search(r"t=(\d+),v1=([0-9a-zA-Z+/=]+)", sig or "")
         if not m:
             return web.json_response({"error": "bad signature"}, status=400)
-        ts, sig_hex = m.group(1), m.group(2)
-        expect = hmac.new(STRIPE_WHSEC.encode(), raw, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(expect, sig_hex):
+        ts, sig_b64 = m.group(1), m.group(2)
+        try:
+            expect = _b64.b64decode(sig_b64)
+        except Exception:
+            return web.json_response({"error": "bad signature encoding"}, status=400)
+        got = hmac.new(STRIPE_WHSEC.encode(), raw, hashlib.sha256).digest()
+        if not hmac.compare_digest(got, expect):
             return web.json_response({"error": "signature mismatch"}, status=400)
     try:
         body = json.loads(raw.decode())
