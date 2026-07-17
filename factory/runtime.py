@@ -1041,6 +1041,14 @@ async def observatory(request):
                   "uncovered_signals": c.get("uncovered_signals", [])}
         for slug, c in state.get("spawn_candidates", {}).items()
     }
+    # Scale-out (Task 5): surface autonomous daughter scale-out counts.
+    # daughters_total = standing daughter centers; scaleout_promoted =
+    # candidates promoted ("born") this cycle (fallback: daughter count).
+    daughter_centers = state.get("daughter_centers", {})
+    daughters_total = len(daughter_centers)
+    scaleout_promoted = sum(
+        1 for c in state.get("spawn_candidates", {}).values()
+        if c.get("status") == "born")
     payload = {
         "centers_total": len(by_center),
         "centers_active": len(active),
@@ -1064,6 +1072,9 @@ async def observatory(request):
         # FACTORY-FACTORY transparency: what the spawn-agent staged,
         # and whether Laura let it through. No human needed to SEE this.
         "spawn_candidates": spawn_candidates,
+        # Scale-out counts (Task 5): standing daughters + promoted this cycle.
+        "daughters_total": daughters_total,
+        "scaleout_promoted": scaleout_promoted,
     }
     # Machine path: keep the JSON contract 100% intact for API clients.
     if request.headers.get("Accept", "").startswith("application/json"):
@@ -1169,6 +1180,11 @@ a{{color:#4ea1ff;text-decoration:none}}
 
 <h2>Spawn candidates</h2>
 <table><tr><th>Candidate</th><th>Status</th><th>Source</th><th>Laura gate</th></tr>{cands}</table>
+
+<h2>Scale-out</h2>
+<div class=card>
+{payload["centers_total"]} standing · <b>{payload.get("daughters_total", 0)}</b> daughters · <b>{payload.get("scaleout_promoted", 0)}</b> promoted last cycle
+</div>
 
 <p class=foot>{payload["stripe_account"]} · static render, refresh to update.</p>
 </div></body></html>"""
