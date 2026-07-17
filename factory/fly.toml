@@ -22,12 +22,13 @@ primary_region = 'fra'
   protocol = 'tcp'
   internal_port = 8091
   processes = ['app']
-  # The app imports 50 centers + the registry on boot (aiohttp + catalog
-  # expansion), which on a 512MB shared-CPU machine can take >30s.
-  # Give the smoke check a longer grace period so the slow start doesn't
-  # trip the "not listening" WARNING on every deploy.
+  # The app imports 50 centers + the registry + factory_spawn_agent
+  # on boot (aiohttp + catalog expansion + feedparser lazy), which on
+  # a 512MB shared-CPU machine can take >90s. Give the smoke
+  # check a long grace period so the slow start doesn't trip the
+  # "not listening" WARNING on every deploy.
   [services.healthchecks]
-    grace_period = "90s"
+    grace_period = "180s"
     interval = "30s"
     timeout = "10s"
     path = "/health"
