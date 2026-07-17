@@ -37,7 +37,6 @@ from catalog import CENTERS_META, CENTER_NETWORK, _REG
 from stripe_links import STRIPE_LINKS, link_for_factory
 from synthesis import local_synthesize, engine_synthesize, propagate_tensions, detect_emergence, propose_daughter
 import temporal as T  # noqa: E402  (mandatory temporal cognition: anchors + ts_id)
-
 HERE = Path(__file__).parent
 # State lives on a mounted volume (/data) when present, so all machines share
 # one cashflow/key store instead of diverging per-instance.
@@ -1526,8 +1525,8 @@ async def firms_grid(request):
         f'<div class=v>{len(c.get("use_cases", []))}</div></div>'
         f'</div>'
         f'<div class=temporal>'
-        f'geboren {html.escape(str(R.state.get("centers", {}).get(s, {}).get("born_at", "—")))} · '
-        f'{T.years_to_north_star(R.state.get("centers", {}).get(s, {}).get("born_at"))}J bis Jubiläum 2040'
+        f'geboren {html.escape(str(state.get("centers", {}).get(s, {}).get("born_at", "—")))} · '
+        f'{T.years_to_north_star(state.get("centers", {}).get(s, {}).get("born_at"))}J bis Jubiläum 2040'
         f'</div>'
         f'<a class=book href="/{s}">Jetzt buchen →</a>'
         f'</div>'
