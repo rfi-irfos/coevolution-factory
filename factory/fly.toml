@@ -1,0 +1,43 @@
+# fly.toml app configuration file generated for coevolution-factory-sparkling-mountain-1802 on 2026-07-16T21:59:09+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'coevolution-factory-sparkling-mountain-1802'
+primary_region = 'fra'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[mounts]
+  source = "factory_data"
+  destination = "/data"
+
+[env]
+  FT_ENGINE_KEY = 'local'
+  FT_ENGINE_URL = 'https://lauras-agents-api.fly.dev'
+  FT_PORT = '8091'
+  FT_STATE_DIR = '/data'
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 8091
+  processes = ['app']
+
+  [[services.ports]]
+    port = 80
+    handlers = ['http']
+
+  [[services.ports]]
+    port = 443
+    handlers = ['tls', 'http']
+
+  [services.concurrency]
+    type = 'connections'
+    hard_limit = 200
+    soft_limit = 100
+
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 512

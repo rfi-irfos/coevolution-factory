@@ -1,0 +1,17 @@
+# python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# local runtime state (lives on the Fly /data volume, never in VCS)
+state.json
+evolve_log.jsonl
+state.json.bak.*
+
+# secrets / local env
+.env
+.env.*
+
+# docker build cache
+agents_registry/__pycache__/

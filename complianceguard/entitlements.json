@@ -1,0 +1,24 @@
+{
+  "accounts": {
+    "cg_6703ee02c7dedcf19bb6ca3ca4720e54": {
+      "email": "test@startup.com",
+      "created": 1784229239,
+      "plan": "trial",
+      "runs": 0
+    },
+    "cg_7d3fb233a88c0f960a4ae03440421942": {
+      "email": "founder@realstartup.com",
+      "created": 1784229335,
+      "plan": "trial",
+      "runs": 1
+    }
+  },
+  "usage": [
+    {
+      "key": "cg_7d3fb233a88c0f960a4ae03440421942",
+      "ts": 1784229464,
+      "cost": 0.0
+    }
+  ],
+  "operator_key": "local"
+}

@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CoEvolution AI — Licensable Autonomous Review Engine</title>
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#0f141d; --panel2:#121a26; --line:#1c2733;
+    --ink:#e6edf3; --mut:#8b98a9; --faint:#5b6675;
+    --accent:#4ea1ff; --accent2:#36d6a0; --warn:#f5a623; --bad:#ff5d5d;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent);text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  nav{
+    position:sticky;top:0;z-index:10;background:rgba(10,14,20,.82);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+  }
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .brand{font-weight:600;letter-spacing:.3px;display:flex;align-items:center;gap:10px}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent2);
+    box-shadow:0 0 0 0 rgba(54,214,160,.6);animation:breathe 3.4s ease-in-out infinite}
+  @keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(54,214,160,.5)}50%{box-shadow:0 0 0 7px rgba(54,214,160,0)}}
+  nav .links{display:flex;gap:22px;font-size:14px;color:var(--mut)}
+  nav .links a:hover{color:var(--ink)}
+  .btn{
+    display:inline-block;border:1px solid var(--line);border-radius:8px;
+    padding:9px 16px;font-size:14px;color:var(--ink);background:var(--panel2);
+    transition:border-color .2s,background .2s;
+  }
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:linear-gradient(180deg,#1b2a3d,#14202e);border-color:#2c4258;color:#cfe6ff}
+  .btn.primary:hover{border-color:var(--accent);color:#fff}
+  .hero{padding:78px 0 56px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent2);margin-bottom:18px}
+  h1{font-size:42px;line-height:1.12;margin:0 0 18px;font-weight:650;letter-spacing:-.5px}
+  h1 .grad{background:linear-gradient(90deg,#9fd0ff,#36d6a0);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{font-size:18px;color:var(--mut);max-width:680px;margin:0 0 30px}
+  .cta{display:flex;gap:14px;flex-wrap:wrap}
+  .stats{display:flex;gap:34px;margin-top:42px;flex-wrap:wrap}
+  .stat .n{font-size:26px;font-weight:650;color:var(--ink)}
+  .stat .l{font-size:13px;color:var(--faint);margin-top:2px}
+  section{padding:56px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:26px;margin:0 0 8px;font-weight:620;letter-spacing:-.3px}
+  .lead{color:var(--mut);max-width:680px;margin:0 0 32px;font-size:16px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+  .card h3{margin:0 0 8px;font-size:17px}
+  .card p{margin:0;color:var(--mut);font-size:14px}
+  .card .tag{display:inline-block;font-size:11px;color:var(--accent2);border:1px solid #1d3a30;
+    background:#0e1f19;border-radius:20px;padding:2px 9px;margin-bottom:12px;letter-spacing:.04em}
+  .why{display:grid;grid-template-columns:1fr 1fr;gap:14px 28px}
+  .why div{display:flex;gap:12px;align-items:flex-start;color:var(--mut);font-size:15px}
+  .why .k{color:var(--accent2);font-weight:600;min-width:22px}
+  .price{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .plan{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column}
+  .plan.feat{border-color:#2c4258;background:linear-gradient(180deg,#101b27,#0e151e)}
+  .plan .nm{font-size:15px;font-weight:600}
+  .plan .pr{font-size:24px;font-weight:650;margin:10px 0 2px}
+  .plan .pr small{font-size:13px;color:var(--faint);font-weight:400}
+  .plan ul{list-style:none;padding:0;margin:14px 0 18px;font-size:13.5px;color:var(--mut)}
+  .plan ul li{padding:5px 0;border-top:1px solid var(--line)}
+  .plan .btn{margin-top:auto;text-align:center}
+  .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:stretch;margin-top:8px}
+  .node{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 14px}
+  .node .step{font-size:12px;color:var(--accent2);letter-spacing:.08em}
+  .node h4{margin:8px 0 6px;font-size:14.5px}
+  .node p{margin:0;font-size:12.5px;color:var(--mut)}
+  .daughters{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .d{grid-column:span 1;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+  .d h4{margin:0 0 4px;font-size:14px}
+  .d p{margin:0;font-size:12px;color:var(--mut)}
+  .live{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+    background:#070b10;border:1px solid var(--line);border-radius:8px;padding:16px;color:#b9c6d6;overflow:auto}
+  .live .c{color:var(--accent2)} .live .w{color:var(--warn)} .live .b{color:var(--bad)} .live .m{color:var(--faint)}
+  .gate{background:var(--panel);border:1px solid #2c4258;border-radius:var(--radius);padding:20px;color:var(--mut);font-size:14.5px}
+  .gate b{color:var(--ink)}
+  footer{padding:40px 0 60px;color:var(--faint);font-size:13px}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
+  @media(max-width:860px){
+    .cards,.price,.flow,.daughters{grid-template-columns:1fr 1fr}
+    .why{grid-template-columns:1fr}
+    h1{font-size:34px}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span> CoEvolution AI</div>
+    <div class="links">
+      <a href="#engine">Engine</a>
+      <a href="#products">Products</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#autonomous">Autonomous</a>
+      <a href="https://github.com/rfi-irfos/call-laura" target="_blank" rel="noopener">call-laura (free)</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Licensable autonomous review engine</div>
+    <h1>A <span class="grad">292-agent</span> expert team that reviews your documents —<br>with verbatim proof, not opinions.</h1>
+    <p class="sub">Stop asking one AI to "review this for anything wrong." We run a metacognitive, entitlement-gated multi-agent pipeline where every specialist stays in its lane and quotes your exact words. Built on Laura Serna Gaviria's Human–AI Co-Evolution research. License per agent, per bundle, or the full pipeline.</p>
+    <div class="cta">
+      <a class="btn primary" href="#pricing">See pricing</a>
+      <a class="btn" href="https://github.com/rfi-irfos/call-laura" target="_blank" rel="noopener">Try the free engine →</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n">292</div><div class="l">function-agents (org map)</div></div>
+      <div class="stat"><div class="n">15</div><div class="l">hand-authored core roles</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">severity tiers: blocker · flag · note</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">black-box verdicts</div></div>
+    </div>
+  </div>
+</header>
+
+<section id="engine">
+  <div class="wrap">
+    <h2>Why a team beats one smart model</h2>
+    <p class="lead">A general model asked to find "anything wrong" has no incentive to stay in lane — it blends a security flaw into a legal nitpick into a wording complaint, all at the same confidence. We invert that.</p>
+    <div class="why">
+      <div><span class="k">01</span><span><b style="color:var(--ink)">Lane-locked.</b> Security only talks security. Legal only talks legal exposure. When two independently flag the same verbatim line, that's a real signal — not one model's mood.</span></div>
+      <div><span class="k">02</span><span><b style="color:var(--ink)">Verbatim or nothing.</b> Every finding quotes the exact substring it reacted to. A finding whose evidence isn't literally in your text is dropped, not passed through on the model's word.</span></div>
+      <div><span class="k">03</span><span><b style="color:var(--ink)">Whitebox by design.</b> After each pass every agent audits its own output and may rewrite its own prompt (versioned, append-only). Skill proposals wait for human review. EU AI Act transparency, operationalized.</span></div>
+      <div><span class="k">04</span><span><b style="color:var(--ink)">Entitlement-gated.</b> A key is entitled to exactly the agents you licensed. A single-agent customer's key cannot reach the other 291. Licensing is enforced at the network boundary.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="products">
+  <div class="wrap">
+    <h2>One engine, many product fronts</h2>
+    <p class="lead">The same Rust/Axum engine powers a portfolio of autonomous product lines. Each is a focused front end over a licensed slice of the agent pool — the parent funds several independent AI startups from one tech base.</p>
+    <div class="cards">
+      <div class="card"><span class="tag">FLAGSHIP</span><h3>ComplianceGuard</h3><p>Per-document GDPR / EU AI Act / SOX / HIPAA review with verbatim citations and a whitebox transparency roll-up. Built from risk-* + legal-compliance agents.</p></div>
+      <div class="card"><span class="tag">LAUNCH</span><h3>LaunchLens</h3><p>Pre-launch audit for AI features: ai-safety-governance, legal-ip, appsec and chief-ai-officer run the launch intent as a directed graph.</p></div>
+      <div class="card"><span class="tag">LEGAL OPS</span><h3>DocuTrust</h3><p>Contract and corporate-doc review across legal-corporate, employment, litigation and technical-writing lanes. Per-run credits.</p></div>
+      <div class="card"><span class="tag">DILIGENCE</span><h3>BoardEye</h3><p>Founder / VC pre-diligence: ceo, cfo, board, chief-risk-officer and corpdev-diligence produce a per-report assessment.</p></div>
+      <div class="card"><span class="tag">CONTINUOUS</span><h3>GRC-Auto</h3><p>Continuous controls + ISO/SOC2 readiness from risk-enterprise, ethics, quality-iso and gov-compliance. Monthly autonomous monitoring.</p></div>
+      <div class="card"><span class="tag">FREE</span><h3>call-laura</h3><p>The deterministic, local, zero-cost sibling — same 15-role taxonomy, pattern-matching instead of a model call. Live on crates.io + Fly.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <h2>Pricing that scales with autonomy</h2>
+    <p class="lead">Start free and deterministic. Pay only when you run the live model-backed pipeline. License single agents, bundles, or the full team.</p>
+    <div class="price">
+      <div class="plan">
+        <div class="nm">Free</div>
+        <div class="pr">€0 <small>/ forever</small></div>
+        <ul>
+          <li>call-laura deterministic engine</li>
+          <li>15-role taxonomy</li>
+          <li>Local, no API key</li>
+          <li>Proof of discipline</li>
+        </ul>
+        <a class="btn" href="https://github.com/rfi-irfos/call-laura" target="_blank" rel="noopener">Get call-laura</a>
+      </div>
+      <div class="plan feat">
+        <div class="nm">Per-run</div>
+        <div class="pr">from €0.20 <small>/ run</small></div>
+        <ul>
+          <li>Live NIM-backed pipeline</li>
+          <li>Verbatim citations</li>
+          <li>Metacog transparency report</li>
+          <li>Pay-as-you-go credits</li>
+        </ul>
+        <a class="btn primary" href="#autonomous">Start a run</a>
+      </div>
+      <div class="plan">
+        <div class="nm">Agent license</div>
+        <div class="pr">from €490 <small>/ mo</small></div>
+        <ul>
+          <li>Named agent or bundle</li>
+          <li>Entitlement-gated key</li>
+          <li>API + dashboard access</li>
+          <li>HITL annotation export</li>
+        </ul>
+        <a class="btn" href="#autonomous">License agents</a>
+      </div>
+      <div class="plan">
+        <div class="nm">Full pipeline</div>
+        <div class="pr">Custom <small>/ enterprise</small></div>
+        <ul>
+          <li>All 292 function-agents</li>
+          <li>Mission Control turntable</li>
+          <li>Watchtower BI + self-improve</li>
+          <li>Dedicated deploy</li>
+        </ul>
+        <a class="btn" href="#autonomous">Talk to us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="autonomous">
+  <div class="wrap">
+    <h2>The autonomous revenue loop</h2>
+    <p class="lead">The engine runs without humans in the loop — only skill-install needs a human. The business runs autonomously too: metered billing, self-serve onboarding, and a marketing layer the engine's own agents keep fresh.</p>
+    <div class="flow">
+      <div class="node"><div class="step">01 · INPUT</div><h4>Document or intent</h4><p>You POST text + a regulatory trigger or "launch this" intent.</p></div>
+      <div class="node"><div class="step">02 · ROUTE</div><h4>Entitled agents</h4><p>The engine selects your licensed slice and runs them in parallel.</p></div>
+      <div class="node"><div class="step">03 · REVIEW</div><h4>Verbatim findings</h4><p>blocker / flag / note, each citing the exact span. Whitebox metacog roll-up.</p></div>
+      <div class="node"><div class="step">04 · METER</div><h4>Usage event</h4><p>Every run emits a metered event → Polar/Stripe → invoice. No sales call.</p></div>
+      <div class="node"><div class="step">05 · REINVEST</div><h4>Fund the next</h4><p>Margin spins up the next daughter product on the same engine.</p></div>
+    </div>
+
+    <h3 style="margin:34px 0 10px;font-size:17px">Live engine output (shape)</h3>
+    <div class="live">
+<span class="m">POST /team  { "text": "...", "agents": ["legal-ip","risk-gdpr"] }</span>
+<span class="c">✓ legal-ip</span>      blocker  — "unassigned IP claim"
+   evidence: <span class="m">"all work product belongs to the contractor"</span>
+<span class="w">⚑ risk-gdpr</span>     flag     — Art. 5(1)(a) lawfulness gap
+   evidence: <span class="m">"data processed on legitimate interest, basis unstated"</span>
+<span class="c">✓ metacog</span>      prompt v1.1.0 → v1.1.1 staged (human review)
+<span class="b">✗ dropped</span>      finding with no verbatim evidence — not passed through
+<span class="m">→ report returned. orchestrator took no action. human oversight logged.</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>The daughter portfolio</h2>
+    <p class="lead">Five autonomous product lines, one engine. Each is a separate priced front with its own revenue line — the parent builds several funded AI startups, not one.</p>
+    <div class="daughters">
+      <div class="d"><h4>ComplianceGuard</h4><p>Regulated SMBs · per-doc</p></div>
+      <div class="d"><h4>LaunchLens</h4><p>AI product teams · per-launch</p></div>
+      <div class="d"><h4>DocuTrust</h4><p>Legal ops · per-run</p></div>
+      <div class="d"><h4>BoardEye</h4><p>Founders / VCs · per-report</p></div>
+      <div class="d"><h4>GRC-Auto</h4><p>ISO/SOC2 · continuous</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="gate">
+      <b>Ship gate.</b> Every word on this site is routed through Laura's review before publish — the same Human–AI Co-Evolution framework the engine is built on. The 292 agent prompts are the product and stay in the private repository; what you see here is the contract and the free tool. "Autonomous" means <b>operational</b> autonomy: the engine and the billing run without a human in the loop. Incorporation, banking, and the Laura gate stay human-owned — by design.
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>CoEvolution AI — licensable autonomous review engine. Built on Laura Serna Gaviria's Human–AI Co-Evolution research. RFI-IRFOS, Graz.</div>
+    <div><a href="https://github.com/rfi-irfos/call-laura" target="_blank" rel="noopener">call-laura (free)</a> · <a href="https://github.com/rfi-irfos/lauras-agents-public" target="_blank" rel="noopener">concept</a></div>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+aiohttp>=3.9
+__pycache__/
+*.pyc
+venv/
+.venv/
+state.json
+evolve_log.jsonl
+state.json.bak.*
+
+agents_registry/__pycache__/
