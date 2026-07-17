@@ -29,7 +29,7 @@
 #  GET  /health
 #  POST /stripe/webhook              -> real Stripe webhook (WHSEC-verified)
 
-import os, json, secrets, time, asyncio, hmac, hashlib, sys, html
+import os, json, secrets, time, asyncio, hmac, hashlib, sys, html, math
 from pathlib import Path
 from aiohttp import web, ClientSession, ClientError, ClientTimeout
 
@@ -62,6 +62,79 @@ JOB_TTL = int(os.environ.get("FT_JOB_TTL", "86400"))  # 24h
 # path, referrer->source, utm_*, site, section. Disclosed at /privacy.
 TRACK_URL = "https://lighthouse-rfi-irfos.fly.dev/lighthouse/api/track"
 TRACK_SITE = "coevolution-factory"
+
+
+# --------------------------------------------------------------------------
+# Shared nav — matches rfi-irfos.com's real header (see PublicSite.tsx there:
+# fixed 64px bar, wordmark + teal EKG accent, dark bg). Same partial used by
+# the honeycomb landing page, every center's terrarium, and /privacy.
+# --------------------------------------------------------------------------
+RFI_TEAL = "#00f5c4"
+
+
+def _nav_html(active=""):
+    def link(href, label, key):
+        on = " style=color:#e6edf3;font-weight:700" if key == active else ""
+        return f'<a href="{href}"{on}>{html.escape(label)}</a>'
+    return f"""<nav class=sitenav><div class=navwrap>
+<a class=brand href="/"><span class=word>RFI-IRFOS</span>
+<svg width="46" height="16" viewBox="0 0 54 18" fill="none" style="margin-left:6px;overflow:visible">
+<polyline points="0,9 12,9 16,2 20,16 24,2 28,9 54,9" stroke="{RFI_TEAL}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg><span class=sub>CoEvolution AI</span></a>
+<div class=navlinks>{link('/', 'Centers', 'centers')}{link('/observatory', 'Observatory', 'observatory')}
+{link('/network', 'Network', 'network')}<a href="https://rfi-irfos.com" target=_blank rel=noreferrer>rfi-irfos.com ↗</a></div>
+</div></nav>
+<style>
+.sitenav{{position:fixed;top:0;left:0;right:0;z-index:100;height:64px;background:rgba(10,14,20,.85);
+backdrop-filter:blur(16px);border-bottom:1px solid #1c2733}}
+.navwrap{{max-width:1200px;margin:0 auto;height:64px;padding:0 22px;display:flex;align-items:center;justify-content:space-between}}
+.brand{{display:flex;align-items:center;text-decoration:none;gap:2px}}
+.brand .word{{font-weight:800;font-size:14px;letter-spacing:.06em;color:#e6edf3}}
+.brand .sub{{margin-left:12px;font-size:11px;color:#5b6675;letter-spacing:.04em;border-left:1px solid #1c2733;padding-left:12px}}
+.navlinks{{display:flex;gap:26px;align-items:center}}
+.navlinks a{{color:#8b98a9;font-size:13px;font-weight:600;text-decoration:none;letter-spacing:.02em}}
+.navlinks a:hover{{color:#e6edf3}}
+@media(max-width:640px){{.brand .sub{{display:none}}.navlinks{{gap:14px}}}}
+</style>"""
+
+
+# --------------------------------------------------------------------------
+# Honeycomb layout — axial hex-coordinate spiral (the same ring-by-ring
+# construction Catan itself uses to lay out a hex board), computed once
+# server-side. CENTER_NETWORK is a dense expertise-adjacency graph (10-20
+# edges per node), too dense to double as physical grid adjacency, so
+# placement here is purely geometric/deterministic — same center always
+# lands in the same tile.
+# --------------------------------------------------------------------------
+def _hex_ring(radius):
+    if radius == 0:
+        return [(0, 0)]
+    dirs = [(1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1)]
+    q, r = dirs[4][0] * radius, dirs[4][1] * radius
+    out = []
+    for dq, dr in dirs:
+        for _ in range(radius):
+            out.append((q, r))
+            q, r = q + dq, r + dr
+    return out
+
+
+def _hex_spiral(n):
+    coords = [(0, 0)]
+    radius = 1
+    while len(coords) < n:
+        coords += _hex_ring(radius)
+        radius += 1
+    return coords[:n]
+
+
+def _axial_to_pixel(q, r, size):
+    x = size * (3 ** 0.5 * q + (3 ** 0.5 / 2) * r)
+    y = size * (1.5 * r)
+    return x, y
+
+
+STATUS_COLOR = {"healthy": "#36d6a0", "degraded": "#f0883e", "0-status": "#f85c5c"}
 
 
 def _tracker_js(section):
@@ -146,6 +219,57 @@ def get_center_status(slug):
     if not rec:
         return "healthy"
     return rec.get("status", "healthy")
+
+
+def _sessions_for(slug, usage):
+    return sum(1 for u in usage if u.get("center") == slug)
+
+
+def _revenue_for(slug, usage):
+    return round(sum(u.get("cost", 0.0) for u in usage
+                      if u.get("center") == slug), 2)
+
+
+def _leads_for(slug, leads):
+    return len(leads.get(slug, []))
+
+
+def _problems_for(slug, usage, deb):
+    n_deb = sum(1 for d in deb.values()
+                if d.get("center") == slug and d.get("status") == "done")
+    return _sessions_for(slug, usage) + n_deb
+
+
+def _active_job_for(slug):
+    """The most recent in-flight job (queued/running, not done/error) against
+    this center, if any — same state["jobs"] dict shape created in
+    center_session() ({center, status, created, text, panel, result, error})
+    that the existing panel-result poll() JS already reads from. Only panel
+    convenes go through this async job/poll path (scenario sim and standing
+    check are synchronous, no job record) so every entry here is a panel
+    convene. Used by the terrarium's live-session view so a visitor can
+    watch someone else's convened panel happen in real time."""
+    jobs = [j for j in state.get("jobs", {}).values()
+            if j.get("center") == slug and j.get("status") not in ("done", "error")]
+    if not jobs:
+        return None
+    jobs.sort(key=lambda j: j.get("created", 0), reverse=True)
+    j = jobs[0]
+    return {"status": j.get("status"), "created": j.get("created")}
+
+
+def _live_stats_for(slug):
+    usage = state.get("usage", [])
+    deb = state.get("debates", {})
+    leads = state.get("leads", {})
+    return {
+        "slug": slug, "status": get_center_status(slug),
+        "sessions": _sessions_for(slug, usage),
+        "revenue_eur": _revenue_for(slug, usage),
+        "leads": _leads_for(slug, leads),
+        "problems": _problems_for(slug, usage, deb),
+        "active_job": _active_job_for(slug),
+    }
 
 
 def set_center_status(slug, status, detail=None):
@@ -1243,6 +1367,22 @@ async def network(request):
     })
 
 
+async def live_grid(request):
+    """GET /api/live-grid — every center's live stats in one batched response,
+    polled by the honeycomb landing page (~10s) to patch tile numbers/LED
+    colors in place instead of the old render-once-per-load snapshot."""
+    return web.json_response({s: _live_stats_for(s) for s in CENTER_SLUGS})
+
+
+async def center_live(request):
+    """GET /api/center/{slug}/live — one center's live stats, polled (~3s) by
+    the terrarium panel on that center's detail page."""
+    slug = request.match_info["slug"]
+    if slug not in CENTERS:
+        return web.json_response({"error": "unknown center"}, status=404)
+    return web.json_response(_live_stats_for(slug))
+
+
 def center_page(slug):
     c = CENTERS[slug]
     stripe_link = link_for_factory(slug, c["price"])
@@ -1290,38 +1430,46 @@ def center_page(slug):
     icp_pain_html = (
         f'<div style="margin-top:12px;font-size:13px;color:#ffb38a">'
         f'⚠ {c["icp_pain"]}</div>') if c.get("icp_pain") else ""
+    initial_stats = _live_stats_for(slug)
+    initial_color = STATUS_COLOR.get(initial_stats["status"], "#f0883e")
     page = f"""<!doctype html><html><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <title>{c['name']} — interdisciplinary center</title>
 <style>body{{margin:0;background:#0a0e14;color:#e6edf3;font-family:-apple-system,Segoe UI,Inter,sans-serif;line-height:1.5}}
-.wrap{{max-width:860px;margin:0 auto;padding:0 22px}}
-nav{{border-bottom:1px solid #1c2733;padding:18px 0}}
-.brand{{font-weight:600}} .ey{{color:#36d6a0;font-size:12px;letter-spacing:.12em;text-transform:uppercase}}
+.wrap{{max-width:860px;margin:0 auto;padding:88px 22px 60px}}
+.ey{{color:#36d6a0;font-size:12px;letter-spacing:.12em;text-transform:uppercase}}
 h1{{font-size:32px;margin:30px 0 10px;font-weight:650}}
 .sub{{color:#8b98a9;font-size:16px;max-width:640px;line-height:1.6}}
 .box{{background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:22px;margin-top:26px}}
 button{{background:#14202e;color:#cfe6ff;border:1px solid #2c4258;border-radius:8px;padding:9px 16px;cursor:pointer}}
 .buy{{background:#1b3a2a;border-color:#2c6b4a;color:#9ff0c8;text-decoration:none;display:inline-block;padding:10px 18px;border-radius:8px;margin-top:14px}}
-input,textarea{{width:100%;padding:10px;background:#070b10;border:1px solid #1c2733;border-radius:8px;color:#e6edf3;margin:8px 0;font-family:inherit}}
+input,textarea{{width:100%;padding:10px;background:#070b10;border:1px solid #1c2733;border-radius:8px;color:#e6edf3;margin:8px 0;font-family:inherit;box-sizing:border-box}}
 pre{{background:#070b10;border:1px solid #1c2733;border-radius:8px;padding:12px;overflow:auto;font-size:12px;max-height:260px}}
 .small{{color:#5b6675;font-size:12px}} a{{color:#4ea1ff}}
 .disc{{display:inline-block;background:#11202e;border:1px solid #21384a;border-radius:14px;padding:3px 10px;margin:3px;font-size:12px;color:#9fd0ff}}
-.tab{{display:inline-block;padding:8px 14px;cursor:pointer;color:#8b98a9}}
+.tab{{display:inline-block;padding:8px 14px;cursor:pointer;color:#8b98a9;margin-right:6px;user-select:none}}
 .tab.on{{color:#e6edf3;border-bottom:2px solid #36d6a0}}
-.val{{background:#0f1a14;border:1px solid #1c3a2a;border-radius:8px;padding:6px 10px;font-size:12px;color:#cfe6ff;margin:4px 0}}
+.tab:hover{{color:#cfe6ff}}
+.val{{background:#0f1a14;border:1px solid #1c3a2a;border-radius:8px;padding:8px 10px;font-size:12px;color:#cfe6ff}}
+.valrow{{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}}
 .out{{background:#070b10;border:1px solid #1c2733;border-radius:8px;padding:12px;margin-top:6px;font-size:13px;min-height:60px;white-space:normal;line-height:1.5}}
 button:disabled{{opacity:.6;cursor:default}}
-.tab{{margin-right:6px;user-select:none}}
-.tab:hover{{color:#cfe6ff}}
-@media(max-width:620px){{.tab{{display:block;margin:4px 0;border-bottom:none!important}}}}</style></head>
-<body><nav><div class=wrap><span class=brand>{c['name']}</span> · <span class=small>a CoEvolution AI center</span></div></nav>
+@keyframes tdot{{0%,100%{{opacity:1}}50%{{opacity:.4}}}}
+.terrarium{{border-color:{initial_color}44}}
+.tstats{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}}
+.tstat{{background:#070b10;border:1px solid #1c2733;border-radius:8px;padding:9px 12px;text-align:center}}
+.tstat .k{{color:#5b6675;font-size:10px;text-transform:uppercase;letter-spacing:.06em}}
+.tstat .v{{color:#e6edf3;font-size:19px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}}
+.tled{{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;animation:tdot 1.8s ease-in-out infinite}}
+.tactivity{{margin-top:12px;font-size:13px;color:#9fd0ff;background:#0f1a14;border:1px solid #1c3a2a;border-radius:8px;padding:10px 12px}}
+@media(max-width:620px){{.tab{{display:block;margin:4px 0;border-bottom:none!important}}.valrow{{grid-template-columns:1fr}}.tstats{{grid-template-columns:1fr 1fr}}}}</style></head>
+<body>{_nav_html()}
 <div class=wrap>
-<style>.val{{background:#0f1a14;border:1px solid #1c3a2a;border-radius:8px;padding:6px 10px;font-size:12px;color:#cfe6ff;margin:4px 0}}.out{{background:#070b10;border:1px solid #1c2733;border-radius:8px;padding:12px;margin-top:6px;font-size:13px;min-height:60px;white-space:normal;line-height:1.5}}button:disabled{{opacity:.6;cursor:default}}.tab{{margin-right:6px;user-select:none}}.tab:hover{{color:#cfe6ff}}@media(max-width:620px){{.tab{{display:block;margin:4px 0;border-bottom:none!important}}}}</style>
 <div class=ey>standing interdisciplinary center · live engine · payments via RFI-IRFOS</div>
 <h1>{c['name']}</h1>
 <p class=sub>{c['mandate']}.<br><br><b>Why crisis-resistant:</b> {c['resilient']}<br><br><span style=color:#8b98a9>The engine is a decision-support tool that surfaces expert perspectives; it is not a substitute for qualified counsel.</span></p>
 <div class=box style="border-color:#2c6b4a">
-<div style="display:flex;gap:8px;flex-wrap:wrap">
+<div class=valrow>
 <div class=val>🛡 <b>{len(c['panel'])} experts</b> across {len(c['disciplines'])} disciplines review your question</div>
 <div class=val>🔁 simulate a decision before you ship it</div>
 <div class=val>📡 continuous standing posture check</div>
@@ -1330,6 +1478,17 @@ button:disabled{{opacity:.6;cursor:default}}
 </div>
 {icp_pain_html}
 {reduced_mode_html}
+<div class="box terrarium" id=terrarium>
+<div class=small style="color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-size:11px">
+<span class=tled id=tled style="background:{initial_color}"></span>terrarium — live</div>
+<div class=tstats>
+<div class=tstat><div class=k>Status</div><div class=v id=tstatus style="color:{initial_color};font-size:13px">{html.escape(initial_stats['status'])}</div></div>
+<div class=tstat><div class=k>Sessions</div><div class=v id=tsessions>{initial_stats['sessions']}</div></div>
+<div class=tstat><div class=k>Revenue</div><div class=v id=trevenue>€{initial_stats['revenue_eur']:.0f}</div></div>
+<div class=tstat><div class=k>Leads</div><div class=v id=tleads>{initial_stats['leads']}</div></div>
+</div>
+<div class=tactivity id=tactivity>watching for activity…</div>
+</div>
 <div style="margin-top:18px"><div class=small style="color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-size:11px">typical questions this center answers</div>
 <div style="margin-top:8px">
 {use_cases_html}
@@ -1401,7 +1560,23 @@ $('su').onclick=su;$('run').onclick=run;
 // Offer click-through beacon — target=_blank so the current tab never unloads,
 // a plain fetch is enough (no keepalive/sendBeacon needed).
 $('buyLink').addEventListener('click',function(){fetch('__TRACK_URL__',{method:'POST',headers:{'Content-Type':'application/json'},
-body:JSON.stringify({path:location.pathname,site:'__TRACK_SITE__',section:slug+':offer_click'})}).catch(function(){});});"""
+body:JSON.stringify({path:location.pathname,site:'__TRACK_SITE__',section:slug+':offer_click'})}).catch(function(){});});
+// Terrarium — poll this center's own live numbers + any in-flight panel
+// session (someone else's, not just yours) so a visitor watches real
+// activity happen, not a static snapshot from page-load.
+var COLOR_MAP={healthy:'#36d6a0',degraded:'#f0883e','0-status':'#f85c5c'};
+function pollLive(){fetch('/api/center/'+slug+'/live').then(function(r){return r.json()}).then(function(s){
+var c=COLOR_MAP[s.status]||'#f0883e';
+$('tled').style.background=c;
+var st=$('tstatus');st.textContent=s.status;st.style.color=c;
+$('tsessions').textContent=s.sessions;
+$('trevenue').textContent='€'+Math.round(s.revenue_eur);
+$('tleads').textContent=s.leads;
+var act=$('tactivity');
+if(s.active_job){act.innerHTML='<b style=color:#36d6a0>● live</b> — a panel is convening right now ('+esc(s.active_job.status)+')';}
+else{act.textContent='no panel currently running — click "Convene panel" below to start one';}
+}).catch(function(){});}
+pollLive();setInterval(pollLive,3000);"""
     js = (js.replace("__SLUG__", slug).replace("__SAMPLE__", json.dumps(c["sample_question"]))
           .replace("__TRACK_URL__", TRACK_URL).replace("__TRACK_SITE__", TRACK_SITE))
     return page + "<script>" + js + "</script>" + _tracker_js(slug) + "</body></html>"
@@ -1514,132 +1689,131 @@ h1{{font-size:30px;font-weight:650;margin:0 0 10px;letter-spacing:-.01em}}
 <div class=grid>{cards}</div></div></body></html>""", content_type="text/html")
 
 
-async def firms_grid(request):
-    """Public landing page — one Instagram-style tile per center, rendered
-    ONCE from live state (no polling loop, no JS fetch, no auto-refresh).
-    Each tile shows 4 live zones (Sessions / Revenue / Leads / Status) with
-    a pulsing status LED, train-track dashboard styling, and a 'Jetzt
-    buchen' button linking to that center's detail page (which carries the
-    tiers + Stripe signup). Merged from the old split index()/firms_grid()
-    duo — this is now the single landing page at both / and /firms.
+HEX_SIZE = 64        # center-to-vertex, px — the polygon's own geometry
+HEX_PITCH = 70        # center-to-center spacing used in the axial->pixel math (> HEX_SIZE = visible seams, like a real board)
+HEX_POINTS = " ".join(
+    f"{HEX_SIZE * math.cos(math.radians(60 * i - 30)):.1f},"
+    f"{HEX_SIZE * math.sin(math.radians(60 * i - 30)):.1f}"
+    for i in range(6))
 
-    Per-center stats (honest): SESSIONS/LEADS are per-center real counts.
-    REVENUE shown is this center's own tracked usage cost where available,
-    falling back to 0 rather than a misleading even-split of network total.
+
+async def firms_grid(request):
+    """Public landing page — the 50 centers as a Catan-style honeycomb: each
+    a real SVG <polygon> hex (true geometry, clickable, no canvas hit-testing)
+    with an HTML <foreignObject> overlay for the name/LED/live numbers, laid
+    out via a deterministic axial-coordinate spiral (_hex_spiral) and
+    revealed with a staggered per-ring CSS animation on load. Live numbers
+    (sessions/revenue/leads/status) are polled from /api/live-grid every
+    ~10s and patched into the DOM in place — see the <script> below.
+    Merged from the old split index()/firms_grid() duo — single landing
+    page at both / and /firms.
     """
     q = (request.query.get("q") or "").strip().lower()
-    usage = state.get("usage", [])
-    deb = state.get("debates", {})
-    leads = state.get("leads", {})
 
-    def _sessions_for(slug):
-        return sum(1 for u in usage if u.get("center") == slug)
-
-    def _revenue_for(slug):
-        return round(sum(u.get("cost", 0.0) for u in usage
-                          if u.get("center") == slug), 2)
-
-    def _leads_for(slug):
-        return len(leads.get(slug, []))
-
-    def _problems_for(slug):
-        n_deb = sum(1 for d in deb.values()
-                    if d.get("center") == slug and d.get("status") == "done")
-        return _sessions_for(slug) + n_deb
-
-    STATUS_COLOR = {"healthy": "#36d6a0", "degraded": "#f0883e",
-                     "0-status": "#f85c5c"}
-
-    def _led(slug):
-        status = get_center_status(slug)
-        color = STATUS_COLOR.get(status, "#f0883e")
-        return (f'<span class=led style="--c:{color}" '
-                f'title="{html.escape(status)}"></span>'
-                f'<span class=lstatus style="color:{color}">'
-                f'{html.escape(status)}</span>')
-
-    items = CENTERS.items()
+    items = list(CENTERS.items())
     if q:
         items = [(s, c) for s, c in items
                  if q in c["name"].lower() or q in c["mandate"].lower()
                  or any(q in d.lower() for d in c["disciplines"])]
 
-    tiles = "".join(
-        f'<a class=tile href="/{s}">'
-        f'<div class=rail></div>'
-        f'<div class=thead>'
-        f'<span class=tname>{html.escape(c["name"])}</span>'
-        f'<span class=tstatus>{_led(s)}</span>'
-        f'</div>'
-        f'<div class=vp>{html.escape((c.get("value_prop") or c["mandate"])[:140])}</div>'
-        f'<div class=grid4>'
-        f'<div class=stat style="--zc:#4ea1ff"><div class=k>Sessions</div>'
-        f'<div class=v>{_sessions_for(s)}</div></div>'
-        f'<div class=stat style="--zc:#36d6a0"><div class=k>Revenue</div>'
-        f'<div class=v>€{_revenue_for(s)}</div></div>'
-        f'<div class=stat style="--zc:#c792ea"><div class=k>Leads</div>'
-        f'<div class=v>{_leads_for(s)}</div></div>'
-        f'<div class=stat style="--zc:#f0883e"><div class=k>Gelöst</div>'
-        f'<div class=v>{_problems_for(s)}</div></div>'
-        f'</div>'
-        f'<span class=book>Jetzt buchen →</span>'
-        f'</a>'
-        for s, c in items) or '<div class=empty>keine Zentren passen zur Suche</div>'
+    pad = HEX_SIZE + 20
+    if items:
+        coords = _hex_spiral(len(items))
+        pixels = [_axial_to_pixel(qx, r, HEX_PITCH) for qx, r in coords]
+        min_x = min(p[0] for p in pixels) - pad
+        max_x = max(p[0] for p in pixels) + pad
+        min_y = min(p[1] for p in pixels) - pad
+        max_y = max(p[1] for p in pixels) + pad
+    else:
+        pixels = []
+        min_x = min_y = -pad
+        max_x = max_y = pad
+    vb_w, vb_h = max_x - min_x, max_y - min_y
 
-    hint = (f'{len(list(items))} Zentren gefunden für "{html.escape(q)}"'
+    def _tile(i, s, c):
+        x, y = pixels[i]
+        stats = _live_stats_for(s)
+        color = STATUS_COLOR.get(stats["status"], "#f0883e")
+        delay = min(i * 0.028, 1.1)
+        fo_size = HEX_SIZE * 1.35
+        return (
+            f'<g class=hex data-slug="{s}" transform="translate({x - min_x:.1f},{y - min_y:.1f})" '
+            f'style="animation-delay:{delay:.3f}s">'
+            f'<a href="/{s}">'
+            f'<polygon class=hexshape points="{HEX_POINTS}" data-c="{color}" style="stroke:{color}"/>'
+            f'<foreignObject x="{-fo_size/2:.1f}" y="{-fo_size/2:.1f}" width="{fo_size:.1f}" height="{fo_size:.1f}">'
+            f'<div xmlns="http://www.w3.org/1999/xhtml" class=hexbody>'
+            f'<div class=hexname>{html.escape(c["name"])}</div>'
+            f'<div class=hexled style="background:{color}"></div>'
+            f'<div class=hexstats>'
+            f'<span data-k=sessions>{stats["sessions"]}</span>&nbsp;S · '
+            f'<span data-k=revenue>€{stats["revenue_eur"]:.0f}</span> · '
+            f'<span data-k=leads>{stats["leads"]}</span>&nbsp;L'
+            f'</div></div></foreignObject>'
+            f'</a></g>')
+
+    tiles_svg = "".join(_tile(i, s, c) for i, (s, c) in enumerate(items))
+    empty_note = "" if items else '<div class=empty>keine Zentren passen zur Suche</div>'
+
+    hint = (f'{len(items)} Zentren gefunden für "{html.escape(q)}"'
             if q else f"{len(CENTERS)} autonome Firmen, live aus dem Netzwerk")
 
     body = f"""<!doctype html><html><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <title>CoEvolution AI — {len(CENTERS)} autonome Firmen, live</title>
 <style>
-@keyframes blink{{0%,100%{{opacity:1;box-shadow:0 0 0 0 var(--c)}}50%{{opacity:.35;box-shadow:0 0 8px 2px var(--c)}}}}
-@keyframes railmove{{0%{{background-position:0 0}}100%{{background-position:40px 0}}}}
+@keyframes hexin{{0%{{opacity:0;transform:scale(.55)}}70%{{opacity:1}}100%{{opacity:1;transform:scale(1)}}}}
+@keyframes blink{{0%,100%{{opacity:1}}50%{{opacity:.4}}}}
 body{{margin:0;background:#0a0e14;color:#e6edf3;font-family:-apple-system,Segoe UI,Inter,sans-serif;line-height:1.5}}
-.wrap{{max-width:1220px;margin:0 auto;padding:40px 24px 60px}}
+.wrap{{max-width:1220px;margin:0 auto;padding:88px 24px 60px}}
 .eyebrow{{color:#36d6a0;font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}}
-.eyebrow .dot{{width:7px;height:7px;border-radius:50%;background:#36d6a0;animation:blink 1.6s ease-in-out infinite;--c:#36d6a0}}
+.eyebrow .dot{{width:7px;height:7px;border-radius:50%;background:#36d6a0;animation:blink 1.6s ease-in-out infinite}}
 h1{{font-size:32px;font-weight:700;margin:0 0 10px;letter-spacing:-.01em;
 background:linear-gradient(90deg,#e6edf3,#9fd0ff 60%,#36d6a0);-webkit-background-clip:text;background-clip:text;color:transparent}}
 .lede{{color:#8b98a9;font-size:15px;max-width:720px;margin:0 0 22px}}
 .lede a{{color:#4ea1ff;text-decoration:none}}
-.track{{height:6px;border-radius:3px;margin:0 0 26px;
-background:repeating-linear-gradient(90deg,#2c4258 0 18px,#0a0e14 18px 26px);
-animation:railmove 2.2s linear infinite}}
 .search{{margin:0 0 8px}}
 .search input{{width:100%;max-width:520px;padding:12px 14px;background:#070b10;border:1px solid #1c2733;border-radius:10px;color:#e6edf3;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}}
 .search input:focus{{border-color:#4ea1ff}}
 .hint{{color:#5b6675;font-size:13px;margin:0 0 22px}}
-.fgrid{{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}}
-.tile{{position:relative;overflow:hidden;background:#0f141d;border:1px solid #1c2733;border-radius:14px;padding:18px 18px 18px 22px;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s,box-shadow .2s}}
-.tile:hover{{border-color:#4ea1ff;transform:translateY(-3px);box-shadow:0 8px 28px rgba(78,161,255,.12)}}
-.rail{{position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#4ea1ff,#36d6a0)}}
-.thead{{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}}
-.tname{{color:#e6edf3;font-weight:650;font-size:15px}}
-.tstatus{{display:flex;align-items:center;gap:6px;white-space:nowrap}}
-.led{{width:8px;height:8px;border-radius:50%;background:var(--c);animation:blink 1.8s ease-in-out infinite}}
-.lstatus{{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}}
-.vp{{color:#8b98a9;font-size:12.5px;line-height:1.45;margin-bottom:14px;min-height:54px}}
-.grid4{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}}
-.stat{{background:#070b10;border:1px solid #1c2733;border-left:3px solid var(--zc);border-radius:8px;padding:9px 12px}}
-.stat .k{{color:var(--zc);font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}}
-.stat .v{{color:#e6edf3;font-size:19px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}}
-.book{{margin-top:auto;background:#1b3a2a;border:1px solid #2c6b4a;color:#9ff0c8;text-decoration:none;text-align:center;padding:10px 16px;border-radius:9px;font-weight:600;font-size:14px;transition:background .2s}}
-.tile:hover .book{{background:#234c37}}
-.empty{{color:#5b6675;text-align:center;padding:30px;grid-column:1/-1}}
+.honeycomb{{display:block;width:100%;height:auto;overflow:visible}}
+.hex{{animation:hexin .5s cubic-bezier(.2,.9,.3,1.2) both}}
+.hex a{{display:block;text-decoration:none;color:inherit;cursor:pointer}}
+.hexshape{{fill:#0f141d;stroke-width:1.5;transition:fill .2s,stroke-width .2s;paint-order:stroke}}
+.hex:hover .hexshape{{fill:#141c28;stroke-width:2.5}}
+.hexbody{{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px;box-sizing:border-box;font-family:-apple-system,Segoe UI,Inter,sans-serif;pointer-events:none}}
+.hexname{{color:#e6edf3;font-weight:650;font-size:11px;line-height:1.25;margin-bottom:5px}}
+.hexled{{width:7px;height:7px;border-radius:50%;margin-bottom:5px;animation:blink 1.8s ease-in-out infinite}}
+.hexstats{{color:#8b98a9;font-size:9.5px;font-variant-numeric:tabular-nums;letter-spacing:.01em}}
+.empty{{color:#5b6675;text-align:center;padding:30px}}
 .foot{{color:#5b6675;font-size:12px;margin-top:36px}}
-@media(max-width:900px){{.fgrid{{grid-template-columns:repeat(2,1fr)}}}}
-@media(max-width:560px){{.fgrid{{grid-template-columns:1fr}}}}
-</style></head><body><div class=wrap>
+@media(max-width:640px){{.hexname{{font-size:9.5px}}.hexstats{{font-size:8.5px}}}}
+</style></head><body>{_nav_html('centers')}<div class=wrap>
 <div class=eyebrow><span class=dot></span>live · 292-agenten-engine</div>
 <h1>CoEvolution AI — {len(CENTERS)} autonome Firmen</h1>
-<p class=lede>Jede Kachel ist eine eigenständige, autonome Firma — Live-Status, Sessions, Umsatz, Leads und gelöste Probleme, einmal aus dem State gerendert (kein Flicker, keine Polling-Schleife). <a href="/observatory">→ Observatory</a> · <a href="/network">→ Center-Netzwerk</a></p>
-<div class=track></div>
+<p class=lede>Jede Wabe ist eine eigenständige, autonome Firma — klick rein für die volle Terrarium-Ansicht mit Live-Status, Sessions und laufenden Panels. <a href="/observatory">→ Observatory</a> · <a href="/network">→ Center-Netzwerk</a></p>
 <form class=search method=get><input name=q placeholder="Suche nach Problem, Fachgebiet oder Firma (z.B. GDPR, Security, Hiring)" value="{html.escape(q)}"></form>
 <p class=hint>{hint}</p>
-<div class=fgrid>{tiles}</div>
-<p class=foot>Live-Status-Kacheln · statisch gerendert, neu laden zum Aktualisieren · Zahlung sicher via RFI-IRFOS Stripe. · <a href="/privacy">Datenschutz</a></p>
-</div>{_tracker_js('search:' + q if q else '')}</body></html>"""
+{empty_note}
+<svg class=honeycomb viewBox="0 0 {vb_w:.1f} {vb_h:.1f}" xmlns="http://www.w3.org/2000/svg">{tiles_svg}</svg>
+<p class=foot>Live-Waben · Zahlen alle ~10s aktualisiert · Zahlung sicher via RFI-IRFOS Stripe. · <a href="/privacy">Datenschutz</a></p>
+</div>
+<script>(function(){{
+function poll(){{fetch('/api/live-grid').then(function(r){{return r.json()}}).then(function(d){{
+document.querySelectorAll('.hex').forEach(function(g){{
+var s=d[g.dataset.slug];if(!s)return;
+var c=g.querySelector('.hexshape'),color=c.getAttribute('data-c');
+var colorMap={{healthy:'#36d6a0',degraded:'#f0883e','0-status':'#f85c5c'}};
+var nc=colorMap[s.status]||color;
+c.setAttribute('data-c',nc);c.style.stroke=nc;
+var led=g.querySelector('.hexled');if(led)led.style.background=nc;
+var ss=g.querySelector('[data-k=sessions]');if(ss)ss.textContent=s.sessions;
+var rv=g.querySelector('[data-k=revenue]');if(rv)rv.textContent='€'+Math.round(s.revenue_eur);
+var ld=g.querySelector('[data-k=leads]');if(ld)ld.textContent=s.leads;
+}});}}).catch(function(){{}});}}
+setInterval(poll,10000);
+}})();</script>
+{_tracker_js('search:' + q if q else '')}</body></html>"""
     return web.Response(text=body, content_type="text/html")
 
 
@@ -1830,6 +2004,8 @@ app.router.add_get("/privacy", privacy_page)
 app.router.add_get("/health", health)
 app.router.add_get("/observatory", observatory)
 app.router.add_get("/network", network)
+app.router.add_get("/api/live-grid", live_grid)
+app.router.add_get("/api/center/{slug}/live", center_live)
 app.router.add_get("/{slug}", center_page_handler)
 app.router.add_get("/briefing/{slug}", briefing_page_handler)
 app.router.add_post("/signup", signup)
