@@ -968,7 +968,15 @@ async def observatory(request):
             "status": last.get("status"),
             "posture": (last.get("resolution") or {}).get("posture"),
         }
-    return web.json_response({
+    leads_by_center = {slug: len(state.get("leads", {}).get(slug, []))
+                       for slug in by_center}
+    spawn_candidates = {
+        slug: {"name": c.get("name"), "mandate": c.get("mandate"),
+                  "status": c.get("status"), "laura_pass": c.get("laura_pass"),
+                  "uncovered_signals": c.get("uncovered_signals", [])}
+        for slug, c in state.get("spawn_candidates", {}).items()
+    }
+    payload = {
         "centers_total": len(by_center),
         "centers_active": len(active),
         "total_sessions": total_sessions,
@@ -981,8 +989,7 @@ async def observatory(request):
         # Per-center CRM leads (Task 3): populated ONLY from real inbound
         # sessions + debates. Read-only here; no PII (hash only), no scrape.
         "leads_total": sum(len(v) for v in state.get("leads", {}).values()),
-        "leads": {slug: len(state.get("leads", {}).get(slug, []))
-                  for slug in by_center},
+        "leads": leads_by_center,
         "stripe_account": "RFI-IRFOS (verified link pool, %d links)" % len(STRIPE_LINKS),
         "cashflow": {s: {"name": b["name"], "sessions": b["sessions"],
                          "revenue_eur": round(b["revenue_eur"], 2),
@@ -991,13 +998,108 @@ async def observatory(request):
                      for s, b in by_center.items()},
         # FACTORY-FACTORY transparency: what the spawn-agent staged,
         # and whether Laura let it through. No human needed to SEE this.
-        "spawn_candidates": {
-            slug: {"name": c.get("name"), "mandate": c.get("mandate"),
-                      "status": c.get("status"), "laura_pass": c.get("laura_pass"),
-                      "uncovered_signals": c.get("uncovered_signals", [])}
-            for slug, c in state.get("spawn_candidates", {}).items()
-        },
-    })
+        "spawn_candidates": spawn_candidates,
+    }
+    # Machine path: keep the JSON contract 100% intact for API clients.
+    if request.headers.get("Accept", "").startswith("application/json"):
+        return web.json_response(payload)
+    # Human path (Task 5): a calm, static HTML watch-page so Simeon + Laura can
+    # WATCH the orchestra — status badges, debates, leads, spawn candidates and
+    # the Virtual Firm pipeline — without grepping state.json. Same Palantir
+    # palette as index(); no flicker, no auto-refresh loop.
+    return web.Response(
+        text=_observatory_html(by_center, payload, vf_counts),
+        content_type="text/html")
+
+
+def _observatory_html(by_center, payload, vf_counts):
+    """Render the calm observatory watch-page (static, no auto-refresh)."""
+    def _badge(status):
+        # blue=healthy, orange=degraded/0-status (reuses index accent tokens)
+        color = "#4ea1ff" if status == "healthy" else "#f0883e"
+        return (f'<span class=badge style="color:{color};'
+                f'border-color:{color}">{status}</span>')
+
+    rows = "".join(
+        f'<tr><td class=cn>{b["name"]}</td>'
+        f'<td>{_badge(get_center_status(slug))}</td>'
+        f'<td class=num>{b["sessions"]}</td>'
+        f'<td class=num>€{round(b["revenue_eur"], 2)}</td>'
+        f'<td class=num>{payload["leads"].get(slug, 0)}</td>'
+        f'<td><a href="{b["stripe_link"]}" target=_blank rel=noreferrer>pay link</a></td>'
+        f'</tr>'
+        for slug, b in by_center.items())
+
+    vf = payload["virtual_firm"]
+    stages = "".join(
+        f'<span class=pill>{stg}: <b>{vf_counts.get(stg, 0)}</b></span>'
+        for stg in PIPELINE_STAGES)
+
+    ld = payload["last_debate"]
+    last_debate = (f'last: <b>{ld.get("center")}</b> '
+                   f'({ld.get("status")}, {ld.get("posture") or "—"})'
+                   if ld else "no debates yet")
+
+    cands = "".join(
+        f'<tr><td class=cn>{c.get("name")}</td>'
+        f'<td>{c.get("status") or "—"}</td>'
+        f'<td>{"✔ Laura pass" if c.get("laura_pass") else "— gate pending"}</td>'
+        f'</tr>'
+        for c in payload["spawn_candidates"].values()) \
+        or '<tr><td colspan=3 class=empty>no spawn candidates staged</td></tr>'
+
+    return f"""<!doctype html><html><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>CoEvolution Observatory</title>
+<style>
+body{{margin:0;background:#0a0e14;color:#e6edf3;font-family:-apple-system,Segoe UI,Inter,sans-serif;line-height:1.5}}
+.wrap{{max-width:1100px;margin:0 auto;padding:40px 24px 60px}}
+h1{{font-size:30px;font-weight:650;margin:0 0 6px;letter-spacing:-.01em}}
+.lede{{color:#8b98a9;font-size:15px;max-width:720px;margin:0 0 26px}}
+.lede a{{color:#4ea1ff;text-decoration:none}}
+h2{{font-size:15px;font-weight:600;color:#8b98a9;text-transform:uppercase;letter-spacing:.08em;margin:30px 0 12px}}
+.stats{{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 8px}}
+.stat{{background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:12px 16px;min-width:120px}}
+.stat .k{{color:#5b6675;font-size:11px;text-transform:uppercase;letter-spacing:.06em}}
+.stat .v{{color:#e6edf3;font-size:22px;font-weight:650;margin-top:2px}}
+table{{width:100%;border-collapse:collapse;background:#0f141d;border:1px solid #1c2733;border-radius:12px;overflow:hidden}}
+th,td{{text-align:left;padding:10px 14px;font-size:13px;border-bottom:1px solid #1c2733}}
+th{{color:#5b6675;font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}}
+tr:last-child td{{border-bottom:none}}
+td.cn{{color:#e6edf3;font-weight:550}}
+td.num{{text-align:right;color:#c7d2e0;font-variant-numeric:tabular-nums}}
+th.num{{text-align:right}}
+a{{color:#4ea1ff;text-decoration:none}}
+.badge{{display:inline-block;border:1px solid;border-radius:10px;padding:1px 9px;font-size:11px;font-weight:600;letter-spacing:.02em}}
+.pill{{display:inline-block;background:#0f141d;border:1px solid #1c2733;border-radius:10px;padding:4px 11px;font-size:12px;color:#c7d2e0;margin:0 6px 6px 0}}
+.card{{background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:16px 18px;font-size:14px;color:#c7d2e0}}
+.empty{{color:#5b6675;text-align:center;padding:16px}}
+.foot{{color:#5b6675;font-size:12px;margin-top:36px}}
+</style></head><body><div class=wrap>
+<h1>CoEvolution Observatory</h1>
+<p class=lede>Watch the orchestra — center health, debates, leads and the Virtual Firm pipeline, rendered once from live state. No flicker, no polling loop. <a href="/">→ centers</a> · <a href="/network">→ network</a></p>
+<div class=stats>
+<div class=stat><div class=k>Centers</div><div class=v>{payload["centers_active"]}/{payload["centers_total"]}</div></div>
+<div class=stat><div class=k>Sessions</div><div class=v>{payload["total_sessions"]}</div></div>
+<div class=stat><div class=k>Revenue</div><div class=v>€{payload["total_revenue_eur"]}</div></div>
+<div class=stat><div class=k>Paid</div><div class=v>€{payload["total_paid_eur"]}</div></div>
+<div class=stat><div class=k>Leads</div><div class=v>{payload["leads_total"]}</div></div>
+</div>
+
+<h2>Centers</h2>
+<table><tr><th>Center</th><th>Status</th><th class=num>Sessions</th><th class=num>Revenue</th><th class=num>Leads</th><th>Stripe</th></tr>{rows}</table>
+
+<h2>Virtual Firm</h2>
+<div class=card><div style="margin-bottom:10px">{vf["label"]} · <b>{vf["offerings_total"]}</b> offerings</div>{stages}</div>
+
+<h2>Debates</h2>
+<div class=card>{payload["debates_resolved"]}/{payload["debates_total"]} resolved · {last_debate}</div>
+
+<h2>Spawn candidates</h2>
+<table><tr><th>Candidate</th><th>Status</th><th>Laura gate</th></tr>{cands}</table>
+
+<p class=foot>{payload["stripe_account"]} · static render, refresh to update.</p>
+</div></body></html>"""
 
 
 async def network(request):
