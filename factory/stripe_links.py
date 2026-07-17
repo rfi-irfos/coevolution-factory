@@ -51,12 +51,12 @@ TIER_TO_LINK = {
 def link_for_factory(slug, price):
     """Return the Stripe link a center should surface, by price tier.
 
-    NOTE on center attribution: a static buy-link cannot carry per-center
-    metadata on its own. To make the webhook attribute payments to the right
-    center, the Stripe link must be opened with `?metadata[center]=<slug>`
-    OR the link is created programmatically with metadata. Here we return the
-    bare link; the runtime surfaces it and the webhook reads metadata.center
-    when Stripe echoes it back (see runtime.stripe_webhook).
+    Center attribution: a static buy-link cannot carry per-center
+    metadata on its own. Stripe links accept `?metadata[center]=<slug>`
+    as a query param (echoed back to the webhook), so we append it
+    here. The webhook reads metadata.center to attribute the payment
+    to the right center — that is how we 'only track the cashflow'
+    per center.
     """
     if price <= 0.30:
         tier = "micro"
@@ -68,4 +68,6 @@ def link_for_factory(slug, price):
         tier = "large"
     else:
         tier = "enterprise"
-    return STRIPE_LINKS[TIER_TO_LINK[tier]]
+    base = STRIPE_LINKS[TIER_TO_LINK[tier]]
+    sep = "&" if "?" in base else "?"
+    return f"{base}{sep}metadata[center]={slug}"

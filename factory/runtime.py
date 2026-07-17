@@ -776,6 +776,10 @@ async def briefing_page_handler(request):
     st = load_state()
     briefs = st.get("briefings", {}).get(slug, [])
     c = CENTERS[slug]
+    # briefing subscription uses an existing Stripe link (monthly tier),
+    # attributed to this center via metadata[center] so the webhook tracks it.
+    sub_link = (STRIPE_LINKS["further_dev_monthly"]
+                 + "?metadata[center]=" + slug)
     cards = "".join(
         f'<div class=brf>'
         f'<div class=bhead><a class=bh href="{b["link"]}" target=_blank rel=noreferrer>{b["source"]}</a></div>'
@@ -811,6 +815,8 @@ a{{color:#4ea1ff}}
 <div class=ey>autonomous briefing feed</div>
 <h1>{c['name']} — briefings</h1>
 <p class=sub>Standing panel, convened on real regulatory & security signals from public feeds. Published on a schedule, even when no human is online. <a href="/{slug}">→ back to center</a></p>
+<div style="margin:18px 0"><a class=buy href="{sub_link}" target="_blank" rel="noopener">Subscribe to this center's autonomous briefing feed →</a>
+<div class=small style="margin-top:8px">A standing panel, briefed on real regulatory signals — delivered as it publishes. Secure payment via RFI-IRFOS Stripe.</div></div>
 {cards}
 </div></body></html>""", content_type="text/html")
 
