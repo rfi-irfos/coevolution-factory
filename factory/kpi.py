@@ -104,3 +104,50 @@ def plan_at_new_moon(slug, base=None):
     with open(p, "w") as f:
         yaml.safe_dump(k, f, sort_keys=False)
     return plan
+
+
+# --- Pheromone / Mycelium model (Simeon Q&A #7, simeon approves) ------------
+# How does nature validate? Mycelium networks + pheromone trails. No central
+# boss decides if a value-prop is good — the collective trail strength does.
+# Every good action leaves pheromone (partner found, ecocentric pass,
+# recurrence). Weak trails evaporate. A value-prop with a strong trail is
+# validated; one whose trail evaporates is stale -> evolve.py rewrites it.
+PHEROMONE_MODEL = True
+PHEROMONE_WEIGHTS = {
+    "partner": 1.0,        # referral -> strong trail
+    "ecocentric_pass": 0.5,
+    "recurrence": 0.3,
+    "hard_sell": -1.0,     # self-serving -> anti-trail (evaporates)
+}
+VP_STRENGTH_FLOOR = 1.0   # below this, value-prop is stale -> rewrite
+
+
+def track_pheromone(slug, action, base=None):
+    """Leave a pheromone trail for a good/bad action. Persists in kpi.yaml."""
+    w = PHEROMONE_WEIGHTS.get(action, 0.0)
+    k = load_kpi(slug, base)
+    k.setdefault("pheromones", {})
+    k["pheromones"][action] = k["pheromones"].get(action, 0.0) + w
+    k.setdefault("history", []).append({"ts": int(__import__("datetime").datetime.now(__import__("datetime").timezone.utc).timestamp()),
+                                        "pheromone": action, "weight": w})
+    p = kpi_path(slug, base)
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, "w") as f:
+        yaml.safe_dump(k, f, sort_keys=False)
+    return k["pheromones"]
+
+
+def vp_strength(slug, base=None):
+    """Trail strength = sum of pheromones. High = validated VP; low = stale."""
+    k = load_kpi(slug, base)
+    ph = k.get("pheromones", {})
+    return round(sum(ph.values()), 3)
+
+
+def mycelium_share(slugs, base=None):
+    """Mycelium: firms share their trail strength with each other (decentral).
+
+    Returns a mapping slug -> vp_strength so any firm can read the collective
+    without a central authority. Nature has no CEO; the network knows.
+    """
+    return {s: vp_strength(s, base=base) for s in slugs}
