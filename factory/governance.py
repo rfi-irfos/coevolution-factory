@@ -163,6 +163,58 @@ def evaluate_ecocentric(human_trit, eco_trit, systemic_trit=None):
     return ("pass", "serves the whole, not only the self")
 
 
+# When a firm may spawn a NEW daughter (Simeon Q&A #5, simeon approves):
+# A daughter must be SO autonomous + differently-colored that there is no
+# conflict of interest. Never similar firms. Every firm needs >=3 core
+# primitives, must be legal, must solve a real physical-world problem, and
+# must be crisis-resistant.
+MIN_CORE_PRIMITIVES = 3
+FORBIDDEN_DOMAINS = {"weapons", "surveillance-abuse", "illicit", "disinfo"}
+SIMILARITY_BAN = True  # no two firms may be near-duplicates
+
+
+def should_spawn_daughter(proposal, existing_slugs=None, existing_primitives=None):
+    """Gate a daughter proposal against Simeon's spawn constitution.
+
+    proposal = {
+      "name", "slug", "mandate",
+      "core_primitives": [..],        # >=3 required
+      "legal": bool,                  # must be legal
+      "solves_real_problem": bool,    # physical-world, ecocentric
+      "crisis_resistant": bool,       # demand survives downturns
+    }
+    Returns (bool allowed, reason).
+    """
+    primitives = proposal.get("core_primitives", [])
+    if len(primitives) < MIN_CORE_PRIMITIVES:
+        return (False, f"needs >= {MIN_CORE_PRIMITIVES} core primitives, got {len(primitives)}")
+    if not proposal.get("legal", False):
+        return (False, "not legal — hard ban")
+    # forbidden domain check
+    mandate_l = (proposal.get("mandate", "") + " " + proposal.get("name", "")).lower()
+    for dom in FORBIDDEN_DOMAINS:
+        if dom in mandate_l:
+            return (False, f"forbidden domain: {dom}")
+    if not proposal.get("solves_real_problem", False):
+        return (False, "does not solve a real physical-world problem")
+    if not proposal.get("crisis_resistant", False):
+        return (False, "not crisis-resistant")
+    # no conflict of interest / no near-duplicate
+    if SIMILARITY_BAN and existing_slugs:
+        slug = proposal.get("slug", "")
+        if slug in existing_slugs:
+            return (False, "slug already exists — no duplicate firms")
+        # similarity via core primitives: if a proposed daughter shares too
+        # many primitives with an existing firm, it is a near-duplicate (no
+        # conflict of interest / no redundant firms).
+        new_prims = set(proposal.get("core_primitives", []))
+        for ex_prims in (existing_primitives or []):
+            ex_set = set(ex_prims)
+            if ex_set and len(new_prims & ex_set) / min(len(new_prims), len(ex_set)) > 0.6:
+                return (False, "too similar to an existing firm — no near-duplicates")
+    return (True, "autonomous, distinct, legal, real-world, crisis-resistant")
+
+
 def score_lead(recurrence=0, referral=0, fit=0.0, hard_sell_attempt=False):
     """Score a lead the Simeon way — not churn-risk, but 50-year partner.
 
