@@ -1043,10 +1043,11 @@ def _observatory_html(by_center, payload, vf_counts):
     cands = "".join(
         f'<tr><td class=cn>{c.get("name")}</td>'
         f'<td>{c.get("status") or "—"}</td>'
+        f'<td>{c.get("source") or "spawn-agent"}</td>'
         f'<td>{"✔ Laura pass" if c.get("laura_pass") else "— gate pending"}</td>'
         f'</tr>'
         for c in payload["spawn_candidates"].values()) \
-        or '<tr><td colspan=3 class=empty>no spawn candidates staged</td></tr>'
+        or '<tr><td colspan=4 class=empty>no spawn candidates staged</td></tr>'
 
     return f"""<!doctype html><html><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
@@ -1090,13 +1091,19 @@ a{{color:#4ea1ff;text-decoration:none}}
 <table><tr><th>Center</th><th>Status</th><th class=num>Sessions</th><th class=num>Revenue</th><th class=num>Leads</th><th>Stripe</th></tr>{rows}</table>
 
 <h2>Virtual Firm</h2>
-<div class=card><div style="margin-bottom:10px">{vf["label"]} · <b>{vf["offerings_total"]}</b> offerings</div>{stages}</div>
+<div class=card>
+<div style="margin-bottom:10px">{vf["label"]} · <b>{vf["offerings_total"]}</b> offerings</div>
+{stages}
+<div style="margin-top:12px;font-size:13px;color:#8b98a9">
+<b>Loop status:</b> {("staged ✔ — spawn candidate queued for Laura gate" if vf.get("stage_transition", {}).get("advanced") else vf.get("launch_gate", ""))}
+</div>
+</div>
 
 <h2>Debates</h2>
 <div class=card>{payload["debates_resolved"]}/{payload["debates_total"]} resolved · {last_debate}</div>
 
 <h2>Spawn candidates</h2>
-<table><tr><th>Candidate</th><th>Status</th><th>Laura gate</th></tr>{cands}</table>
+<table><tr><th>Candidate</th><th>Status</th><th>Source</th><th>Laura gate</th></tr>{cands}</table>
 
 <p class=foot>{payload["stripe_account"]} · static render, refresh to update.</p>
 </div></body></html>"""
