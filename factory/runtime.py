@@ -73,17 +73,13 @@ RFI_TEAL = "#00f5c4"
 
 
 def _nav_html(active=""):
-    def link(href, label, key):
-        on = " style=color:#e6edf3;font-weight:700" if key == active else ""
-        return f'<a href="{href}"{on}>{html.escape(label)}</a>'
     return f"""<nav class=sitenav><div class=navwrap>
 <a class=brand href="/">
 <svg width="22" height="18" viewBox="0 0 54 18" fill="none" style="overflow:visible;flex-shrink:0">
 <polyline points="0,9 12,9 16,2 20,16 24,2 28,9 54,9" stroke="{RFI_TEAL}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg><span class=word>CoEvolution&nbsp;Factory</span>
 <span class=sub>by RFI-IRFOS</span></a>
-<div class=navlinks>{link('/', 'Centers', 'centers')}{link('/observatory', 'Observatory', 'observatory')}
-{link('/network', 'Network', 'network')}<a href="https://rfi-irfos.com" target=_blank rel=noreferrer>rfi-irfos.com ↗</a></div>
+<div class=navlinks><a href="https://rfi-irfos.com" target=_blank rel=noreferrer>rfi-irfos.com ↗</a></div>
 </div></nav>
 <style>
 .sitenav{{position:fixed;top:0;left:0;right:0;z-index:100;height:64px;background:rgba(10,14,20,.85);
@@ -1454,135 +1450,159 @@ def center_page(slug):
         f'data-q="{uc.replace(chr(34), "&quot;")}">{uc}</button>'
         for uc in ucs) if ucs else ""
     icp_pain_html = (
-        f'<div style="margin-top:12px;font-size:13px;color:#ffb38a">'
+        f'<div style="margin-top:10px;font-size:13px;color:#ffb38a">'
         f'{c["icp_pain"]}</div>') if c.get("icp_pain") else ""
     initial_stats = _live_stats_for(slug)
     initial_color = STATUS_COLOR.get(initial_stats["status"], "#f0883e")
+    # panel roster as avatar chips — plain-English label per role, two-letter
+    # initials for the avatar, so the "N experts" number from the old
+    # copy becomes a row of actual faces instead of an abstract count.
+    def _role_label(role):
+        return role.replace('-', ' ').replace('_', ' ').title()
+    def _role_initials(role):
+        parts = [p for p in role.replace('_', '-').split('-') if p]
+        return (parts[0][:1] + (parts[1][:1] if len(parts) > 1 else parts[0][1:2])).upper()
+    roster_html = "".join(
+        f'<span class=chip><span class=av>{_role_initials(p)}</span>{_role_label(p)}</span>'
+        for p in c["panel"])
     page = f"""<!doctype html><html><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <title>{c['name']} — interdisciplinary center</title>
 <style>body{{margin:0;background:#0a0e14;color:#e6edf3;font-family:-apple-system,Segoe UI,Inter,sans-serif;line-height:1.5}}
 .wrap{{max-width:860px;margin:0 auto;padding:88px 22px 60px}}
-.ey{{color:#36d6a0;font-size:12px;letter-spacing:.12em;text-transform:uppercase}}
-h1{{font-size:32px;margin:30px 0 10px;font-weight:650}}
-.sub{{color:#8b98a9;font-size:16px;max-width:640px;line-height:1.6}}
-.box{{background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:22px;margin-top:26px}}
+h1{{font-size:32px;margin:26px 0 8px;font-weight:700;letter-spacing:-.01em}}
+.tagline{{color:#8b98a9;font-size:16px;max-width:620px;line-height:1.55}}
+.herorow{{display:flex;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap}}
+.box{{background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:22px;margin-top:22px}}
 button{{background:#14202e;color:#cfe6ff;border:1px solid #2c4258;border-radius:8px;padding:9px 16px;cursor:pointer}}
-.buy{{background:#1b3a2a;border-color:#2c6b4a;color:#9ff0c8;text-decoration:none;display:inline-block;padding:10px 18px;border-radius:8px;margin-top:14px}}
+.buy{{background:#1b3a2a;border-color:#2c6b4a;color:#9ff0c8;text-decoration:none;display:inline-block;padding:11px 20px;border-radius:9px;font-weight:700;font-size:14px}}
+.freenote{{color:#5b6675;font-size:13px}}
 input,textarea{{width:100%;padding:10px;background:#070b10;border:1px solid #1c2733;border-radius:8px;color:#e6edf3;margin:8px 0;font-family:inherit;box-sizing:border-box}}
 pre{{background:#070b10;border:1px solid #1c2733;border-radius:8px;padding:12px;overflow:auto;font-size:12px;max-height:260px}}
 .small{{color:#5b6675;font-size:12px}} a{{color:#4ea1ff}}
-.disc{{display:inline-block;background:#11202e;border:1px solid #21384a;border-radius:14px;padding:3px 10px;margin:3px;font-size:12px;color:#9fd0ff}}
-.tab{{display:inline-block;padding:8px 14px;cursor:pointer;color:#8b98a9;margin-right:6px;user-select:none}}
-.tab.on{{color:#e6edf3;border-bottom:2px solid #36d6a0}}
-.tab:hover{{color:#cfe6ff}}
-.val{{background:#0f1a14;border:1px solid #1c3a2a;border-radius:8px;padding:8px 10px;font-size:12px;color:#cfe6ff}}
-.valrow{{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}}
 .out{{background:#070b10;border:1px solid #1c2733;border-radius:8px;padding:12px;margin-top:6px;font-size:13px;min-height:60px;white-space:normal;line-height:1.5}}
 button:disabled{{opacity:.6;cursor:default}}
 @keyframes tdot{{0%,100%{{opacity:1}}50%{{opacity:.4}}}}
-.terrarium{{border-color:{initial_color}44}}
-.tstats{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}}
-.tstat{{background:#070b10;border:1px solid #1c2733;border-radius:8px;padding:9px 12px;text-align:center}}
+@keyframes glow{{0%,100%{{box-shadow:0 0 0 0 {initial_color}33}}50%{{box-shadow:0 0 22px 3px {initial_color}33}}}}
+.dash{{border-color:{initial_color}55;animation:glow 3.2s ease-in-out infinite;background:radial-gradient(ellipse at top left,#101a24,#0f141d 65%)}}
+.dashtop{{display:flex;align-items:center;gap:10px}}
+.dashtop .liveword{{color:#8b98a9;font-size:11px;text-transform:uppercase;letter-spacing:.14em;font-weight:700}}
+.dashtop .dashsub{{color:#5b6675;font-size:11px;margin-left:auto}}
+.tstats{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}}
+.tstat{{background:#070b10;border:1px solid #1c2733;border-radius:10px;padding:12px 10px;text-align:center}}
 .tstat .k{{color:#5b6675;font-size:10px;text-transform:uppercase;letter-spacing:.06em}}
-.tstat .v{{color:#e6edf3;font-size:19px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}}
-.tled{{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;animation:tdot 1.8s ease-in-out infinite}}
-.tactivity{{margin-top:12px;font-size:13px;color:#9fd0ff;background:#0f1a14;border:1px solid #1c3a2a;border-radius:8px;padding:10px 12px}}
-@media(max-width:620px){{.tab{{display:block;margin:4px 0;border-bottom:none!important}}.valrow{{grid-template-columns:1fr}}.tstats{{grid-template-columns:1fr 1fr}}}}</style></head>
+.tstat .v{{color:#e6edf3;font-size:22px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}}
+.tled{{width:9px;height:9px;border-radius:50%;display:inline-block;animation:tdot 1.8s ease-in-out infinite}}
+.roster{{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}}
+.chip{{display:flex;align-items:center;gap:6px;background:#0f1a14;border:1px solid #1c3a2a;border-radius:20px;padding:5px 12px 5px 6px;font-size:12px;color:#9fd0ff}}
+.chip .av{{width:20px;height:20px;border-radius:50%;background:#1b3a2a;color:#9ff0c8;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}}
+.chip.active .av{{background:#36d6a0;color:#04140c;animation:tdot 1.4s ease-in-out infinite}}
+.tactivity{{margin-top:14px;font-size:13px;color:#9fd0ff;background:#0f1a14;border:1px solid #1c3a2a;border-radius:8px;padding:10px 12px}}
+.asktabs{{display:flex;gap:4px;background:#070b10;border:1px solid #1c2733;border-radius:10px;padding:4px;margin-bottom:2px}}
+.asktabs .tab{{flex:1;text-align:center;padding:8px 6px;border-radius:7px;cursor:pointer;color:#8b98a9;font-size:12.5px;font-weight:600;user-select:none}}
+.asktabs .tab.on{{background:#14202e;color:#e6edf3}}
+.chips{{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}}
+.chips button{{background:#0f141d;border:1px solid #1c2733;border-radius:16px;padding:6px 12px;font-size:12px;color:#9fd0ff;cursor:pointer}}
+.chips button:hover{{border-color:#2c4258}}
+.meta{{margin-top:30px;padding-top:18px;border-top:1px solid #1c2733;color:#5b6675;font-size:12px;line-height:1.8}}
+.meta a{{color:#5b6675;text-decoration:underline}}
+@media(max-width:620px){{.tstats{{grid-template-columns:1fr 1fr}}.asktabs{{flex-direction:column}}}}</style></head>
 <body>{_nav_html()}
 <div class=wrap>
-<div class=ey>standing interdisciplinary center · live engine · payments via RFI-IRFOS</div>
 <h1>{c['name']}</h1>
-<p class=sub>{c['mandate']}.<br><br><b>Why crisis-resistant:</b> {c['resilient']}<br><br><span style=color:#8b98a9>The engine is a decision-support tool that surfaces expert perspectives; it is not a substitute for qualified counsel.</span></p>
-<div class=box style="border-color:#2c6b4a">
-<div class=valrow>
-<div class=val><b>{len(c['panel'])} experts</b> across {len(c['disciplines'])} disciplines review your question</div>
-<div class=val>simulate a decision before you ship it</div>
-<div class=val>continuous standing posture check</div>
-</div>
-<div style="margin-top:14px;font-size:13px;color:#9fd0ff">price: first {c['free']} sessions free, then <b>EUR {c['price']}/session</b> · built for {c['icp']}</div>
+<p class=tagline>{c['mandate']}.</p>
+<div class=herorow>
+<a class=buy id=buyLink href="{stripe_link}" target="_blank" rel="noopener">Buy sessions — €{c['price']} each →</a>
+<span class=freenote>first {c['free']} sessions free · built for {c['icp']}</span>
 </div>
 {icp_pain_html}
 {reduced_mode_html}
-<div class="box terrarium" id=terrarium>
-<div class=small style="color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-size:11px">
-<span class=tled id=tled style="background:{initial_color}"></span>terrarium — live</div>
+<div class="box dash" id=terrarium>
+<div class=dashtop>
+<span class=tled id=tled style="background:{initial_color}"></span>
+<span class=liveword>live right now</span>
+<span class=dashsub>updates every few seconds, no refresh needed</span>
+</div>
 <div class=tstats>
-<div class=tstat><div class=k>Status</div><div class=v id=tstatus style="color:{initial_color};font-size:13px">{html.escape(initial_stats['status'])}</div></div>
+<div class=tstat><div class=k>Status</div><div class=v id=tstatus style="color:{initial_color};font-size:15px">{html.escape(initial_stats['status'])}</div></div>
 <div class=tstat><div class=k>Sessions</div><div class=v id=tsessions>{initial_stats['sessions']}</div></div>
 <div class=tstat><div class=k>Revenue</div><div class=v id=trevenue>€{initial_stats['revenue_eur']:.0f}</div></div>
 <div class=tstat><div class=k>Leads</div><div class=v id=tleads>{initial_stats['leads']}</div></div>
 </div>
-<div class=tactivity id=tactivity>watching for activity…</div>
+<div class=roster>{roster_html}</div>
+<div class=tactivity id=tactivity>no live session running — try it below and watch this panel light up</div>
 </div>
-<div style="margin-top:18px"><div class=small style="color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-size:11px">typical questions this center answers</div>
-<div style="margin-top:8px">
-{use_cases_html}
-</div>
-<div class=small style="margin-top:6px;color:#5b6675">click a question to drop it into the panel ↓</div>
-</div>
+
 <div class=box>
-<div class=tab id=t1 class=on>1 · Convene panel</div><div class=tab id=t2>2 · Scenario sim</div><div class=tab id=t3>3 · Standing check</div>
-<div style="margin-top:14px"><input id=email placeholder="you@company.com"><button id=su>issue key</button>
-<div class=small>key: <span id=key style=color:#36d6a0>—</span> <span style=color:#5b6675>(saved on this device)</span></div></div>
-<div id=ctxwrap style="display:none;margin-top:8px"><input id=ctx placeholder="optional context for the scenario"></div>
-<div style="margin-top:10px"><textarea id=doc placeholder="{c['sample_question']}"></textarea>
-<button id=run>convene panel</button><span id=runlabel style="display:none">convene panel</span>
-<div class=small id=bill style="margin-top:8px">issue a key above — first runs are free</div></div>
-<div class=small style="margin-top:14px">result</div>
-<div id=out class=out>awaiting…</div>
-<a class=buy id=buyLink href="{stripe_link}" target="_blank" rel="noopener">Sponsor this center / buy sessions →</a>
-<div style="margin-top:10px"><a href="/briefing/{slug}" style="color:#9fd0ff;font-size:13px">→ read this center's autonomous briefings</a></div>
-<div class=small style="margin-top:8px">Secure payment via RFI-IRFOS Stripe. · <a href="/privacy">Datenschutz</a></div>
+<div class=asktabs><div class=tab id=t1 class=on>Ask a question</div><div class=tab id=t2>Test a decision</div><div class=tab id=t3>Quick health check</div></div>
+<div style="margin-top:14px"><input id=email placeholder="you@company.com — where we send your free answer"></div>
+<div id=ctxwrap style="display:none"><input id=ctx placeholder="optional: a bit more context"></div>
+<textarea id=doc placeholder="{c['sample_question']}"></textarea>
+{('<div class=chips>' + use_cases_html + '</div>') if use_cases_html else ''}
+<button id=run style="margin-top:12px;width:100%">ask now — first {c['free']} free</button><span id=runlabel style="display:none">Ask now</span>
+<div class=small id=key style="display:none"></div>
+<div class=small id=bill style="margin-top:8px"></div>
+<div class=small style="margin-top:14px">answer</div>
+<div id=out class=out>waiting for your question…</div>
 </div>
-<div style="margin-top:24px"><div class=small>adjacent centers (shared expertise graph):</div>
-<div style="margin-top:8px">{adj_links or '—'}</div></div>
+
+<div class=meta>
+Payments via RFI-IRFOS Stripe · <a href="/privacy">Datenschutz</a> · <a href="/briefing/{slug}">this center's autonomous briefings</a>{(' · related: ' + adj_links) if adj_links else ''}
+<br>This is a decision-support tool that surfaces expert perspectives — not a substitute for qualified counsel.
+</div>
 </div></body>
 """
     js = r"""const $=id=>document.getElementById(id);const slug='__SLUG__';
 function esc(s){return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
-try{const k=localStorage.getItem('ct_'+slug);if(k)$('key').textContent=k;}catch(e){}
-function renderSynth(s,demo){if(!s)return '<span style=color:#8b98a9>no synthesis</span>';
+let currentKey='';try{currentKey=localStorage.getItem('ct_'+slug)||'';}catch(e){}
+function renderSynth(s,demo){if(!s)return '<span style=color:#8b98a9>no answer came back</span>';
  const posture=s.posture||'unknown';
  const color=posture==='stable'?'#36d6a0':posture==='watch'?'#e8c14a':posture==='elevated'?'#ff8a8a':'#8b98a9';
- let h='<div style="margin:4px 0 10px"><b style="color:'+color+'">POSTURE: '+posture.toUpperCase()+'</b> · '+(s.disciplines_fired||0)+'/'+(s.panel_size||0)+' disciplines responded';
- if(demo)h+=' · <span style=color:#e8c14a>DEMO MODE (engine key not configured)</span>';h+='</div>';
- (s.flags||[]).forEach(f=>{h+='<div style="border-left:3px solid #ff8a8a;padding:6px 10px;margin:6px 0;background:#1a1014"><b>⚠ '+esc(f.agent)+'</b> <span style=color:#ff8a8a>['+esc(f.severity)+']</span><br>'+esc(f.description);if(f.evidence)h+='<div style=color:#8b98a9;font-size:12px>evidence: '+esc(f.evidence)+'</div>';h+='</div>';});
- (s.conflicts||[]).forEach(cf=>{h+='<div style="border-left:3px solid #e8c14a;padding:6px 10px;margin:6px 0;background:#1a1710"><b>Tension</b> — flagged by '+esc((cf.flag_by||[]).join(', '))+' but cleared by '+esc(cf.note_by||'')+'<div style=color:#8b98a9;font-size:12px>evidence: '+esc(cf.evidence||'')+'</div></div>';});
+ let h='<div style="margin:4px 0 10px"><b style="color:'+color+'">'+posture.toUpperCase()+'</b> · '+(s.disciplines_fired||0)+'/'+(s.panel_size||0)+' experts responded';
+ if(demo)h+=' · <span style=color:#e8c14a>demo mode (engine not configured)</span>';h+='</div>';
+ (s.flags||[]).forEach(f=>{h+='<div style="border-left:3px solid #ff8a8a;padding:6px 10px;margin:6px 0;background:#1a1014"><b>'+esc(f.agent)+'</b> <span style=color:#ff8a8a>['+esc(f.severity)+']</span><br>'+esc(f.description);if(f.evidence)h+='<div style=color:#8b98a9;font-size:12px>evidence: '+esc(f.evidence)+'</div>';h+='</div>';});
+ (s.conflicts||[]).forEach(cf=>{h+='<div style="border-left:3px solid #e8c14a;padding:6px 10px;margin:6px 0;background:#1a1710"><b>Open tension</b> - flagged by '+esc((cf.flag_by||[]).join(', '))+' but cleared by '+esc(cf.note_by||'')+'<div style=color:#8b98a9;font-size:12px>evidence: '+esc(cf.evidence||'')+'</div></div>';});
  (s.notes||[]).slice(0,12).forEach(n=>{h+='<div style="border-left:3px solid #2c4258;padding:6px 10px;margin:6px 0;background:#0f141d"><b>'+esc(n.agent)+'</b><br>'+esc(n.description);if(n.evidence)h+='<div style=color:#8b98a9;font-size:12px>evidence: '+esc(n.evidence)+'</div>';h+='</div>';});
- if(!(s.flags||[]).length&&!(s.notes||[]).length&&!(s.conflicts||[]).length)h+='<div style=color:#8b98a9>No flags or notes returned.</div>';
+ if(!(s.flags||[]).length&&!(s.notes||[]).length&&!(s.conflicts||[]).length)h+='<div style=color:#8b98a9>Nothing flagged.</div>';
  return h;}
 function poll(run_id){return new Promise(res=>{const tick=async()=>{try{const r=await fetch('/api/center/result/'+run_id);const j=await r.json();
   if(j.status==='done'){res(j);}else if(j.status==='error'){$('out').innerHTML='<span style=color:#ff8a8a>error: '+esc(j.error||'unknown')+'</span>';res(j);}
-  else{$('out').innerHTML='<span style=color:#9fd0ff>Panel convening… ('+esc(j.status)+') — usually 30–60s</span>';setTimeout(tick,3000);}}catch(e){$('out').innerHTML='<span style=color:#ff8a8a>poll failed: '+esc(e)+'</span>';res({});}};tick();});}
-async function su(){const r=await fetch('/signup?center='+slug,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('email').value})});const j=await r.json();
- if(j.key){$('key').textContent=j.key;try{localStorage.setItem('ct_'+slug,j.key);}catch(e){}$('bill').textContent='✓ key issued — first '+j.free_sessions+' sessions free, then EUR '+j.price_eur+'/session';}
- else{$('out').innerHTML='<span style=color:#e8c14a>'+esc(JSON.stringify(j))+'</span>';}}
-async function run(){const k=$('key').textContent;if(k==='—'||!k){$('out').innerHTML='<span style=color:#e8c14a>issue a key first (top of panel)</span>';return;}
+  else{$('out').innerHTML='<span style=color:#9fd0ff>The panel is working on it… (usually 30-60s)</span>';setTimeout(tick,3000);}}catch(e){$('out').innerHTML='<span style=color:#ff8a8a>lost connection: '+esc(e)+'</span>';res({});}};tick();});}
+async function ensureKey(){
+ if(currentKey)return currentKey;
+ const email=($('email').value||'').trim();
+ if(!email){$('out').innerHTML='<span style=color:#e8c14a>enter your email above first — that\'s where your free answer goes</span>';return null;}
+ const r=await fetch('/signup?center='+slug,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+ const j=await r.json();
+ if(j.key){currentKey=j.key;try{localStorage.setItem('ct_'+slug,currentKey);}catch(e){}
+  $('bill').textContent='first '+j.free_sessions+' sessions free, then EUR '+j.price_eur+'/session';return currentKey;}
+ $('out').innerHTML='<span style=color:#e8c14a>'+esc(JSON.stringify(j))+'</span>';return null;}
+async function run(){const k=await ensureKey();if(!k)return;
  const tab=window._tab||'t1';const doc=$('doc').value.trim();
- if(tab==='t1'){if(!doc){$('out').innerHTML='<span style=color:#e8c14a>enter your question above</span>';return;}
-  $('run').disabled=true;$('run').textContent='convening…';$('out').innerHTML='<span style=color:#9fd0ff>Queued — convening the panel now…</span>';
+ if(tab==='t1'){if(!doc){$('out').innerHTML='<span style=color:#e8c14a>type your question above</span>';return;}
+  $('run').disabled=true;$('run').textContent='asking…';$('out').innerHTML='<span style=color:#9fd0ff>Sent to the panel — thinking…</span>';
   const r=await fetch('/api/center?center='+slug,{method:'POST',headers:{Authorization:'Bearer '+k,'Content-Type':'application/json'},body:JSON.stringify({text:doc})});const j=await r.json();
   if(j.run_id){const fin=await poll(j.run_id);$('run').disabled=false;$('run').textContent=$('runlabel').textContent;
    if(fin.synthesis){$('out').innerHTML=renderSynth(fin.synthesis,fin.demo);if(fin.billed_eur!==undefined)$('bill').textContent='billed EUR '+fin.billed_eur;}}
   else{$('out').innerHTML='<span style=color:#ff8a8a>'+esc(JSON.stringify(j))+'</span>';$('run').disabled=false;$('run').textContent=$('runlabel').textContent;}}
- else if(tab==='t2'){if(!doc){$('out').innerHTML='<span style=color:#e8c14a>describe the proposed action</span>';return;}
-  $('run').disabled=true;$('run').textContent='simulating…';$('out').innerHTML='<span style=color:#9fd0ff>Running scenario through the panel…</span>';
+ else if(tab==='t2'){if(!doc){$('out').innerHTML='<span style=color:#e8c14a>describe the decision you\'re about to make</span>';return;}
+  $('run').disabled=true;$('run').textContent='testing…';$('out').innerHTML='<span style=color:#9fd0ff>Running it past the panel…</span>';
   const r=await fetch('/api/center/scenario?center='+slug,{method:'POST',headers:{Authorization:'Bearer '+k,'Content-Type':'application/json'},body:JSON.stringify({action:doc,context:($('ctx').value||'')})});const j=await r.json();
   $('run').disabled=false;$('run').textContent=$('runlabel').textContent;
   $('out').innerHTML=j.synthesis?renderSynth(j.synthesis,j.demo):'<span style=color:#ff8a8a>'+esc(JSON.stringify(j))+'</span>';}
- else{$('run').disabled=true;$('run').textContent='checking…';$('out').innerHTML='<span style=color:#9fd0ff>Running standing posture check…</span>';
+ else{$('run').disabled=true;$('run').textContent='checking…';$('out').innerHTML='<span style=color:#9fd0ff>Checking current standing…</span>';
   const r=await fetch('/api/center/healthcheck?center='+slug,{method:'POST',headers:{Authorization:'Bearer '+k,'Content-Type':'application/json'},body:JSON.stringify({})});const j=await r.json();
   $('run').disabled=false;$('run').textContent=$('runlabel').textContent;
   $('out').innerHTML=j.synthesis?renderSynth(j.synthesis,j.demo):'<span style=color:#ff8a8a>'+esc(JSON.stringify(j))+'</span>';}}
 function showTab(n){['t1','t2','t3'].forEach(t=>$(t).classList.toggle('on',t===n));
  $('ctxwrap').style.display=(n==='t2')?'block':'none';
- $('runlabel').textContent=n==='t1'?'convene panel':(n==='t2'?'simulate scenario':'run standing check');
- $('doc').placeholder=n==='t1'?__SAMPLE__:(n==='t2'?'PROPOSED ACTION — e.g. we ship X without a DPIA':'standing check needs no input');
+ $('runlabel').textContent=n==='t1'?'Ask now':(n==='t2'?'Test it':'Check now');
+ $('run').textContent=$('runlabel').textContent;
+ $('doc').placeholder=n==='t1'?__SAMPLE__:(n==='t2'?'the decision you\'re about to make - e.g. we ship X without a DPIA':'no input needed - just checks current standing');
  window._tab=n;}
 ['t1','t2','t3'].forEach(t=>$(t).onclick=()=>showTab(t));showTab('t1');
 document.querySelectorAll('.uc').forEach(b=>b.onclick=()=>{const q=b.getAttribute('data-q')||b.textContent;$('doc').value=q;showTab('t1');$('doc').scrollIntoView({behavior:'smooth',block:'center'});});
-$('su').onclick=su;$('run').onclick=run;
+$('run').onclick=run;
 // Offer click-through beacon — target=_blank so the current tab never unloads,
 // a plain fetch is enough (no keepalive/sendBeacon needed).
 $('buyLink').addEventListener('click',function(){fetch('__TRACK_URL__',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1599,8 +1619,9 @@ $('tsessions').textContent=s.sessions;
 $('trevenue').textContent='€'+Math.round(s.revenue_eur);
 $('tleads').textContent=s.leads;
 var act=$('tactivity');
-if(s.active_job){act.innerHTML='<b style=color:#36d6a0>● live</b> — a panel is convening right now ('+esc(s.active_job.status)+')';}
-else{act.textContent='no panel currently running — click "Convene panel" below to start one';}
+document.querySelectorAll('.roster .chip').forEach(function(el){el.classList.toggle('active',!!s.active_job);});
+if(s.active_job){act.innerHTML='<b style=color:#36d6a0>● live now</b> - a real question is being answered right now ('+esc(s.active_job.status)+')';}
+else{act.textContent='no live session right now - ask a question below and watch this light up';}
 }).catch(function(){});}
 pollLive();setInterval(pollLive,3000);"""
     js = (js.replace("__SLUG__", slug).replace("__SAMPLE__", json.dumps(c["sample_question"]))
@@ -1762,9 +1783,16 @@ async def firms_grid(request):
         color = STATUS_COLOR.get(stats["status"], "#f0883e")
         delay = min(i * 0.028, 1.1)
         fo_size = HEX_SIZE * 1.35
+        # Two nested <g>s on purpose: the OUTER one carries the SVG
+        # positioning transform="translate(...)" attribute and is never
+        # touched by CSS. The INNER one carries the CSS `hexin` keyframe
+        # animation (opacity/scale). A CSS animation that sets `transform`
+        # on an element REPLACES that element's transform attribute rather
+        # than composing with it — putting position and animation on the
+        # same <g> silently collapsed every tile onto the same coordinates.
         return (
-            f'<g class=hex data-slug="{s}" transform="translate({x - min_x:.1f},{y - min_y:.1f})" '
-            f'style="animation-delay:{delay:.3f}s">'
+            f'<g transform="translate({x - min_x:.1f},{y - min_y:.1f})">'
+            f'<g class=hex data-slug="{s}" style="animation-delay:{delay:.3f}s">'
             f'<a href="/{s}">'
             f'<polygon class=hexshape points="{HEX_POINTS}" data-c="{color}" style="stroke:{color}"/>'
             f'<foreignObject x="{-fo_size/2:.1f}" y="{-fo_size/2:.1f}" width="{fo_size:.1f}" height="{fo_size:.1f}">'
@@ -1776,7 +1804,7 @@ async def firms_grid(request):
             f'<span data-k=revenue>€{stats["revenue_eur"]:.0f}</span> · '
             f'<span data-k=leads>{stats["leads"]}</span>&nbsp;L'
             f'</div></div></foreignObject>'
-            f'</a></g>')
+            f'</a></g></g>')
 
     tiles_svg = "".join(_tile(i, s, c) for i, (s, c) in enumerate(items))
     empty_note = "" if items else '<div class=empty>keine Zentren passen zur Suche</div>'
@@ -1831,7 +1859,7 @@ background:linear-gradient(90deg,#e6edf3,#9fd0ff 60%,#36d6a0);-webkit-background
 </style></head><body>{_nav_html('centers')}<div class=wrap>
 <div class=eyebrow><span class=dot></span>live · 292-agenten-engine</div>
 <h1>CoEvolution AI — {len(CENTERS)} autonome Firmen</h1>
-<p class=lede>Jede Wabe ist eine eigenständige, autonome Firma — klick rein für die volle Terrarium-Ansicht mit Live-Status, Sessions und laufenden Panels. <a href="/observatory">→ Observatory</a> · <a href="/network">→ Center-Netzwerk</a></p>
+<p class=lede>Jede Wabe ist eine eigenständige, autonome Firma. Klick rein für die volle Ansicht: was sie tut, was sie gerade live macht, und wie du sie buchst.</p>
 <div class=kpibar>
 <div class=kpi><div class=k>Firmen im Netzwerk</div><div class=v>{len(CENTERS)}</div></div>
 <div class=kpi><div class=k>Healthy</div><div class=v style="color:#36d6a0">{kpi_healthy}/{len(CENTERS)}</div></div>
