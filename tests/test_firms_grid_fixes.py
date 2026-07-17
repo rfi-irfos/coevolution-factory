@@ -35,12 +35,17 @@ def seeded():
 def test_firms_grid_per_center_problems_and_title(seeded):
     import runtime as R
     req = MagicMock()
+    req.query = {}  # real aiohttp gives a dict-like MultiDict; firms_grid() now reads ?q= for search
     resp = asyncio.run(R.firms_grid(req))
     html = resp.text
     # gdpr-guard: 2 usage + 1 resolved debate = 3
     # ai-act-guard: 1 usage + 1 resolved debate = 2
     assert "3" in html and "2" in html, "per-center problem counts must differ"
-    assert "19" not in html.split("Geld")[0], "global fake '19' should be gone"
+    # revenue is now genuinely per-center (2026-07-17 landing-page rewrite:
+    # Sessions/Revenue/Leads/Gelöst zones), not a repeated network-wide total —
+    # gdpr-guard (2 usage x 25.0) and ai-act-guard (1 usage x 25.0) must differ.
+    assert "€50.0" in html and "€25.0" in html, \
+        "per-center revenue must differ, not repeat one global total on every tile"
     expected = str(len(R.CENTERS))
     assert f"{expected} autonome Firmen" in html, \
         f"title should say {expected} firms, not hardcoded 50"
