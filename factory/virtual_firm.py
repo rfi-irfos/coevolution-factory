@@ -22,11 +22,53 @@ Doctrine wired here:
     candidate; daily_spawn.gate_candidate runs Laura as FINAL gate #1). This
     module refuses to set 'launched' and says so explicitly.
 """
+import os
 import time
 
-import runtime as R
+import daily_spawn as DS  # noqa: E402  (promote + second-reviewer gate)
+import runtime as R  # noqa: E402
+from runtime import CENTER_SLUGS  # noqa: E402  (mutable registry for launch/rollback)
 
 LABEL = "VIRTUAL FIRM (agentic, data-processing only)"
+
+# Opt-in auto-launch (Simeon/Laura 2026-07-17): a staged offering may launch
+# ITSELF only when EVERY gate is true — see launch_staged_offering(). Off by
+# default; requires explicit VF_AUTO_LAUNCH=1 + HITL_SECOND_REVIEWER + laura_pass.
+_AUTO_LAUNCH = os.environ.get("VF_AUTO_LAUNCH", "0") == "1"
+_SECOND_REVIEWER = bool(os.environ.get("HITL_SECOND_REVIEWER"))
+
+
+def _snapshot_for_rollback(oid, slug):
+    """Capture pre-launch CENTERS keys so a launch is reversible. Stored under
+    state['rollback'][oid]; rollback_launch() restores exactly this state."""
+    R.state.setdefault("rollback", {})[oid] = {
+        "slug": slug,
+        "centers_keys": list(R.CENTERS.keys()),
+        "at": int(time.time()),
+    }
+
+
+def rollback_launch(oid):
+    """Reverse a launch: remove the promoted center and drop the offering back
+    to 'staged'. Reversible ONLY for launches this module performed (oid in
+    state['rollback']). Returns {ok, reason}."""
+    rb = R.state.get("rollback", {}).get(oid)
+    if not rb:
+        return {"ok": False, "reason": "no rollback record for this offering"}
+    slug = rb["slug"]
+    # remove from the running registry (mirror of daily_spawn.promote)
+    R.CENTERS.pop(slug, None)
+    if slug in CENTER_SLUGS:
+        CENTER_SLUGS.remove(slug)
+    R.CENTER_NETWORK.pop(slug, None)
+    R.state.get("centers", {}).pop(slug, None)
+    R.state.get("daughter_centers", {}).pop(slug, None)
+    rec = R.state.get("pipeline", {}).get(oid)
+    if rec is not None:
+        rec["stage"] = "staged"
+        rec["updated"] = int(time.time())
+    R.save_state(R.state)
+    return {"ok": True, "reason": f"rolled back launch of {slug}", "slug": slug}
 
 
 def _year(ts=None):
@@ -154,6 +196,73 @@ def promote_prototype_to_staged(center):
             "reason": f"staged: resolved debate + {lead_count} leads; "
                       f"spawn_candidate '{cand_slug}' queued for Laura gate",
             "candidate": cand_slug}
+
+
+def launch_staged_offering(oid):
+    """Autonomously LAUNCH a staged offering — REVERSIBLY — but ONLY when every
+    gate is true:
+
+      * VF_AUTO_LAUNCH=1  (explicit opt-in, off by default)
+      * HITL_SECOND_REVIEWER set (OQ2 second human slot present)
+      * candidate.laura_pass == True  (Laura gate #1 cleared; the FINAL ship gate)
+
+    If any gate is false, this returns {launched: False, reason} and leaves the
+    offering at 'staged' for the human/Laura path. When all gates pass, it:
+      1. snapshots pre-launch CENTERS keys (rollback record),
+      2. promotes the candidate to a real standing center (daily_spawn.promote),
+      3. stamps second-reviewer presence + laura_pass on the record,
+      4. sets the offering stage to 'launched' + records the rollback oid.
+
+    Rollback: rollback_launch(oid) reverses all of the above.
+
+    Doctrine: LAURA STAYS GATE #1. Without laura_pass this NEVER launches, even
+    with auto-launch + second reviewer set. Reversible by design.
+    """
+    rec = R.state.get("pipeline", {}).get(oid)
+    if rec is None:
+        return {"launched": False, "reason": "unknown offering"}
+    if rec.get("stage") != "staged":
+        return {"launched": False, "reason": f"not staged (stage={rec.get('stage')})"}
+
+    # resolve the spawn_candidate this offering registered
+    cand = None
+    cand_slug = None
+    for slug, c in R.state.get("spawn_candidates", {}).items():
+        if c.get("offering_id") == oid and c.get("source") == "virtual_firm_pipeline":
+            cand = c
+            cand_slug = slug
+            break
+    if cand is None:
+        return {"launched": False, "reason": "no staged candidate for offering"}
+
+    # ── gate checks ──────────────────────────────────────────────────────────
+    if not _AUTO_LAUNCH:
+        return {"launched": False, "reason": "VF_AUTO_LAUNCH not enabled (opt-in)"}
+    if not _SECOND_REVIEWER:
+        return {"launched": False, "reason": "HITL_SECOND_REVIEWER not set"}
+    if not cand.get("laura_pass"):
+        return {"launched": False,
+                "reason": "Laura gate #1 not cleared (laura_pass=False)"}
+
+    # ── all gates true -> launch, reversibly ──────────────────────────────────
+    _snapshot_for_rollback(oid, cand_slug)
+    ok = DS.promote(R.state, cand)
+    if not ok:
+        # slug already present (e.g. re-run) — still mark launched, no double-add
+        R.state.get("rollback", {}).pop(oid, None)
+        return {"launched": False, "reason": f"slug {cand_slug} already exists"}
+
+    DS.apply_second_reviewer(cand)  # stamp second-reviewer presence
+    cand["status"] = "launched"
+    cand["launched_at"] = int(time.time())
+    rec["stage"] = "launched"
+    rec["launched_candidate"] = cand_slug
+    rec["rollback_oid"] = oid
+    rec["updated"] = int(time.time())
+    R.save_state(R.state)
+    return {"launched": True, "slug": cand_slug, "rollback_oid": oid,
+            "reason": "all gates true (auto-launch + second-reviewer + Laura); "
+                      "reversible via rollback_launch(oid)"}
 
 
 def stage_counts(center=None):

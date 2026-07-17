@@ -90,7 +90,7 @@ def apply_second_reviewer(cand):
 def promote(st, cand):
     """Register the candidate as a real standing center (mirrors
     /evolve apply: CENTERS + CENTERS_SLUGS + daughter_centers + network)."""
-    from runtime import CENTERS, CENTERS_SLUGS, CENTER_NETWORK
+    from runtime import CENTERS, CENTER_SLUGS, CENTER_NETWORK
     slug = cand["slug"]
     if slug in CENTERS:
         return False
@@ -110,7 +110,7 @@ def promote(st, cand):
         "is_daughter": True, "parent": None,
     }
     CENTERS[slug] = spec
-    CENTERS_SLUGS.append(slug)
+    CENTER_SLUGS.append(slug)
     CENTER_NETWORK.setdefault(slug, [])
     st.setdefault("centers", {})[slug] = {"version": 1, "is_daughter": True}
     st.setdefault("daughter_centers", {})[slug] = spec
