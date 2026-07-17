@@ -318,6 +318,71 @@ async def require_key(request, center):
     return acct, None
 
 
+# ── Red-team hardening (rfi-irfos-infra-hardening doctrine) ────────────────
+# In-memory sliding-window rate limiter. Bounds abusive/mutating operator
+# calls (key-granted) so a leaked key cannot burn engine budget or brute the
+# API. Not persistent across restarts — that's fine; it's a speed bump, not a
+# court record. Tune via env without a code change.
+import os as _os
+_RATE_MAX = int(_os.environ.get("VF_RATE_MAX", "20"))
+_RATE_WINDOW = int(_os.environ.get("VF_RATE_WINDOW", "60"))  # seconds
+_RATE_HITS = {}  # (ip, route) -> list[timestamp]
+
+
+def _client_ip(request):
+    # Fly proxy forwards the real client in X-Forwarded-For (first hop).
+    xff = request.headers.get("X-Forwarded-For", "")
+    return xff.split(",")[0].strip() or request.remote or "local"
+
+
+def rate_limited(request, route, max_hits=_RATE_MAX, window=_RATE_WINDOW):
+    """Return True if this (ip, route) exceeded max_hits in window seconds."""
+    ip = _client_ip(request)
+    now = time.time()
+    key = (ip, route)
+    hits = _RATE_HITS.setdefault(key, [])
+    # drop stale
+    _RATE_HITS[key] = [t for t in hits if now - t < window]
+    if len(_RATE_HITS[key]) >= max_hits:
+        return True
+    _RATE_HITS[key].append(now)
+    return False
+
+
+def cors_headers(request):
+    """Explicit, strict CORS: only same-origin (no wildcard) for /api/*.
+
+    aiohttp's default is already 'no ACAO header' (safe), but we set it
+    explicitly so a future CORS middleware can't accidentally open '*'."""
+    origin = request.headers.get("Origin")
+    # Only reflect the requesting origin if it matches our own host; never '*'.
+    own_host = request.headers.get("Host", "")
+    if origin and own_host and origin.split("://")[-1] == own_host:
+        return {"Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Authorization, Content-Type"}
+    return {}  # no cross-origin grant
+
+
+async def require_operator(request, center, route):
+    """Combined gate for mutating operator routes: key + rate-limit + CORS.
+
+    Returns (acct, err_response). err_response is None on success. CORS
+    headers are merged into err_response when present."""
+    acct, err = await require_key(request, center)
+    if err:
+        err.headers.update(cors_headers(request))
+        return None, err
+    if rate_limited(request, route):
+        r = web.json_response(
+            {"error": "rate limit exceeded", "retry_after": _RATE_WINDOW},
+            status=429)
+        r.headers["Retry-After"] = str(_RATE_WINDOW)
+        r.headers.update(cors_headers(request))
+        return None, r
+    return acct, None
+
+
 async def center_session(request):
     """Convene the panel on a question. Returns a run_id immediately; the panel
     review runs in the background (the engine reviews agents sequentially and
@@ -470,7 +535,7 @@ async def debate_session(request):
     c = CENTERS.get(center)
     if not c:
         return web.json_response({"error": "unknown center"}, status=404)
-    acct, err = await require_key(request, center)
+    acct, err = await require_operator(request, center, "debate")
     if err:
         return err
     try:
@@ -594,7 +659,7 @@ async def scenario_session(request):
     c = CENTERS.get(center)
     if not c:
         return web.json_response({"error": "unknown center"}, status=404)
-    acct, err = await require_key(request, center)
+    acct, err = await require_operator(request, center, "scenario")
     if err:
         return err
     try:
@@ -666,7 +731,7 @@ async def spawn_session(request):
     c = CENTERS.get(center)
     if not c:
         return web.json_response({"error": "unknown center"}, status=404)
-    acct, err = await require_key(request, center)
+    acct, err = await require_operator(request, center, "spawn")
     if err:
         return err
     try:
@@ -761,7 +826,7 @@ async def propose_session(request):
     c = CENTERS.get(center)
     if not c:
         return web.json_response({"error": "unknown center"}, status=404)
-    acct, err = await require_key(request, center)
+    acct, err = await require_operator(request, center, "propose")
     if err:
         return err
     cs = state.get("centers", {}).get(center, {})

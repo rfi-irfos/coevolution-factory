@@ -32,6 +32,7 @@ class _FakeRequest:
         self.query = query or {}
         self._body = body or {}
         self._match = {}
+        self.remote = "127.0.0.1"
 
     async def json(self):
         return self._body
