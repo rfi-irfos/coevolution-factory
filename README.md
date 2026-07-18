@@ -1,5 +1,8 @@
 # CoEvolution Factory
 
+## Human rights are not subject to negotiation.
+
+
 Autonomous, revenue-generating AI product line built on the private
 **lauras-agents** engine (RFI-IRFOS). One parent engine + one generic
 multi-tenant runtime + a catalog of 50 standing, interdisciplinary
