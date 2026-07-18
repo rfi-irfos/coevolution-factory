@@ -106,6 +106,7 @@ backdrop-filter:blur(16px);border-bottom:1px solid #1c2733}}
 # --------------------------------------------------------------------------
 def _footer_html():
     return """<footer class=sitefoot><div class=footwrap>
+<p class=footdoctrine>Human rights are not subject to negotiation.<br><span>&mdash; RFI-IRFOS &times; Emergent Interaction Lab, core doctrine</span></p>
 <div class=footlinks>
 <a href="https://rfi-irfos.com/#p/impressum" target=_blank rel=noreferrer>Legal Notice</a>
 <a href="https://rfi-irfos.com/#p/datenschutz" target=_blank rel=noreferrer>Privacy Policy</a>
@@ -123,6 +124,8 @@ def _footer_html():
 <style>
 .sitefoot{border-top:1px solid #1c2733;margin-top:50px;padding:34px 22px 40px;text-align:center}
 .footwrap{max-width:900px;margin:0 auto}
+.footdoctrine{font-family:monospace;font-size:12px;color:#00f5c4;letter-spacing:.05em;font-weight:600;margin:0 0 22px}
+.footdoctrine span{font-size:10px;color:#5b6675;font-weight:400}
 .footlinks{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-bottom:18px}
 .footlinks a{color:#5b6675;font-size:12px;text-decoration:none}
 .footlinks a:hover{color:#9fd0ff}
