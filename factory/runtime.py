@@ -2275,9 +2275,9 @@ def center_card_html(slug, lang="en"):
 #cmbody .pstep{{flex:1;background:#0f141d;border:1px solid #1c2733;border-radius:10px;padding:10px;font-size:12px;color:#c7d2e0;display:flex;align-items:center;gap:8px;line-height:1.3}}
 #cmbody .pstep span{{display:inline-flex;width:22px;height:22px;border-radius:50%;background:#36d6a0;color:#04140d;font-weight:800;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}}
 #cmbody .cmask h3{{display:none}}
-#cmbody .wizsteps{{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:18px}}
-#cmbody .wizdot{{width:24px;height:24px;border-radius:50%;background:#0f141d;border:1px solid #1c2733;color:#5b6675;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}}
-#cmbody .wizdot.on{{background:{accent_color}22;border-color:{accent_color};color:{accent_color}}}
+#cmbody .wizsteps,.wizsteps{{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:18px}}
+#cmbody .wizdot,.wizdot{{width:24px;height:24px;border-radius:50%;background:#0f141d;border:1px solid #1c2733;color:#5b6675;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}}
+#cmbody .wizdot.on,.wizdot.on{{background:{accent_color}22;border-color:{accent_color};color:{accent_color}}}
 #cmbody .wizstep{{display:none}}
 #cmbody .wizstep.on{{display:block;animation:cmpop .3s ease-out both}}
 #cmbody .wizprompt{{text-align:center;font-size:16px;font-weight:700;margin-bottom:16px}}
@@ -3116,7 +3116,10 @@ background:radial-gradient(ellipse at center,#0d1219,#0a0e14 75%);border:1px sol
 .cmclosebtn{{position:absolute;top:14px;right:14px;z-index:5;width:32px;height:32px;border-radius:50%;background:#0f141d;border:1px solid #1c2733;color:#c7d2e0;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}}
 .cmclosebtn:hover{{border-color:#2c4258;color:#fff}}
 @media(max-width:640px){{.hexname{{font-size:9.5px}}.hexstats{{font-size:8.5px}}.hcwrap{{height:60vh}}
-.cmoverlay{{padding:0}}.cmpanel{{max-width:none;max-height:100vh;height:100vh;border-radius:0}}}}
+.cmoverlay{{padding:0}}.cmpanel{{max-width:none;max-height:100vh;height:100vh;border-radius:0}}
+.wizsteps{{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:18px}}
+.wizdot{{width:24px;height:24px;border-radius:50%;background:#0f141d;border:1px solid #1c2733;color:#5b6675;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}}
+.wizdot.on{{background:#36d6a0;color:#04140d}}
 </style></head><body>{_nav_html('centers', brand_extra=nav_badge, right_html=nav_right)}<div class=wrap>
 <h1>{t['lede_hero']}</h1>
 <p class=ledesub>{t['lede_sub']}</p>
