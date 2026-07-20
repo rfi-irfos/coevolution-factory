@@ -2358,10 +2358,7 @@ def center_card_html(slug, lang="en"):
   <h3>{t['what_you_get_title']}</h3>
   <ul><li>{t['what_you_get_1']}</li><li>{t['what_you_get_2']}</li><li>{t['what_you_get_3']}</li></ul>
 </div>
-{sample_html}
 </div>
-
-<div class=cmpane id=cp2>
 <div class=zone style="margin-top:14px;position:relative">
 <canvas class=officecanvas id=workshop width=1200 height=800></canvas>
 <div class=workpopup id=workpopup hidden></div>
@@ -3056,14 +3053,11 @@ def _firms_grid_body(request, open_slug=None):
             f'<polygon class=hexshape points="{HEX_POINTS}" data-c="{color}" style="stroke:{color}"/>'
             f'<foreignObject x="{-fo_size/2:.1f}" y="{-fo_size/2:.1f}" width="{fo_size:.1f}" height="{fo_size:.1f}">'
             f'<div xmlns="http://www.w3.org/1999/xhtml" class=hexbody>'
-            f'<svg class=hexicon viewBox="0 0 24 24" fill=none stroke="{color}" stroke-width=1.6 '
+            f'<svg class=hexicon viewBox="0 0 24 24" fill=none stroke="#cdd9e5" stroke-width=1.6 '
             f'stroke-linecap=round stroke-linejoin=round>{_hex_icon(s)}</svg>'
             f'<div class=hexname>{html.escape(c["name"])}</div>'
             f'<div class=hexled style="background:{color}"></div>'
-            f'<div class=hexstats>'
-            f'<span data-k=sessions>{stats["sessions"]}</span>&nbsp;{t["stat_sessions"]} · '
-            f'<span data-k=leads>{stats["leads"]}</span>&nbsp;{t["stat_leads"]}'
-            f'</div></div></foreignObject>'
+            f'</div></foreignObject>'
             f'</a></g></g>')
 
     tiles_svg = "".join(_tile(i, s, c) for i, (s, c) in enumerate(items))
@@ -3110,7 +3104,7 @@ background:radial-gradient(ellipse at center,#0d1219,#0a0e14 75%);border:1px sol
 .hexshape{{fill:#0f141d;stroke-width:1.5;transition:fill .2s,stroke-width .2s;paint-order:stroke}}
 .hex:hover .hexshape{{fill:#141c28;stroke-width:2.5}}
 .hexbody{{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;box-sizing:border-box;font-family:-apple-system,Segoe UI,Inter,sans-serif;pointer-events:none}}
-.hexicon{{width:20px;height:20px;margin-bottom:4px;flex-shrink:0}}
+.hexicon{{width:26px;height:26px;margin-bottom:5px;flex-shrink:0;color:#cdd9e5}}
 .hexname{{color:#e6edf3;font-weight:650;font-size:10.5px;line-height:1.22;margin-bottom:4px;overflow-wrap:break-word;hyphens:auto}}
 .hexled{{width:7px;height:7px;border-radius:50%;margin-bottom:4px;animation:blink 1.8s ease-in-out infinite}}
 .hexstats{{color:#8b98a9;font-size:9.5px;font-variant-numeric:tabular-nums;letter-spacing:.01em}}

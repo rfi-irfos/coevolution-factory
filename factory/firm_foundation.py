@@ -69,11 +69,27 @@ def _engine_call(text, agents, timeout=120):
             if not ans and isinstance(data, dict):
                 resp = data.get("responses")
                 if isinstance(resp, list) and resp:
-                    ans = "\n".join(
-                        str(x.get("content") or x.get("text") or x.get("answer") or x)
-                        for x in resp)
+                    # Only pull REAL content out of each response element — if a
+                    # response is a dict with no content/text (e.g. it carries a
+                    # raw system_prompt / debug envelope), skip it rather than
+                    # serialising that internal junk into the answer. This is the
+                    # fix for the bug where "Beispiel-Ergebnis" cards rendered the
+                    # agent's system_prompt verbatim instead of a deliverable.
+                    parts = []
+                    for x in resp:
+                        c = x.get("content") if isinstance(x, dict) else None
+                        if not c:
+                            c = x.get("text") if isinstance(x, dict) else None
+                        if not c and isinstance(x, str):
+                            c = x
+                        if c and str(c).strip():
+                            parts.append(str(c))
+                    ans = "\n".join(parts)
             if not ans:
-                ans = json.dumps(data, ensure_ascii=False)[:1200]
+                # No usable answer text — do NOT fall back to json.dumps(data),
+                # which would dump the raw response envelope (system_prompt etc.)
+                # into a user-facing card. Return empty so callers skip rendering.
+                return ""
             if isinstance(ans, list):
                 ans = "\n".join(str(a) for a in ans)
             return str(ans).strip()
@@ -144,11 +160,24 @@ def generate_sample_product(slug, force=False):
 
 
 def load_sample_product(slug):
-    """Load a previously generated product (or None)."""
+    """Load a previously generated product (or None).
+
+    Guards against serving a corrupt/debug artifact: if the stored body
+    contains a raw agent envelope (system_prompt / 'agent': / raw_response)
+    instead of a real deliverable, treat it as missing so the card is
+    skipped rather than dumping internal junk to the visitor.
+    """
     path = PRODUCT_DIR / f"{slug}.json"
     if path.exists():
         try:
-            return json.load(open(path))
+            rec = json.load(open(path))
+            body = str(rec.get("body") or rec.get("summary") or "")
+            _JUNK = ("system_prompt", "'agent':", '"agent":', "raw_response",
+                     "complete':", "complete\":")
+            if any(tok in body for tok in _JUNK):
+                # Corrupt artifact — do not render it.
+                return None
+            return rec
         except Exception:
             return None
     return None
