@@ -14,9 +14,15 @@ primary_region = 'fra'
 
 [env]
   FT_ENGINE_KEY = 'local'
-  FT_ENGINE_URL = 'https://lauras-agents-api.fly.dev'
+  FT_ENGINE_URL = 'https://lauras-agents-api-v2.fly.dev'
   FT_PORT = '8091'
   FT_STATE_DIR = '/data'
+
+[deploy]
+  # Keep the app running so the in-app autonomous scheduler
+  # (reflect/spawn/briefing/evolve loops) fires without external cron machines.
+  min_machines_running = 1
+  auto_stop_machines = false
 
 [[services]]
   protocol = 'tcp'
@@ -37,18 +43,6 @@ primary_region = 'fra'
   key = 'app'
   command = 'python runtime.py'
 
-[[processes]]
-  key = 'briefing'
-  command = 'python daily_brief.py'
-
-[[processes]]
-  key = 'spawn'
-  command = 'python daily_spawn.py'
-
-  [[services.ports]]
-    port = 80
-    handlers = ['http']
-
   [[services.ports]]
     port = 443
     handlers = ['tls', 'http']
@@ -63,19 +57,6 @@ primary_region = 'fra'
   cpus = 1
   memory_mb = 512
 
-# Autonomous schedules (separate from the daily-evolve cron job that
-# runs via `fly machine exec` / the Hermes cron).
-#
-# 1. Briefings: pull real regulatory/security feeds, convene the panel,
-#    publish. Every 4h.
-# 2. FACTORY-FACTORY: scan real trends/regulation, detect gaps, STAGE a
-#    candidate daughter-center. LAURA-GATED before promotion (the
-#    daily_spawn cron calls mcp_laura_review_plan; only 0-FLAG candidates
-#    are born). Runs daily at 02:00, before daily_evolve (03:00).
-[[deploy.schedules]]
-  process = 'briefing'
-  cron = '17 */4 * * *'
-
-[[deploy.schedules]]
-  process = 'spawn'
-  cron = '0 2 * * *'
+# All autonomous loops (reflect/spawn/briefing/evolve) now run INSIDE the
+# app via the in-app scheduler (app.on_startup). No external cron machines
+# or deploy.schedules needed — the app self-drives as long as it's live.

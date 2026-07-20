@@ -339,8 +339,9 @@ async def detect_gap(new_items):
                 "reason": "engine key not configured, not convened",
                 "new_count": len(new_items)}
     # Build a panel from a few broad experts to judge coverage.
-    panel = ["legal-counsel", "compliance-officer", "regulatory-analyst",
-              "ai-ethics-lead", "data-protection-officer"]
+    # Use agents_registry slugs (the live engine's /pool/team contract).
+    panel = ["chief-compliance-officer", "legal-compliance",
+             "data-protection-officer", "risk-sox", "board-of-directors"]
     text = ("Our standing compliance centers cover these domains: "
             + ", ".join(sorted(_standing_domains())[:40])
             + ". Do the following NEW regulatory/trend signals fall outside "
@@ -366,24 +367,34 @@ async def detect_gap(new_items):
 
 async def _call_engine_local(text, agents):
     """Local engine convene (mirrors runtime.call_engine, no circular import).
+    Calls the live engine's /pool/team endpoint with agents_registry slugs
+    (same contract runtime.call_engine uses) and maps the TeamResponse back
+    to the {posture, ...} shape detect_gap expects.
     Returns a synthesized {posture, ...} dict, or None if unreachable."""
     if not ENGINE_URL or ENGINE_KEY in ("local", "", None):
         return None
     try:
         async with aiohttp.ClientSession() as s:
             async with s.post(
-                ENGINE_URL.rstrip("/") + "/v1/panel",
-                json={"text": text, "agents": agents,
-                      "key": ENGINE_KEY},
-                timeout=aiohttp.ClientTimeout(total=120), ssl=False) as r:
+                ENGINE_URL.rstrip("/") + "/pool/team",
+                json={"text": text, "agents": agents},
+                headers={"Authorization": f"Bearer {ENGINE_KEY}"},
+                timeout=aiohttp.ClientTimeout(total=60), ssl=False) as r:
                 if r.status != 200:
                     return None
                 data = await r.json()
-        # mirror runtime.engine_synthesize's minimal shape
-        return {"posture": (data.get("posture")
-                          or data.get("synthesis", {}).get("posture")
-                          or "ok"),
-                "panel_size": len(agents)}
+        # Map TeamResponse -> posture (detect_gap only reads "posture").
+        responses = data.get("responses", []) if isinstance(data, dict) else []
+        has_flag = False
+        for resp in responses:
+            if not isinstance(resp, dict):
+                continue
+            for f in resp.get("findings", []):
+                sev = str((f.get("severity") if isinstance(f, dict) else "")).lower()
+                if sev in ("flag", "conflict"):
+                    has_flag = True
+        posture = "flag" if has_flag else ("ok" if data.get("complete") else "conflict")
+        return {"posture": posture, "panel_size": len(responses), "raw": data}
     except Exception:
         return None
 

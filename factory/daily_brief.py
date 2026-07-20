@@ -26,9 +26,21 @@ from briefing import BRIEFING_SOURCES, run_briefing, load_state, save_state
 
 
 def laura_gate(text):
-    """Call the REAL Laura ship gate on the published briefing copy."""
+    """Call the REAL Laura ship gate on the published briefing copy.
+
+    Uses the Hermes MCP when available, otherwise our OWN Laura API on Fly
+    (keyless /mcp). Either way: the gate is Laura's — never self-approve.
+    """
     try:
         from hermes_tools import mcp_laura_review_plan
+    except Exception:
+        try:
+            from laura_gate_client import review_plan as mcp_laura_review_plan
+        except Exception:
+            mcp_laura_review_plan = None
+    if mcp_laura_review_plan is None:
+        return (False, "laura bridge unavailable")
+    try:
         res = mcp_laura_review_plan(
             text=text,
             metadata={"title": "center autonomous briefing",

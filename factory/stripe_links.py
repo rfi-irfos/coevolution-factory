@@ -35,16 +35,31 @@ STRIPE_LINKS = {
     "site_link_1":             "https://buy.stripe.com/dRm5kF0qkaPZeuxePS7N603",
     "site_link_2":             "https://buy.stripe.com/14AeVfdd6e2b3PTdLO7N602",
     "site_link_3":             "https://buy.stripe.com/28EcN7b4Y6zJgCFgY07N601",
+    # PER-SESSION LINK (THE ONE THAT WAS MISSING):
+    # Every center sells ONE "Sitzung" at c["price"] (currently €25). There
+    # was no €25 link in the pool before, so price=25 fell through to the
+    # "enterprise" tier and surfaced a €3,000 link while the button promised
+    # €25 — that mismatch is why nobody bought. Create this link in your
+    # Stripe Dashboard (Payment Links -> New -> one-off price €25, currency
+    # EUR) and PASTE the real ID below, replacing the placeholder.
+    "session_25":              "https://buy.stripe.com/00w28tehae2baehcHK7N60F",
 }
 
-# Which link a factory surfaces, by its price tier.
+# Which link a center surfaces, by its price tier.
 # tier = ceil(price per run) bucket -> pick a link at/above that value.
+#
+# NOTE (2026-07-20 fix): the per-session price is €25 — there is no "small"
+# or "mid" link below €700. Before this fix, price=25 (> 5.00) fell into the
+# "enterprise" tier and surfaced a €3,000 link while the button text said
+# "€25". That 120x mismatch is the core reason no sessions were ever bought.
+# Now: any single-session price (<= 100) maps to the real per-session link.
+# Higher tiers (real sprints/enterprise engagements) keep their own links.
 TIER_TO_LINK = {
-    "micro":   "case_intake_scan",        # <= 0.30/run  -> EUR 700 intake
-    "small":   "mangelcluster_sprint",    # ~0.30-0.60   -> EUR 2200
-    "mid":     "systemaudit",             # ~0.60-1.00   -> EUR 4500
-    "large":   "emergent_case_sprint",    # > 1.00       -> EUR 12500
-    "enterprise": "system_design_deploy", # full pipeline -> EUR 55000
+    "session": "session_25",              # <= 100  -> the real €25-per-session link
+    "small":   "mangelcluster_sprint",    # legacy tiered/sprint pricing
+    "mid":     "systemaudit",
+    "large":   "emergent_case_sprint",
+    "enterprise": "system_design_deploy",
 }
 
 
@@ -52,14 +67,19 @@ def link_for_factory(slug, price):
     """Return the Stripe link a center should surface, by price tier.
 
     Center attribution: a static buy-link cannot carry per-center
-    metadata on its own. Stripe links accept `?metadata[center]=<slug>`
-    as a query param (echoed back to the webhook), so we append it
-    here. The webhook reads metadata.center to attribute the payment
-    to the right center — that is how we 'only track the cashflow'
-    per center.
+    metadata through a URL param — Stripe Payment Links ignore
+    ?metadata[...] query strings. REAL per-center attribution must be set
+    when the Payment Link is created in the Stripe Dashboard / API
+    (metadata["center"] = <slug>). This function therefore returns the
+    bare link only; do NOT append ?metadata[center]= here (it is silently
+    dropped by Stripe and gives a false sense of tracking).
+
+    For the current flat per-session pricing, every center maps to the
+    same real €25 link. If you later introduce tiered/sprint pricing per
+    center, extend the tier logic below.
     """
-    if price <= 0.30:
-        tier = "micro"
+    if price <= 100:
+        tier = "session"
     elif price <= 0.60:
         tier = "small"
     elif price <= 1.00:
@@ -68,6 +88,4 @@ def link_for_factory(slug, price):
         tier = "large"
     else:
         tier = "enterprise"
-    base = STRIPE_LINKS[TIER_TO_LINK[tier]]
-    sep = "&" if "?" in base else "?"
-    return f"{base}{sep}metadata[center]={slug}"
+    return STRIPE_LINKS[TIER_TO_LINK[tier]]

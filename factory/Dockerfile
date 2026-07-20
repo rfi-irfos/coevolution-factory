@@ -15,7 +15,7 @@ COPY . .
 # faking gated-engine output. FT_AGENT_REGISTRY points at the registry baked
 # into the image (copied from the host at build time) so panels expand offline.
 ENV FT_PORT=8091 \
-    FT_ENGINE_URL=https://lauras-agents-api.fly.dev \
+    FT_ENGINE_URL=https://lauras-agents-api-v2.fly.dev \
     FT_ENGINE_KEY=local \
     FT_AGENT_REGISTRY=/app/agents_registry
 

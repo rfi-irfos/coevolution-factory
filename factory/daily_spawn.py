@@ -17,12 +17,16 @@ import asyncio, json, time, sys, os
 from pathlib import Path
 
 # Hermes runtime provides mcp_laura_review_plan when the Laura tool is
-# connected. Outside that context (e.g. direct `python daily_spawn.py`)
-# we treat Laura as UNAVAILABLE and refuse to spawn.
+# connected. Outside that context we call our OWN Laura API on Fly directly
+# (keyless /mcp endpoint) so the Babies self-govern without an agent proxy.
+# Either way, the gate is Laura's — never self-approve.
 try:
     from hermes_tools import mcp_laura_review_plan
 except Exception:
-    mcp_laura_review_plan = None
+    try:
+        from laura_gate_client import review_plan as mcp_laura_review_plan
+    except Exception:
+        mcp_laura_review_plan = None
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import factory_spawn_agent as F
@@ -45,6 +49,16 @@ def save_state(st):
 async def gate_candidate(cand):
     """Return True only if Laura passes (or Laura is the FINAL gate and
     unavailable -> we return False, never self-approve)."""
+    # ── self-correction hook (active learning): before Laura sees it, the
+    #    firm re-reads its memory and de-fangs known mistake patterns. ──────
+    try:
+        import firm_foundation as FF
+        notes = FF.apply_self_correction(R.state, cand.get("parent") or cand.get("slug"), cand)
+        if notes:
+            print(f"[self-review] {cand.get('slug')}: {notes}", flush=True)
+            R.save_state(R.state)
+    except Exception as _e:
+        print(f"[self-review] hook failed: {_e}", flush=True)
     if mcp_laura_review_plan is None:
         return False  # Laura offline -> no spawn
     try:
@@ -59,7 +73,17 @@ async def gate_candidate(cand):
         )
         # 0-FLAG required (doctrine: any flag -> block)
         flags = (res or {}).get("flags") or (res or {}).get("verdicts") or []
-        return len(flags) == 0
+        passed = len(flags) == 0
+        # learning hook: Laura blocked this candidate -> capture why
+        if not passed:
+            try:
+                import firm_foundation as FF
+                FF.learn_from_laura_block(
+                    R.state, cand.get("parent") or cand.get("slug"), cand, flags)
+                R.save_state(R.state)
+            except Exception as _e:
+                print(f"[learning] laura-block hook failed: {_e}", flush=True)
+        return passed
     except Exception:
         return False  # Laura error -> no spawn
 
@@ -157,6 +181,19 @@ def promote(st, cand):
     CENTER_NETWORK.setdefault(slug, [])
     st.setdefault("centers", {})[slug] = {"version": 1, "is_daughter": True}
     st.setdefault("daughter_centers", {})[slug] = spec
+    # learning hook: a Laura-passed offering shipped -> success lesson
+    try:
+        import firm_foundation as FF
+        FF.learn_from_launch(st, cand.get("parent") or slug, cand)
+        FF.ensure_foundation(st, slug)
+        st.setdefault("firm_foundation", {}).setdefault(slug, {})
+        st["firm_foundation"][slug]["launches"] = \
+            st["firm_foundation"][slug].get("launches", 0) + 1
+        st["firm_foundation"][slug]["reflection_score"] = round(
+            min(0.98, st["firm_foundation"][slug].get("reflection_score", 0.35) + 0.05), 3)
+        R.save_state(st)
+    except Exception as _e:
+        print(f"[learning] launch hook failed: {_e}", flush=True)
     return True
 
 

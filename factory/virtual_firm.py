@@ -167,9 +167,25 @@ def promote_prototype_to_staged(center):
 
     lead_count = len(R.state.get("leads", {}).get(center, []))
     if not _debate_resolved_for(center):
+        # learning hook: real demand signal arrived but no resolved debate
+        try:
+            import firm_foundation as FF
+            FF.learn_from_lead_failure(
+                R.state, center,
+                {"kind": "debate", "question_hash": rec.get("idea", "")[:12]})
+            R.save_state(R.state)
+        except Exception as _e:
+            print(f"[learning] lead-failure hook failed: {_e}", flush=True)
         return {"advanced": False, "offering_id": oid, "stage": "prototype",
                 "reason": "no resolved debate yet (need real deliberation)"}
     if lead_count < STAGE_MIN_LEADS:
+        try:
+            import firm_foundation as FF
+            for ld in R.state.get("leads", {}).get(center, [])[:3]:
+                FF.learn_from_lead_failure(R.state, center, ld)
+            R.save_state(R.state)
+        except Exception as _e:
+            print(f"[learning] lead-failure hook failed: {_e}", flush=True)
         return {"advanced": False, "offering_id": oid, "stage": "prototype",
                 "reason": f"only {lead_count}/{STAGE_MIN_LEADS} real leads"}
 

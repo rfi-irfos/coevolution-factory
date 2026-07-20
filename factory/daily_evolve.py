@@ -45,6 +45,14 @@ def laura_gate(changelog_text):
     """Call the REAL Laura ship gate. Returns (passed: bool, summary: str)."""
     try:
         from hermes_tools import mcp_laura_review_plan
+    except Exception:
+        try:
+            from laura_gate_client import review_plan as mcp_laura_review_plan
+        except Exception:
+            mcp_laura_review_plan = None
+    if mcp_laura_review_plan is None:
+        return (False, "laura bridge unavailable")
+    try:
         res = mcp_laura_review_plan(
             text=changelog_text,
             metadata={"title": "center recursive self-improvement",
@@ -96,6 +104,20 @@ def main():
         else:
             log["blocked"].append({"center": slug, "reason": "vp: " + summary})
             print(f"  VP-BLOCKED {slug}: {summary}")
+    # 2c. proactively generate a REAL sample product per firm (autonomy: the
+    # firm makes itself useful without waiting for a buyer). One engine call
+    # per firm, cached 7 days — never a placeholder.
+    try:
+        from firm_foundation import generate_sample_product
+        from runtime import CENTER_SLUGS
+        made = 0
+        for slug in CENTER_SLUGS:
+            prod = generate_sample_product(slug)
+            if prod:
+                made += 1
+        print(f"  PRODUCTS generated/refreshed: {made}")
+    except Exception as e:
+        print(f"  PRODUCTS skipped: {e}")
     # 3. cashflow snapshot
     obs = get("/observatory")
     log["cashflow"] = {"total_sessions": obs.get("total_sessions"),
