@@ -3181,13 +3181,14 @@ function execScripts(container){{
   old.parentNode.replaceChild(s,old);
  }});}}
 function openModal(slug,lang,push){{
+ var m=document.getElementById('centermodal'),cb=document.getElementById('cmbody');
  fetch('/api/center/'+slug+'/card?lang='+lang).then(function(r){{return r.text();}}).then(function(htm){{
-  cmbody.innerHTML=htm;execScripts(cmbody);
-  modal.style.display='flex';document.body.style.overflow='hidden';
+  if(cb)cb.innerHTML=htm;execScripts(cb||document);
+  if(m)m.style.display='flex';document.body.style.overflow='hidden';
   if(push)history.pushState({{slug:slug,lang:lang}},'','/'+slug+'?lang='+lang);
  }});}}
 function closeModal(push){{
- modal.style.display='none';document.body.style.overflow='';
+ var m=document.getElementById('centermodal');if(m)m.style.display='none';document.body.style.overflow='';
  if(window.__cmPollId){{clearInterval(window.__cmPollId);window.__cmPollId=null;}}
  if(push){{var qs=new URLSearchParams(location.search);var q=qs.get('q');
   history.pushState({{}},'','/'+(q?('?q='+encodeURIComponent(q)):''));}}
@@ -3198,7 +3199,7 @@ document.querySelectorAll('.hex a').forEach(function(a){{
   e.preventDefault();
   var g=a.closest('.hex');openModal(g.getAttribute('data-slug'),CUR_LANG,true);
  }});}});
-document.getElementById('cmclose').onclick=function(){{closeModal(true);}};
+var __cb=document.getElementById('cmclose');if(__cb)__cb.addEventListener('click',function(){{closeModal(true);}});
 modal.addEventListener('mousedown',function(e){{if(e.target===modal)closeModal(true);}});
 window.addEventListener('keydown',function(e){{if(e.key==='Escape'&&modal.style.display!=='none')closeModal(true);}});
 window.addEventListener('popstate',function(){{
