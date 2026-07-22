@@ -890,6 +890,21 @@ def build_panel(slug, seed, max_panel=4):
     return out[:max_panel]
 
 
+def derive_roster(panel):
+    """Build the additive hierarchy from a flat panel slug list.
+
+    One default department 'general'; its lead is panel[0] (the center's
+    primary lead / CEO), the rest are experts. Additive only - does not
+    replace `panel`. Mirrors docs/teamlead_backend_schema.md section 3 + 5.
+    """
+    panel = list(panel or [])
+    if not panel:
+        return {"departments": []}
+    lead = {"agent": panel[0], "name": panel[0], "role": "lead"}
+    experts = [{"agent": p, "name": p, "role": "expert"} for p in panel[1:]]
+    return {"departments": [{"id": "general", "name": "General", "lead": lead, "experts": experts}]}
+
+
 # --------------------------------------------------------------------------
 # Cross-center network: derived from the real agents.md feeds_into graph.
 # Two centers are ADJACENT if their seed agents share ≥1 downstream agent.
@@ -1630,6 +1645,7 @@ CENTERS_META = {c["slug"]: {
     "icp": c["icp"], "resilient": c["resilient"], "price": c["price"], "free": c["free"],
     "products": c.get("products", []),
     "panel": build_panel(c["slug"], c["seed_agents"]),
+    "roster": derive_roster(build_panel(c["slug"], c["seed_agents"])),
     "disciplines": sorted({_REG[s]["lane"] for s in build_panel(c["slug"], c["seed_agents"])
                            if s in _REG}),
     # standing health-check prompt: what this center asks itself continuously
