@@ -306,7 +306,7 @@ backdrop-filter:blur(16px);border-bottom:1px solid #1c2733}}
 .navbadge{{color:#36d6a0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;
 border-left:1px solid #1c2733;padding-left:12px;margin-left:2px}}
 .navbadge .dot{{width:6px;height:6px;border-radius:50%;background:#36d6a0;animation:navblink 1.6s ease-in-out infinite}}
-.hcinfobtn{{position:absolute;top:12px;right:14px;z-index:10;width:34px;height:34px;background:rgba(15,20,29,.85);border:1px solid #1c2733;color:#9fd0ff;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px)}}
+.hcinfobtn{position:absolute;top:12px;right:14px;z-index:10;width:34px;height:34px;background:rgba(15,20,29,.85);border:1px solid #1c2733;color:#9fd0ff;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px)}
 .hcinfobtn:hover{{border-color:#2c4258;color:#e6edf3}}
 .hcinfopop{{position:absolute;top:48px;right:14px;width:260px;background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:14px;color:#c7d2e0;font-size:13px;line-height:1.5;box-shadow:0 10px 26px rgba(0,0,0,.55);z-index:20;font-family:inherit}}
 .hcinfopop b{{color:#e6edf3;font-weight:700}}
@@ -2449,14 +2449,6 @@ function renderSynth(s,demo){if(!s)return '<span style=color:#8b98a9>no answer c
 function poll(run_id){return new Promise(res=>{const tick=async()=>{try{const r=await fetch('/api/center/result/'+run_id);const j=await r.json();
   if(j.status==='done'){res(j);}else if(j.status==='error'){$('out').innerHTML='<span style=color:#ff8a8a>error: '+esc(j.error||'unknown')+'</span>';res(j);}
   else{$('out').innerHTML='<span style=color:#9fd0ff>The panel is working on it… (usually 30-60s)</span>';setTimeout(tick,3000);}}catch(e){$('out').innerHTML='<span style=color:#ff8a8a>lost connection: '+esc(e)+'</span>';res({});}};tick();});}
-async function ensureKey(){
- if(currentKey)return currentKey;
- const typed=($('email').value||'').trim();
- const email=(typed&&typed.indexOf('@')>-1)?typed:('anon-'+Math.random().toString(36).slice(2)+'@coevolution.local');
- const r=await fetch('/signup?center='+slug,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
- const j=await r.json();
- if(j.key){currentKey=j.key;try{localStorage.setItem('ct_'+slug,currentKey);}catch(e){}
-  $('bill').textContent='first '+j.free_sessions+' sessions free, then EUR '+j.price_eur+'/session';return currentKey;}
 function showFeedback(){var fb=$('feedback');if(fb)fb.hidden=false;}
 function sendFb(v){var note=($('fbtext')||{}).value||'';fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug:slug,value:v,note:note})}).then(function(){var fb=$('feedback');if(fb)fb.innerHTML='<span class=fbthanks>Danke! Das hilft dem Team.</span>';});}
 if($('fbup'))$('fbup').onclick=function(){sendFb(1);};
