@@ -288,7 +288,7 @@ def _nav_html(active="", brand_extra="", right_html=None):
     with no reason to be on every single page."""
     right = right_html if right_html is not None else ""
     return f"""<nav class=sitenav><div class=navwrap>
-<a class=brand href="/"><span class=grad>CoEvolution AI</span></a>
+<a class=brand href="/"><span class=grad>CoEvolution</span><span class="brandsep">:</span> <span class="brandsub">51 autonome, vollautomatische teams</span></a>
 {brand_extra}
 <div class=navlinks>{right}</div>
 </div></nav>
@@ -296,8 +296,13 @@ def _nav_html(active="", brand_extra="", right_html=None):
 .sitenav{{position:fixed;top:0;left:0;right:0;z-index:100;min-height:64px;background:rgba(10,14,20,.85);
 backdrop-filter:blur(16px);border-bottom:1px solid #1c2733}}
 .navwrap{{max-width:none;margin:0;min-height:64px;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}}
-.brand{{display:flex;align-items:center;text-decoration:none;gap:8px}}
+.brand{{display:block;text-decoration:none;gap:8px}}
+.brandwrap{{display:flex;align-items:center;gap:8px;flex-wrap:wrap}}
 .brand .grad{{background:linear-gradient(90deg,#9fd0ff,#36d6a0);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;font-size:16px}}
+.brandsep{{color:#8b98a9;font-weight:700}}
+.brandsub{{color:#8b98a9;font-size:12px;font-weight:500;line-height:1.2;letter-spacing:.01em}}
+.sep{{height:1px;background:#1c2733;margin:0;border:none}}
+.ledesub{{display:none}}
 .navbadge{{color:#36d6a0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;
 border-left:1px solid #1c2733;padding-left:12px;margin-left:2px}}
 .navbadge .dot{{width:6px;height:6px;border-radius:50%;background:#36d6a0;animation:navblink 1.6s ease-in-out infinite}}
@@ -3118,12 +3123,17 @@ background:radial-gradient(ellipse at center,#0d1219,#0a0e14 75%);border:1px sol
 .wizdot{{width:24px;height:24px;border-radius:50%;background:#0f141d;border:1px solid #1c2733;color:#5b6675;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}}
 .wizdot.on{{background:#36d6a0;color:#04140d}}
 </style></head><body>{_nav_html('centers', brand_extra=nav_badge, right_html=nav_right)}<div class=wrap>
-<h1>{t['lede_hero']}</h1>
+<h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">{t['lede_hero']}</h1>
 <p class=ledesub>{t['lede_sub']}</p>
 {f'<p class=hint>{hint}</p>' if q else ''}
 {empty_note}
 <div class=hcwrap id=hcwrap>
 <svg class=honeycomb id=honeycomb viewBox="0 0 {vb_w:.1f} {vb_h:.1f}" width="{vb_w:.1f}" height="{vb_h:.1f}" xmlns="http://www.w3.org/2000/svg">{tiles_svg}</svg>
+.hcinfobtn{{position:absolute;top:12px;right:14px;z-index:10;width:34px;height:34px;background:rgba(15,20,29,.85);border:1px solid #1c2733;color:#9fd0ff;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px)}}
+.hcinfobtn:hover{{border-color:#2c4258;color:#e6edf3}}
+.hcinfopop{{position:absolute;top:48px;right:14px;width:240px;background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:12px 14px;color:#c7d2e0;font-size:12.5px;line-height:1.5;box-shadow:0 10px 26px rgba(0,0,0,.55);z-index:20;font-family:inherit}}
+.hcinfopop b{{color:#e6edf3;font-weight:700}}
+<button id=hcinfo type=button title="Was du hier siehst" class=hcinfobtn aria-label="Was du hier siehst"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></button><div id=hcinfopop class=hcinfopop hidden><b>Was du hier siehst</b><div style="margin-top:5px;color:#c7d2e0">Jede Wabe ist eine eigenständige Firma. Klicke eine Wabe, um Details zu sehen.</div><div style="margin-top:6px;color:#8b98a9">Plus/Minus zum Zoomen, Ziehen zum Verschieben.</div></div>
 <div class=zoomctl>
 <button id=zin type=button title="zoom in">+</button>
 <button id=zout type=button title="zoom out">−</button>
