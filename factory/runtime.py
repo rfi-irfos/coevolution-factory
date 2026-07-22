@@ -2166,6 +2166,20 @@ body{margin:0;background:#070a0f;color:#c7d2de;font:13px/1.5 ui-monospace,SFMono
 .cmdsend:hover{filter:brightness(1.12)}
 .cmdok{font-size:11px;color:#4ade80;min-width:64px}
 .lastd{font-size:10px;color:#5f7085;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ftile{cursor:pointer;transition:border-color .15s ease,transform .12s ease}
+.ftile:hover{border-color:#2c4258;transform:translateY(-1px)}
+.ftile[data-kind=develop],.ftile[data-kind=discuss],.ftile[data-kind=improve],.ftile[data-kind=directive]{animation:afpulse 2.6s ease-in-out infinite}
+@keyframes afpulse{0%,100%{box-shadow:0 0 0 0 rgba(54,214,160,0)}50%{box-shadow:0 0 14px 1px var(--ac,#36d6a0)}}
+.afmodal{position:fixed;inset:0;background:rgba(4,7,11,.72);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:50;padding:24px}
+.afmodal.on{display:flex}
+.afcard{background:#0d1219;border:1px solid #2c4258;border-top:3px solid var(--ac,#36d6a0);border-radius:12px;width:min(640px,96vw);max-height:88vh;overflow:auto;padding:20px;box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.afcard h2{margin:0 0 2px;font-size:18px;color:#e8eef5}
+.afcard .aclose{position:absolute;top:14px;right:18px;background:none;border:0;color:#8aa0b4;font-size:22px;cursor:pointer;line-height:1}
+.afcard .aclose:hover{color:#e8eef5}
+.afcard .ameta{display:flex;gap:10px;align-items:center;margin:6px 0 14px;font-size:12px;color:#8aa0b4}
+.afcard .kpis{margin-bottom:14px}
+.afcard .cmd{margin-top:10px}
+.afcard .arows{max-height:none}
 """
 
 _ANTFARM_JS = """
@@ -2190,8 +2204,36 @@ function paint(g){
   }
 }
 function poll(){
-  fetch('/api/agent-grid').then(function(r){return r.json();}).then(paint).catch(function(){});
+  fetch('/api/agent-grid').then(function(r){return r.json();}).then(function(g){window.__GRID__=g;paint(g);}).catch(function(){});
 }
+var KINDLABEL={develop:'developing',discuss:'in discussion',improve:'improving',directive:'on directive',idle:'idle'};
+function openModal(slug){
+  var g=window.__GRID__; if(!g||!g.firms[slug])return;
+  var f=g.firms[slug];
+  var rows=(f.agents||[]).map(function(a){
+    return '<div class=arow data-kind="'+a.kind+'"><span class=lx></span><span class=an>'+esc(a.name||a.agent)+'</span><span class="rt'+(a.role==='lead'?' lead':'')+'">'+esc(a.role)+'</span><span class=kl>'+(KINDLABEL[a.kind]||a.kind)+'</span></div>';
+  }).join('');
+  var kpis='<div class=kpis><div class=kpi><b>'+f.sessions+'</b><span>sessions</span></div><div class=kpi><b>€'+f.revenue_eur+'</b><span>revenue</span></div><div class=kpi><b>'+f.leads+'</b><span>leads</span></div><div class=kpi><b>'+f.problems+'</b><span>problems</span></div></div>';
+  var lastd=f.last_directive?'<div class=lastd>'+esc(f.last_directive)+'</div>':'';
+  var cmd='<form class="cmd" data-slug="'+slug+'" onsubmit="return sendCmd(event,this)"><input class=cmdin name=directive placeholder="Directive to this team…"><button class=cmdsend type=submit>Send</button><span class=cmdok></span></form>';
+  var card=document.getElementById('afcard');
+  card.style.setProperty('--ac',f.accent||'#36d6a0');
+  card.innerHTML='<button class=aclose onclick="closeModal()">×</button>'
+    +'<h2>'+esc(f.name||slug)+'</h2>'
+    +'<div class=ameta><span class="bd'+(f.open_directives>0?' hot':'')+'">'+(f.open_directives||0)+' open directives</span>'
+    +'<span class="st'+(f.status==='degraded'?' degraded':'')+'">'+esc(f.status||'')+'</span>'
+    +'<span>'+esc(KLABEL[f.kind]||f.kind)+'</span></div>'
+    +kpis+'<div class=arows>'+rows+'</div>'+lastd+cmd;
+  document.getElementById('afmodal').classList.add('on');
+}
+function closeModal(){document.getElementById('afmodal').classList.remove('on');}
+function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
+document.addEventListener('click',function(e){
+  var tile=e.target.closest&&e.target.closest('.ftile');
+  if(tile&&!e.target.closest('.cmd')){openModal(tile.getAttribute('data-slug'));}
+});
+document.addEventListener('click',function(e){if(e.target.id==='afmodal')closeModal();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
 function sendCmd(ev,form){
   ev.preventDefault();
   var slug=form.getAttribute('data-slug');
@@ -2290,6 +2332,7 @@ def build_antfarm_html(lang="en"):
         '<span class=sub>' + html.escape(t["subtitle"]) + '</span>'
         '<div class=aflegend>' + legend + '</div></div>'
         '<div class=afgrid>' + "".join(tiles) + '</div>'
+        '<div class=afmodal id=afmodal><div class=afcard id=afcard></div></div>'
         '<script>' + _ANTFARM_JS + '</script>'
         '</body></html>')
     return body
