@@ -2159,6 +2159,27 @@ def center_card_html(slug, lang="en"):
         for a in adj[:3])
     # Real, engine-generated sample product (never a placeholder). Shown in the
     # overview tab so a visitor sees the firm is already useful — not "0 sessions".
+    _prods = []
+    for _i in range(max(1, len(c.get("panel", [])))):
+        _p = None
+        try:
+            from firm_foundation import load_sample_product
+            _p = load_sample_product(f"{slug}-p{_i+1}")
+        except Exception:
+            _p = None
+        if not _p:
+            continue
+        _body = (_p.get("body") or _p.get("summary") or "").strip()
+        _title = (_p.get("title") or "").strip()
+        if not _body or not _title:
+            continue
+        if any(_x in _body for _x in ["system_prompt", "'agent':", '"agent":', "raw_response", "complete':"]):
+            continue
+        _prods.append(
+            f'<div class="proditem"><div class="prodname">{html.escape(_title)}</div>'
+            f'<div class="prodbody">{html.escape(_body[:180])}</div></div>'
+        )
+    products_html = "".join(_prods)
     try:
         from firm_foundation import load_sample_product
         _prod = load_sample_product(slug)
@@ -2305,6 +2326,22 @@ def center_card_html(slug, lang="en"):
 #cmbody .sampleproduct .sphead{{color:#36d6a0;font-weight:700;font-size:14px}}
 #cmbody .sampleproduct .spmeta{{color:#5b6675;font-size:11px;font-weight:400;white-space:nowrap}}
 #cmbody .sampleproduct .spbody{{color:#c7d2e0;font-size:13px;line-height:1.6;white-space:pre-wrap}}
+#cmbody .sectionblock{{margin-top:18px}}
+#cmbody .whatyouget{{margin-top:0;padding:16px 18px;background:#0f141d;border:1px solid #1c2733;border-radius:14px}}
+#cmbody .whatyouget h3{{margin:0 0 10px;font-size:11px;color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-weight:700}}
+#cmbody .whatyouget ul{{margin:0;padding-left:18px;color:#c7d2e0;font-size:13px;line-height:1.7}}
+#cmbody .whatyouget li{{margin:0}}
+#cmbody .prodhdr{{font-size:11px;color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px}}
+#cmbody .proditem{{padding:10px 0;border-top:1px solid #1c2733}}
+#cmbody .proditem:first-child{{border-top:none}}
+#cmbody .prodname{{color:#e6edf3;font-weight:700;font-size:13.5px;margin-bottom:4px}}
+#cmbody .prodbody{{color:#c7d2e0;font-size:12.5px;line-height:1.55}}
+#cmbody .officewrap{{background:#0f141d;border:1px solid #1c2733;border-radius:16px;padding:14px;position:relative;margin-top:18px}}
+#cmbody .officecanvas{{display:block;width:100%;aspect-ratio:16/9;margin:0 auto;border-radius:10px;overflow:hidden;background:#d5d0c4;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}}
+#cmbody .deskinfowrap{{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:12px}}
+#cmbody .relabel{{color:#5b6675;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-right:4px}}
+#cmbody .nowizard{{margin-top:0}}
+#cmbody .nowizard .pipeline{{margin-bottom:10px}}
 #cmbody a.netchip{{display:inline-block;background:var(--pcbg);border:1px solid var(--pc);border-radius:14px;padding:5px 12px;margin:0;font-size:11.5px;font-weight:600;color:var(--pc)!important;text-decoration:none!important}}
 #cmbody a.netchip:hover{{background:var(--pchover)}}
 #cmbody .cmbuy{{position:absolute;right:18px;bottom:14px;margin:0;background:transparent;padding:0;display:flex;align-items:center;justify-content:flex-end;z-index:5}}
@@ -2333,9 +2370,9 @@ def center_card_html(slug, lang="en"):
 </div>
 
 <div class="cmpane on" id=cp1>
-<div class=kpirow style="margin-top:14px">{kpi_tiles_html}</div>
-<div class=widgetgrid>
-<div class=widget>
+<div class="kpirow" style="margin-top:14px">{kpi_tiles_html}</div>
+<div class="widgetgrid">
+<div class="widget">
 <h3>{t['trust_word'].capitalize()}</h3>
 <div class=widgetbody>
 <div class=gaugewrap>
@@ -2354,66 +2391,40 @@ def center_card_html(slug, lang="en"):
 <div class=widgetsub>{t['chart_sub']}</div>
 </div>
 </div>
-{(f'<div class=related><span class=relabel>{t["related_label"]}</span>{adj_links}</div>') if adj_links else ''}
-{sample_html}
-<div class=whatyouget>
-  <h3>{t['what_you_get_title']}</h3>
-  <ul><li>{t['what_you_get_1']}</li><li>{t['what_you_get_2']}</li><li>{t['what_you_get_3']}</li></ul>
+
+<div class="sectionblock">
+<div class="whatyouget">
+<h3>{t['what_you_get_title']}</h3>
+<ul><li>{t['what_you_get_1']}</li><li>{t['what_you_get_2']}</li><li>{t['what_you_get_3']}</li></ul>
 </div>
 </div>
-<div class=zone style="margin-top:14px;position:relative">
-<canvas class=officecanvas id=workshop width=1200 height=800></canvas>
+{(f'<div class="sectionblock"><div class="related"><span class=relabel>{t["related_label"]}</span>{adj_links}</div></div>') if adj_links else ''}
+</div>
+
+<div class="cmpane" id=cp2>
+<div class="officewrap">
+<div class=officecanvas id=workshop width=1200 height=800></div>
 <div class=workpopup id=workpopup hidden></div>
-<div class=deskinfo id=deskinfo>{t['desk_default']}</div>
-<div class=cmcaption id=wcaption>{workshop_caption}</div>
+<div class=deskinfowrap><div class=deskinfo id=deskinfo>{t['desk_default']}</div><div class=cmcaption id=wcaption>{workshop_caption}</div></div>
 </div>
 </div>
 
 <div class="cmpane" id=cp3>
 <div class=cmask>
-<div class=nochat>{t['no_chatbot_banner']}</div>
-<div class=pipeline>
-  <div class=pstep><span>1</span> {t['pipeline_1']}</div>
-  <div class=pstep><span>2</span> {t['pipeline_2']}</div>
-  <div class=pstep><span>3</span> {t['pipeline_3']}</div>
-</div>
-<div class=wizsteps><span class="wizdot on" id=wd1>1</span><span class=wizdot id=wd2>2</span><span class=wizdot id=wd3>3</span></div>
-
-<div class="wizstep on" id=ws1>
-<div class=wizprompt>{t['wiz_prompt']}</div>
-<div class=wizmodes>
-<button type=button class="tab wizmode on" id=t1><b>{t['tab_ask']}</b><span>{t['wiz_mode_ask_desc']}</span></button>
-<button type=button class="tab wizmode" id=t2><b>{t['tab_test']}</b><span>{t['wiz_mode_test_desc']}</span></button>
-<button type=button class="tab wizmode" id=t3><b>{t['tab_check']}</b><span>{t['wiz_mode_check_desc']}</span></button>
-</div>
-</div>
-
-<div class=wizstep id=ws2>
-<button type=button class=wizback id=wback1>{t['wiz_back']}</button>
-<textarea id=doc placeholder="{c['sample_question']}"></textarea>
-{('<div class=chips>' + use_cases_html + '</div>') if use_cases_html else ''}
-<div id=ctxwrap style="display:none"><input id=ctx placeholder="{t['ctx_placeholder']}"></div>
-<input id=email placeholder="{t['email_placeholder']}">
-<button id=run class="{'' if initial_active else 'idle'}" style="margin-top:6px;width:100%">{t['ask_button'].format(free=c['free'])}</button><span id=runlabel style="display:none">{t['ask_label']}</span>
-<div class=cmsmall id=bill style="margin-top:8px"></div>
-</div>
-
-<div class=wizstep id=ws3>
-<button type=button class=wizback id=wback2>{t['wiz_again']}</button>
-<div class=cmsmall style="margin:10px 0 6px">{t['answer_label']}</div>
-<div id=out class=out>{t['waiting']}</div>
-<div class=feedback id=feedback hidden>
-  <span class=fblabel>War des hilfreich?</span>
-  <button type=button id=fbup class=fbbtn>👍</button>
-  <button type=button id=fbdown class=fbbtn>👎</button>
-  <input id=fbtext class=fbtext placeholder="Was hat gefehlt?" />
-</div>
-</div>
+<div class=nowizard>
+  <div class=nochat>{t['no_chatbot_banner']}</div>
+  <div class=pipeline>
+    <div class=pstep><span>1</span> {t['pipeline_1']}</div>
+    <div class=pstep><span>2</span> {t['pipeline_2']}</div>
+    <div class=pstep><span>3</span> {t['pipeline_3']}</div>
+  </div>
+  <p class=cmsmall>Kein Prompt-Chaos: du steuerst hier nur den Ablauf. Wenn du willst, legst du einfach los — das Team arbeitet das Ergebnis aus.</p>
+  <a class=buy id=buyLink href="{stripe_link}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;margin-top:10px"><svg viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2 stroke-linecap=round stroke-linejoin=round><circle cx=9 cy=21 r=1/><circle cx=19 cy=21 r=1/><path d="M2.5 3 H5 L7 15 H19 L21.5 7 H6"/></svg>{t['buy_button']}</a><span class=buyprice>€{c['price']:g}</span>
 </div>
 </div>
 
 <div class=cmbuy>
-<a class=buy id=buyLink href="{stripe_link}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2 stroke-linecap=round stroke-linejoin=round><circle cx=9 cy=21 r=1/><circle cx=19 cy=21 r=1/><path d="M2.5 3 H5 L7 15 H19 L21.5 7 H6"/></svg>{t['buy_button']}</a><span class=buyprice>€{c['price']:g}</span>
+<a class=buy id=buyLink2 href="{stripe_link}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2 stroke-linecap=round stroke-linejoin=round><circle cx=9 cy=21 r=1/><circle cx=19 cy=21 r=1/><path d="M2.5 3 H5 L7 15 H19 L21.5 7 H6"/></svg>{t['buy_button']}</a><span class=buyprice>€{c['price']:g}</span>
 </div>"""
     js = r"""(function(){
 if(window.__cmPollId){clearInterval(window.__cmPollId);window.__cmPollId=null;}
@@ -2445,42 +2456,7 @@ function showFeedback(){var fb=$('feedback');if(fb)fb.hidden=false;}
 function sendFb(v){var note=($('fbtext')||{}).value||'';fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug:slug,value:v,note:note})}).then(function(){var fb=$('feedback');if(fb)fb.innerHTML='<span class=fbthanks>Danke! Das hilft dem Team.</span>';});}
 if($('fbup'))$('fbup').onclick=function(){sendFb(1);};
 if($('fbdown'))$('fbdown').onclick=function(){sendFb(-1);};
-async function run(){const k=await ensureKey();if(!k)return;}
-const tab=window._tab||'t1';const doc=$('doc').value.trim();
- if(tab==='t1'){if(!doc){$('out').innerHTML='<span style=color:#e8c14a>__T_TYPE_QUESTION__</span>';return;}
-  showWizStep(3);
-  $('run').disabled=true;$('run').textContent='__T_ASKING__';$('out').innerHTML='<span style=color:#9fd0ff>__T_SENT_TO_PANEL__</span>';
-  const r=await fetch('/api/center?center='+slug,{method:'POST',headers:{Authorization:'Bearer '+k,'Content-Type':'application/json'},body:JSON.stringify({text:doc})});const j=await r.json();
-  if(j.run_id){const fin=await poll(j.run_id);$('run').disabled=false;$('run').textContent=$('runlabel').textContent;
-   if(fin.synthesis){$('out').innerHTML=renderSynth(fin.synthesis,fin.demo);if(fin.billed_eur!==undefined)$('bill').textContent='billed EUR '+fin.billed_eur;showFeedback();}}
-  else{$('out').innerHTML='<span style=color:#ff8a8a>'+esc(JSON.stringify(j))+'</span>';$('run').disabled=false;$('run').textContent=$('runlabel').textContent;}}
- else if(tab==='t2'){if(!doc){$('out').innerHTML='<span style=color:#e8c14a>__T_DESCRIBE_DECISION__</span>';return;}
-  showWizStep(3);
-  $('run').disabled=true;$('run').textContent='__T_TESTING__';$('out').innerHTML='<span style=color:#9fd0ff>__T_RUNNING_PAST_PANEL__</span>';
-  const r=await fetch('/api/center/scenario?center='+slug,{method:'POST',headers:{Authorization:'Bearer '+k,'Content-Type':'application/json'},body:JSON.stringify({action:doc,context:($('ctx').value||'')})});const j=await r.json();
-  $('run').disabled=false;$('run').textContent=$('runlabel').textContent;
-  $('out').innerHTML=j.synthesis?renderSynth(j.synthesis,j.demo):'<span style=color:#ff8a8a>'+esc(JSON.stringify(j))+'</span>';showFeedback();}
- else{showWizStep(3);
-  $('run').disabled=true;$('run').textContent='__T_CHECKING__';$('out').innerHTML='<span style=color:#9fd0ff>__T_CHECKING_STANDING__</span>';
-  const r=await fetch('/api/center/healthcheck?center='+slug,{method:'POST',headers:{Authorization:'Bearer '+k,'Content-Type':'application/json'},body:JSON.stringify({})});const j=await r.json();
-  $('run').disabled=false;$('run').textContent=$('runlabel').textContent;
-  $('out').innerHTML=j.synthesis?renderSynth(j.synthesis,j.demo):'<span style=color:#ff8a8a>'+esc(JSON.stringify(j))+'</span>';showFeedback();}}
-function showTab(n){['t1','t2','t3'].forEach(t=>$(t).classList.toggle('on',t===n));
- $('ctxwrap').style.display=(n==='t2')?'block':'none';
- $('runlabel').textContent=n==='t1'?__T_ASK_LABEL__:(n==='t2'?__T_TEST_LABEL__:__T_CHECK_LABEL__);
- $('run').textContent=$('runlabel').textContent;
- $('doc').placeholder=n==='t1'?__SAMPLE__:(n==='t2'?__T_DECISION_PLACEHOLDER__:__T_CHECK_PLACEHOLDER__);
- window._tab=n;}
-// Ask-flow wizard — 3 steps (pick mode → fill in → result) instead of
-// tabs+form+output all visible at once. Same underlying data/requests as
-// before, just revealed progressively.
-function showWizStep(n){['1','2','3'].forEach(function(i){
- $('ws'+i).classList.toggle('on',i===String(n));$('wd'+i).classList.toggle('on',Number(i)<=n);});}
-['t1','t2','t3'].forEach(t=>$(t).onclick=()=>{showTab(t);showWizStep(2);});showTab('t1');
-document.querySelectorAll('.uc').forEach(b=>b.onclick=()=>{const q=b.getAttribute('data-q')||b.textContent;$('doc').value=q;showTab('t1');showWizStep(2);});
-$('wback1').onclick=()=>showWizStep(1);
-$('wback2').onclick=()=>{showWizStep(1);$('doc').value='';$('out').innerHTML=__T_WAITING__;};
-$('run').onclick=run;
+// Wizard element refs removed — Tab 3 is now a direct CTA, not a 3-step form.
 // Modal-level tabs — Overview / How they work / Try it now. Plain show/hide,
 // no routing: this is a page inside a page, not worth its own history state.
 function showPane(n){['1','2','3'].forEach(function(i){$('ct'+i).classList.toggle('on',i===n);$('cp'+i).classList.toggle('on',i===n);});}
@@ -2499,8 +2475,7 @@ document.querySelectorAll('.desk').forEach(function(d){
 });
 // Offer click-through beacon — target=_blank so the current tab never unloads,
 // a plain fetch is enough (no keepalive/sendBeacon needed).
-$('buyLink').addEventListener('click',function(){fetch('__TRACK_URL__',{method:'POST',headers:{'Content-Type':'application/json'},
-body:JSON.stringify({path:location.pathname,site:'__TRACK_SITE__',section:slug+':offer_click'})}).catch(function(){});});
+['buyLink','buyLink2'].forEach(function(id){var el=$(id);if(el)el.addEventListener('click',function(){fetch('__TRACK_URL__',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:location.pathname,site:'__TRACK_SITE__',section:slug+':offer_click'})}).catch(function(){});});});
 // Terrarium — poll this center's own live numbers + any in-flight panel
 // session (someone else's, not just yours) so a visitor watches real
 // activity happen, not a static snapshot from page-load.
