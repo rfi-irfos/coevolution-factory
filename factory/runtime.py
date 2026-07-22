@@ -3086,6 +3086,7 @@ background:radial-gradient(ellipse at center,#0d1219,#0a0e14 75%);border:1px sol
 .empty{{color:#5b6675;text-align:center;padding:30px}}
 .foot{{color:#5b6675;font-size:12px;margin-top:36px}}
 .cmoverlay{{position:fixed;inset:0;z-index:200;background:rgba(6,9,13,.97);backdrop-filter:blur(6px);overflow-y:auto}}
+body:has(#centermodal[style*="display:flex"]) .wrap{{visibility:hidden}}
 .cmpanel{{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:1180px;max-width:calc(100vw - 32px);min-height:200px;height:min(860px,92vh);max-height:92vh;background:#0a0e14;border:1px solid #1c2733;border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box}}
 .cmscroll{{overflow-y:auto;padding:30px 34px 0}}
 .cmclosebtn{{position:absolute;top:14px;right:14px;z-index:5;width:32px;height:32px;border-radius:50%;background:#0f141d;border:1px solid #1c2733;color:#c7d2e0;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}}
