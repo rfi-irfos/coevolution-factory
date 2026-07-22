@@ -2042,6 +2042,267 @@ CENTER_PAGE_TR = {
 }
 
 
+
+
+# =========================================================================
+# ANTFARM — the operator-facing BI console (/antfarm) + its live data feed
+# (/api/agent-grid). A calm, dense grid of every firm: per-agent activity
+# LEDs, real KPIs from _live_stats_for, open-directive badges, and a
+# per-team command channel that POSTs straight to /api/board/directive.
+# The 'kind' of activity is read from the active job record (.get('kind')
+# guarded — a parallel agent adds that field; missing = 'idle').
+# =========================================================================
+ANTFARM_TR = {
+    "en": {
+        "title": "Ant Farm — live operations",
+        "subtitle": "every firm, every standing agent, and a direct command channel",
+        "develop": "developing",
+        "discuss": "in discussion",
+        "improve": "improving",
+        "directive": "on directive",
+        "idle": "idle",
+        "cmd_placeholder": "issue a board directive to this team\u2026",
+        "cmd_send": "Send",
+        "cmd_sent": "\u2713 routed",
+    },
+    "de": {
+        "title": "Ameisenfarm — Live-Betrieb",
+        "subtitle": "jede Firma, jeder feste Agent und ein direkter Befehlskanal",
+        "develop": "entwickelt",
+        "discuss": "in Diskussion",
+        "improve": "verbessert",
+        "directive": "auf Anweisung",
+        "idle": "im Leerlauf",
+        "cmd_placeholder": "eine Vorstandsanweisung an dieses Team erteilen\u2026",
+        "cmd_send": "Senden",
+        "cmd_sent": "\u2713 weitergeleitet",
+    },
+}
+
+
+def build_agent_grid():
+    """Batched live snapshot of every firm for the /antfarm console.
+
+    For each center: real KPIs from _live_stats_for, the current activity
+    'kind' from the active job (guarded .get so a missing 'kind' field — added
+    by a parallel agent — degrades to 'idle' instead of crashing), the flat
+    roster of standing agents (leads + experts) each stamped with that kind,
+    and the board-directive backlog (open count + last directive text)."""
+    firms = {}
+    for slug, m in CENTERS_META.items():
+        stats = _live_stats_for(slug)
+        aj = _active_job_for(slug)
+        kind = (aj or {}).get("kind", "idle")
+        roster = m.get("roster", {})
+        agents = []
+        for dep in roster.get("departments", []):
+            lead = dep.get("lead") or {}
+            if lead.get("agent"):
+                agents.append({"name": lead.get("name") or lead.get("agent"),
+                               "agent": lead.get("agent"), "role": "lead",
+                               "kind": kind})
+            for ex in dep.get("experts", []):
+                agents.append({"name": ex.get("name") or ex.get("agent"),
+                               "agent": ex.get("agent"), "role": "expert",
+                               "kind": kind})
+        bdirs = state.get("board_directives", {}).get(slug, [])
+        open_d = [d for d in bdirs if d.get("status") in ("routed_to_ceo", "in_review")]
+        last_d = bdirs[-1] if bdirs else None
+        firms[slug] = {
+            "name": m.get("name"), "status": stats["status"], "kind": kind,
+            "agents": agents, "open_directives": len(open_d),
+            "last_directive": (last_d["directive"] if last_d else None),
+            "sessions": stats["sessions"], "revenue_eur": stats["revenue_eur"],
+            "leads": stats["leads"], "problems": stats["problems"],
+            "accent": ICON_COLORS.get(ICON_BY_SLUG.get(slug, "shield"), "#36d6a0"),
+        }
+    return {"firms": firms, "generated": int(time.time())}
+
+
+async def agent_grid(request):
+    """GET /api/agent-grid — the live feed the /antfarm console polls (~6s)."""
+    return web.json_response(build_agent_grid())
+
+
+# ---- /antfarm rendering --------------------------------------------------
+_ANTFARM_CSS = """
+*{box-sizing:border-box}
+body{margin:0;background:#070a0f;color:#c7d2de;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.afbar{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:16px 22px;background:#0d1219;border-bottom:1px solid #1c2733;position:sticky;top:0;z-index:5}
+.afbar h1{margin:0;font-size:16px;font-weight:600;letter-spacing:.02em;color:#e8eef5}
+.afbar .sub{color:#68788a;font-size:12px}
+.aflegend{margin-left:auto;display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#7f8fa1}
+.aflegend span{display:inline-flex;align-items:center;gap:6px}
+.aflegend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.led-develop{background:#3b82f6}.led-discuss{background:#36d6a0}.led-improve{background:#f59e0b}.led-directive{background:#a855f7}.led-idle{background:#475569}
+.afgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;padding:18px 22px}
+.ftile{background:#0d1219;border:1px solid #1c2733;border-top:2px solid var(--ac,#36d6a0);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.fthead{display:flex;align-items:center;gap:8px}
+.fthead .fn{font-size:13px;font-weight:600;color:#e8eef5;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#1c2733;color:#8aa0b4}
+.bd.hot{background:#3a2233;color:#f0a5c6}
+.st{font-size:10px;padding:2px 7px;border-radius:10px;background:#12341f;color:#4ade80}
+.st.degraded{background:#3a2e12;color:#fbbf24}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.kpi{background:#0a0f16;border:1px solid #17212d;border-radius:6px;padding:7px 6px;text-align:center}
+.kpi b{display:block;font-size:15px;color:#e8eef5;font-weight:600}
+.kpi span{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#5f7085}
+.arows{display:flex;flex-direction:column;gap:3px;max-height:220px;overflow:auto}
+.arow{display:flex;align-items:center;gap:8px;padding:3px 6px;border-radius:5px;background:#0a0f16}
+.arow .lx{width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:#475569}
+.arow[data-kind=develop] .lx{background:#3b82f6}
+.arow[data-kind=discuss] .lx{background:#36d6a0}
+.arow[data-kind=improve] .lx{background:#f59e0b}
+.arow[data-kind=directive] .lx{background:#a855f7}
+.arow[data-kind=idle] .lx{background:#475569}
+.arow .an{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#c7d2de}
+.arow .rt{font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:#5f7085;border:1px solid #22303e;border-radius:4px;padding:1px 5px}
+.arow .rt.lead{color:#cbb6f5;border-color:#3a2f55}
+.arow .kl{font-size:9px;color:#68788a;min-width:64px;text-align:right}
+.cmd{display:flex;gap:6px;align-items:center;margin-top:2px}
+.cmdin{flex:1;background:#0a0f16;border:1px solid #22303e;border-radius:6px;color:#dfe7ef;padding:7px 9px;font:12px ui-monospace,monospace}
+.cmdin:focus{outline:none;border-color:var(--ac,#36d6a0)}
+.cmdsend{background:var(--ac,#36d6a0);color:#04121a;border:0;border-radius:6px;padding:7px 12px;font:600 12px ui-monospace,monospace;cursor:pointer}
+.cmdsend:hover{filter:brightness(1.12)}
+.cmdok{font-size:11px;color:#4ade80;min-width:64px}
+.lastd{font-size:10px;color:#5f7085;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+"""
+
+_ANTFARM_JS = """
+var KLABEL={develop:'developing',discuss:'in discussion',improve:'improving',directive:'on directive',idle:'idle'};
+function paint(g){
+  var firms=g.firms||{};
+  for(var slug in firms){
+    var f=firms[slug];
+    var tile=document.querySelector('.ftile[data-slug="'+slug+'"]');
+    if(!tile)continue;
+    tile.setAttribute('data-kind',f.kind);
+    var bd=tile.querySelector('.bd');
+    if(bd){bd.textContent=f.open_directives;bd.className='bd'+(f.open_directives>0?' hot':'');}
+    var rows=tile.querySelectorAll('.arow');
+    for(var i=0;i<rows.length;i++){
+      rows[i].setAttribute('data-kind',f.kind);
+      var kl=rows[i].querySelector('.kl');
+      if(kl)kl.textContent=KLABEL[f.kind]||f.kind;
+    }
+    var kv=tile.querySelectorAll('.kpi b');
+    if(kv.length>=4){kv[0].textContent=f.sessions;kv[1].textContent='\u20ac'+f.revenue_eur;kv[2].textContent=f.leads;kv[3].textContent=f.problems;}
+  }
+}
+function poll(){
+  fetch('/api/agent-grid').then(function(r){return r.json();}).then(paint).catch(function(){});
+}
+function sendCmd(ev,form){
+  ev.preventDefault();
+  var slug=form.getAttribute('data-slug');
+  var input=form.querySelector('.cmdin');
+  var ok=form.querySelector('.cmdok');
+  var d=(input.value||'').trim();
+  if(!d){return false;}
+  fetch('/api/board/directive?center='+encodeURIComponent(slug),{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({center:slug,directive:d})
+  }).then(function(r){return r.json();}).then(function(){
+    if(ok){ok.textContent='\u2713 routed';setTimeout(function(){ok.textContent='';},4000);}
+    input.value='';poll();
+  }).catch(function(){if(ok){ok.textContent='\u2717 failed';}});
+  return false;
+}
+setInterval(poll,6000);
+document.addEventListener('DOMContentLoaded',poll);
+"""
+
+
+def _agent_row(a, t):
+    """One standing-agent row: activity LED + name + role tag + kind label."""
+    kind = a.get("kind", "idle")
+    role = a.get("role", "expert")
+    name = html.escape(str(a.get("name") or a.get("agent") or ""))
+    rt_cls = "rt lead" if role == "lead" else "rt"
+    klabel = html.escape(str(t.get(kind, kind)))
+    return (f'<div class=arow data-kind={kind}>'
+            f'<span class=lx></span>'
+            f'<span class=an>{name}</span>'
+            f'<span class="{rt_cls}">{html.escape(role)}</span>'
+            f'<span class=kl>{klabel}</span>'
+            f'</div>')
+
+
+def build_antfarm_html(lang="en"):
+    """Serious BI console at /antfarm: a dense CSS grid of firm tiles, each
+    with live KPIs, per-agent activity LEDs, an open-directive badge, and a
+    per-team command form that POSTs to /api/board/directive. Assembled by
+    string concatenation (not .format) so the CSS/JS brace-heavy blocks need
+    no escaping."""
+    if lang not in ("en", "de"):
+        lang = "en"
+    t = ANTFARM_TR[lang]
+    grid = build_agent_grid()
+    firms = grid["firms"]
+
+    legend = "".join(
+        f'<span><i class=led-{k}></i>{html.escape(t[k])}</span>'
+        for k in ("develop", "discuss", "improve", "directive", "idle"))
+
+    tiles = []
+    for slug, f in firms.items():
+        accent = f["accent"]
+        kind = f["kind"]
+        status = f["status"]
+        st_cls = "st degraded" if status == "degraded" else "st"
+        open_d = f["open_directives"]
+        bd_cls = "bd hot" if open_d > 0 else "bd"
+        name = html.escape(str(f["name"] or slug))
+        rows = "".join(_agent_row(a, t) for a in f["agents"])
+        last_d = f.get("last_directive")
+        last_html = (f'<div class=lastd>{html.escape(str(last_d))}</div>'
+                     if last_d else "")
+        kpis = (
+            f'<div class=kpis>'
+            f'<div class=kpi><b>{f["sessions"]}</b><span>sessions</span></div>'
+            f'<div class=kpi><b>\u20ac{f["revenue_eur"]}</b><span>revenue</span></div>'
+            f'<div class=kpi><b>{f["leads"]}</b><span>leads</span></div>'
+            f'<div class=kpi><b>{f["problems"]}</b><span>problems</span></div>'
+            f'</div>')
+        cmd = (
+            f'<form class="cmd" data-slug="{slug}" onsubmit="return sendCmd(event,this)">'
+            f'<input class=cmdin name=directive placeholder="{html.escape(t["cmd_placeholder"])}">'
+            f'<button class=cmdsend type=submit>{html.escape(t["cmd_send"])}</button>'
+            f'<span class=cmdok></span>'
+            f'</form>')
+        tiles.append(
+            f'<div class=ftile data-slug="{slug}" data-kind={kind} style="--ac:{accent}">'
+            f'<div class=fthead><span class=fn>{name}</span>'
+            f'<span class="{bd_cls}">{open_d}</span>'
+            f'<span class="{st_cls}">{html.escape(str(status))}</span></div>'
+            f'{kpis}'
+            f'<div class=arows>{rows}</div>'
+            f'{last_html}'
+            f'{cmd}'
+            f'</div>')
+
+    body = (
+        '<!doctype html><html lang="' + lang + '"><head><meta charset=utf-8>'
+        '<meta name=viewport content="width=device-width,initial-scale=1">'
+        '<title>' + html.escape(t["title"]) + '</title>'
+        '<style>' + _ANTFARM_CSS + '</style></head><body>'
+        '<div class=afbar><h1>' + html.escape(t["title"]) + '</h1>'
+        '<span class=sub>' + html.escape(t["subtitle"]) + '</span>'
+        '<div class=aflegend>' + legend + '</div></div>'
+        '<div class=afgrid>' + "".join(tiles) + '</div>'
+        '<script>' + _ANTFARM_JS + '</script>'
+        '</body></html>')
+    return body
+
+
+async def antfarm_page(request):
+    """GET /antfarm — the operator BI console. Lang via ?lang=en|de."""
+    lang = request.query.get("lang", "en")
+    if lang not in ("en", "de"):
+        lang = "en"
+    return web.Response(text=build_antfarm_html(lang), content_type="text/html")
+
+
 def center_card_html(slug, lang="en"):
     """Renders ONLY the inner modal content for a center — no <html>/<nav>/
     <footer> — reused by both the AJAX fragment endpoint (GET
@@ -3463,6 +3724,8 @@ app.router.add_get("/privacy", privacy_page)
 app.router.add_get("/health", health)
 app.router.add_get("/observatory", observatory)
 app.router.add_get("/network", network)
+app.router.add_get("/antfarm", antfarm_page)
+app.router.add_get("/api/agent-grid", agent_grid)
 app.router.add_get("/api/live-grid", live_grid)
 app.router.add_get("/api/center/{slug}/live", center_live)
 app.router.add_get("/api/center/{slug}/card", center_card_handler)
