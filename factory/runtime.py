@@ -2593,7 +2593,7 @@ window.__liveStatus=(s.active_job?'live · arbeitet':('live · '+lbl));
 var wcap=$('wcaption');if(wcap)wcap.textContent=s.active_job?__T_WORKSHOP_ACTIVE__:__T_WORKSHOP_IDLE__;
 var runbtn=$('run');if(runbtn&&!runbtn.disabled)runbtn.classList.toggle('idle',!s.active_job);
 }).catch(function(){});}
-pollLive();window.__cmPollId=setInterval(pollLive,3000);
+pollLive();window.__cmPollId=setInterval(pollLive,8000);
 (function(){
   var cv=document.getElementById('actwave'); if(!cv) return;
   var ctx=cv.getContext('2d'); var W=cv.width,H=cv.height; var t=0;
