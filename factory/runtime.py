@@ -2108,6 +2108,20 @@ def build_agent_grid():
         bdirs = state.get("board_directives", {}).get(slug, [])
         open_d = [d for d in bdirs if d.get("status") in ("routed_to_ceo", "in_review")]
         last_d = bdirs[-1] if bdirs else None
+        # --- audit trail: board directives (your prompts) + live jobs + sessions ---
+        directives = [{"id": d.get("id"), "directive": d.get("directive"),
+                       "issued": d.get("issued"), "status": d.get("status"),
+                       "ceo_ack": d.get("ceo_ack"), "teamlead_acks": d.get("teamlead_acks")}
+                      for d in bdirs]
+        jobs = [{"id": jid, "text": j.get("text"), "kind": j.get("kind", "discuss"),
+                 "status": j.get("status"), "created": j.get("created"),
+                 "board_directive_id": j.get("board_directive_id")}
+                for jid, j in state.get("jobs", {}).items()
+                if j.get("center") == slug and j.get("status") not in ("done", "error")]
+        sessions = sorted(
+            [u for u in state.get("usage", []) if u.get("center") == slug],
+            key=lambda u: u.get("ts", 0), reverse=True)[:8]
+        sess_ts = [u.get("ts") for u in sessions]
         firms[slug] = {
             "name": m.get("name"), "status": stats["status"], "kind": kind,
             "agents": agents, "open_directives": len(open_d),
@@ -2115,6 +2129,9 @@ def build_agent_grid():
             "sessions": stats["sessions"], "revenue_eur": stats["revenue_eur"],
             "leads": stats["leads"], "problems": stats["problems"],
             "accent": ICON_COLORS.get(ICON_BY_SLUG.get(slug, "shield"), "#36d6a0"),
+            "audit": {"directives": directives, "jobs": jobs,
+                      "last_session_ts": sess_ts[0] if sess_ts else None,
+                      "session_count": len(sessions)},
         }
     return {"firms": firms, "generated": int(time.time())}
 
@@ -2127,42 +2144,76 @@ async def agent_grid(request):
 # ---- /antfarm rendering --------------------------------------------------
 _ANTFARM_CSS = """
 *{box-sizing:border-box}
-body{margin:0;background:#070a0f;color:#c7d2de;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-.afbar{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:16px 22px;background:#0d1219;border-bottom:1px solid #1c2733;position:sticky;top:0;z-index:5}
-.afbar h1{margin:0;font-size:16px;font-weight:600;letter-spacing:.02em;color:#e8eef5}
-.afbar .sub{color:#68788a;font-size:12px}
-.aflegend{margin-left:auto;display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#7f8fa1}
+body{margin:0;background:#070a0f;color:#dce4ee;font:14px/1.55 -apple-system,BlinkMacSystemFont,'Inter',Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+.afbar{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:16px 24px;background:#0d1219;border-bottom:1px solid #1c2733;position:sticky;top:0;z-index:5}
+.afbar h1{margin:0;font-size:18px;font-weight:700;letter-spacing:.01em;color:#eef3f8}
+.afbar .sub{color:#7f8ea1;font-size:13px}
+.aflegend{margin-left:auto;display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#8aa0b4}
 .aflegend span{display:inline-flex;align-items:center;gap:6px}
 .aflegend i{width:9px;height:9px;border-radius:50%;display:inline-block}
-.led-develop{background:#3b82f6}.led-discuss{background:#36d6a0}.led-improve{background:#f59e0b}.led-directive{background:#a855f7}.led-idle{background:#475569}
-.afgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;padding:18px 22px}
-.ftile{background:#0d1219;border:1px solid #1c2733;border-top:2px solid var(--ac,#36d6a0);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px}
-.fthead{display:flex;align-items:center;gap:8px}
-.fthead .fn{font-size:13px;font-weight:600;color:#e8eef5;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bd{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#1c2733;color:#8aa0b4}
+.aflegend .i-green{background:#22c55e}.aflegend .i-orange{background:#f59e0b}.aflegend .i-red{background:#ef4444}
+.afgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px;padding:20px 24px}
+.ftile{background:#0d1219;border:1px solid #1c2733;border-top:3px solid var(--ac,#36d6a0);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;cursor:pointer;transition:border-color .15s ease,transform .12s ease}
+.ftile:hover{border-color:#2c4258;transform:translateY(-1px)}
+.fthead{display:flex;align-items:center;gap:10px}
+.fthead .fn{font-size:15px;font-weight:700;color:#eef3f8;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
+.badge.on{background:#22c55e;animation:blink 1s steps(1,end) infinite}
+.badge.work{background:#f59e0b;animation:blink 1s steps(1,end) infinite}
+.badge.off{background:#ef4444;animation:blink 1s steps(1,end) infinite}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:.25}}
+.bd{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#1c2733;color:#8aa0b4}
 .bd.hot{background:#3a2233;color:#f0a5c6}
-.st{font-size:10px;padding:2px 7px;border-radius:10px;background:#12341f;color:#4ade80}
+.st{font-size:10px;padding:2px 8px;border-radius:10px;background:#12341f;color:#4ade80}
 .st.degraded{background:#3a2e12;color:#fbbf24}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.kpi{background:#0a0f16;border:1px solid #17212d;border-radius:6px;padding:7px 6px;text-align:center}
-.kpi b{display:block;font-size:15px;color:#e8eef5;font-weight:600}
-.kpi span{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#5f7085}
-.arows{display:flex;flex-direction:column;gap:3px;max-height:220px;overflow:auto}
-.arow{display:flex;align-items:center;gap:8px;padding:3px 6px;border-radius:5px;background:#0a0f16}
-.arow .lx{width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:#475569}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpi{background:#0a0f16;border:1px solid #17212d;border-radius:8px;padding:9px 7px;text-align:center}
+.kpi b{display:block;font-size:17px;color:#eef3f8;font-weight:700}
+.kpi span{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#5f7085}
+.arows{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow:auto}
+.arow{display:flex;align-items:center;gap:9px;padding:4px 7px;border-radius:6px;background:#0a0f16}
+.arow .lx{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:#475569}
 .arow[data-kind=develop] .lx{background:#3b82f6}
 .arow[data-kind=discuss] .lx{background:#36d6a0}
 .arow[data-kind=improve] .lx{background:#f59e0b}
 .arow[data-kind=directive] .lx{background:#a855f7}
-.arow[data-kind=idle] .lx{background:#475569}
-.arow .an{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#c7d2de}
-.arow .rt{font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:#5f7085;border:1px solid #22303e;border-radius:4px;padding:1px 5px}
+.arow[data-kind=idle] .lx{background:#475569;animation:blink 1.4s steps(1,end) infinite}
+.arow .an{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#dce4ee}
+.arow .rt{font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:#5f7085;border:1px solid #22303e;border-radius:4px;padding:1px 6px}
 .arow .rt.lead{color:#cbb6f5;border-color:#3a2f55}
-.arow .kl{font-size:9px;color:#68788a;min-width:64px;text-align:right}
-.cmd{display:flex;gap:6px;align-items:center;margin-top:2px}
-.cmdin{flex:1;background:#0a0f16;border:1px solid #22303e;border-radius:6px;color:#dfe7ef;padding:7px 9px;font:12px ui-monospace,monospace}
+.arow .kl{font-size:10px;color:#8aa0b4;min-width:72px;text-align:right}
+.cmd{display:flex;gap:8px;align-items:center;margin-top:2px}
+.cmdin{flex:1;background:#0a0f16;border:1px solid #22303e;border-radius:8px;color:#dfe7ef;padding:9px 11px;font:13px Inter,sans-serif}
 .cmdin:focus{outline:none;border-color:var(--ac,#36d6a0)}
-.cmdsend{background:var(--ac,#36d6a0);color:#04121a;border:0;border-radius:6px;padding:7px 12px;font:600 12px ui-monospace,monospace;cursor:pointer}
+.cmdsend{background:var(--ac,#36d6a0);color:#04121a;border:0;border-radius:8px;padding:9px 16px;font:700 13px Inter,sans-serif;cursor:pointer}
+.cmdsend:hover{filter:brightness(1.12)}
+.cmdok{font-size:12px;color:#4ade80;min-width:72px}
+.lastd{font-size:11px;color:#5f7085;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ftile[data-kind=develop],.ftile[data-kind=discuss],.ftile[data-kind=improve],.ftile[data-kind=directive]{animation:afpulse 2.4s ease-in-out infinite}
+@keyframes afpulse{0%,100%{box-shadow:0 0 0 0 rgba(54,214,160,0)}50%{box-shadow:0 0 16px 1px var(--ac,#36d6a0)}}
+.afmodal{position:fixed;inset:0;background:rgba(4,7,11,.78);backdrop-filter:blur(5px);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:40px 24px;overflow:auto}
+.afmodal.on{display:flex}
+.afcard{position:relative;background:#0d1219;border:1px solid #2c4258;border-top:4px solid var(--ac,#36d6a0);border-radius:14px;width:min(860px,97vw);max-height:90vh;overflow:auto;padding:26px 28px;box-shadow:0 30px 70px rgba(0,0,0,.65)}
+.afcard h2{margin:0 0 4px;font-size:24px;font-weight:700;color:#eef3f8}
+.aclose{position:absolute;top:16px;right:20px;background:none;border:0;color:#8aa0b4;font-size:26px;cursor:pointer;line-height:1}
+.aclose:hover{color:#eef3f8}
+.ameta{display:flex;gap:12px;align-items:center;margin:8px 0 18px;font-size:13px;color:#8aa0b4;flex-wrap:wrap}
+.ameta .badge{margin-right:2px}
+.asec{margin:18px 0 0}
+.asec h3{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:#7f8ea1;font-weight:700}
+.afcard .kpis{grid-template-columns:repeat(6,1fr)}
+.trail{display:flex;flex-direction:column;gap:6px}
+.trow{display:flex;gap:10px;align-items:flex-start;background:#0a0f16;border:1px solid #15202c;border-radius:8px;padding:9px 11px}
+.trow .tdot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:0 0 auto}
+.tdot.dir{background:#a855f7}.tdot.job{background:#3b82f6}.tdot.sess{background:#22c55e}
+.trow .tbody{flex:1;min-width:0}
+.trow .tt{font-size:13px;color:#dce4ee;font-weight:600}
+.trow .tm{font-size:11px;color:#5f7085}
+.trow .ttag{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#8aa0b4;border:1px solid #22303e;border-radius:4px;padding:1px 6px;white-space:nowrap}
+.afcard .arows{max-height:none}
+.afcard .cmd{margin-top:14px}
+.afcard .cmdin{font-size:14px;padding:11px 13px}
+.afcard .cmdsend{padding:11px 20px;font-size:14px}
 .cmdsend:hover{filter:brightness(1.12)}
 .cmdok{font-size:11px;color:#4ade80;min-width:64px}
 .lastd{font-size:10px;color:#5f7085;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2210,22 +2261,49 @@ var KINDLABEL={develop:'developing',discuss:'in discussion',improve:'improving',
 function openModal(slug){
   var g=window.__GRID__; if(!g||!g.firms[slug])return;
   var f=g.firms[slug];
+  var aud=f.audit||{directives:[],jobs:[],last_session_ts:null,session_count:0};
   var rows=(f.agents||[]).map(function(a){
     return '<div class=arow data-kind="'+a.kind+'"><span class=lx></span><span class=an>'+esc(a.name||a.agent)+'</span><span class="rt'+(a.role==='lead'?' lead':'')+'">'+esc(a.role)+'</span><span class=kl>'+(KINDLABEL[a.kind]||a.kind)+'</span></div>';
   }).join('');
-  var kpis='<div class=kpis><div class=kpi><b>'+f.sessions+'</b><span>sessions</span></div><div class=kpi><b>€'+f.revenue_eur+'</b><span>revenue</span></div><div class=kpi><b>'+f.leads+'</b><span>leads</span></div><div class=kpi><b>'+f.problems+'</b><span>problems</span></div></div>';
-  var lastd=f.last_directive?'<div class=lastd>'+esc(f.last_directive)+'</div>':'';
+  var kpis='<div class=kpis>'
+    +'<div class=kpi><b>'+f.sessions+'</b><span>sessions</span></div>'
+    +'<div class=kpi><b>€'+f.revenue_eur+'</b><span>revenue</span></div>'
+    +'<div class=kpi><b>'+f.leads+'</b><span>leads</span></div>'
+    +'<div class=kpi><b>'+f.problems+'</b><span>problems</span></div>'
+    +'<div class=kpi><b>'+f.open_directives+'</b><span>open dir.</span></div>'
+    +'<div class=kpi><b>'+aud.directives.length+'</b><span>my prompts</span></div>'
+    +'</div>';
+  // audit trail: board directives (your prompts) + live jobs + recent sessions
+  var trail=[];
+  (aud.directives||[]).forEach(function(d){
+    trail.push({_ts:d.issued||0,dot:'dir',tag:'MY PROMPT',t:esc(d.directive||''),m:fmtTs(d.issued)+(d.status?(' · '+esc(d.status)):'')});
+  });
+  (aud.jobs||[]).forEach(function(j){
+    var link=j.board_directive_id?(' · from prompt '+esc(j.board_directive_id)):'';
+    trail.push({_ts:j.created||0,dot:'job',tag:j.kind||'job',t:esc(j.text||''),m:fmtTs(j.created)+link});
+  });
+  trail.sort(function(a,b){return b._ts-a._ts;});
+  var trailHtml=trail.map(function(t){
+    return '<div class=trow><span class="tdot '+t.dot+'"></span><div class=tbody><div class=tt>'+t.t+'</div><div class=tm>'+t.m+'</div></div><span class=ttag>'+t.tag+'</span></div>';
+  }).join('') || '<div class=tm style="padding:8px 2px">No activity recorded yet.</div>';
+  var lastd=f.last_directive?'<div class=lastd>Last prompt: '+esc(f.last_directive)+'</div>':'';
   var cmd='<form class="cmd" data-slug="'+slug+'" onsubmit="return sendCmd(event,this)"><input class=cmdin name=directive placeholder="Directive to this team…"><button class=cmdsend type=submit>Send</button><span class=cmdok></span></form>';
+  var badgeCls = (f.status==='healthy'&&f.kind==='idle')?'on':(f.kind!=='idle'?'work':'off');
   var card=document.getElementById('afcard');
   card.style.setProperty('--ac',f.accent||'#36d6a0');
   card.innerHTML='<button class=aclose onclick="closeModal()">×</button>'
     +'<h2>'+esc(f.name||slug)+'</h2>'
-    +'<div class=ameta><span class="bd'+(f.open_directives>0?' hot':'')+'">'+(f.open_directives||0)+' open directives</span>'
+    +'<div class=ameta><span class="badge '+badgeCls+'"></span>'
     +'<span class="st'+(f.status==='degraded'?' degraded':'')+'">'+esc(f.status||'')+'</span>'
-    +'<span>'+esc(KLABEL[f.kind]||f.kind)+'</span></div>'
-    +kpis+'<div class=arows>'+rows+'</div>'+lastd+cmd;
+    +'<span>'+esc(KLABEL[f.kind]||f.kind)+'</span>'
+    +'<span>'+aud.session_count+' sessions logged</span></div>'
+    +kpis
+    +'<div class=asec><h3>Team — what each agent is doing</h3><div class=arows>'+rows+'</div></div>'
+    +'<div class=asec><h3>Audit trail — prompts, jobs & sessions</h3><div class=trail>'+trailHtml+'</div>'+lastd+'</div>'
+    +cmd;
   document.getElementById('afmodal').classList.add('on');
 }
+function fmtTs(ts){if(!ts)return'';var d=new Date(ts*1000);return d.toISOString().slice(0,16).replace('T',' ');}
 function closeModal(){document.getElementById('afmodal').classList.remove('on');}
 function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
 document.addEventListener('click',function(e){
@@ -2313,8 +2391,10 @@ def build_antfarm_html(lang="en"):
             f'<span class=cmdok></span>'
             f'</form>')
         tiles.append(
-            f'<div class=ftile data-slug="{slug}" data-kind={kind} style="--ac:{accent}">'
-            f'<div class=fthead><span class=fn>{name}</span>'
+            f'<div class=ftile data-slug="{slug}" data-kind={kind} data-status={status} style="--ac:{accent}">'
+            f'<div class=fthead>'
+            f'<span class="badge {"on" if status=="healthy" and kind=="idle" else ("work" if kind!="idle" else "off")}"></span>'
+            f'<span class=fn>{name}</span>'
             f'<span class="{bd_cls}">{open_d}</span>'
             f'<span class="{st_cls}">{html.escape(str(status))}</span></div>'
             f'{kpis}'
