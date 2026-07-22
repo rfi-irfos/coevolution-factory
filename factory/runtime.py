@@ -3085,7 +3085,7 @@ background:radial-gradient(ellipse at center,#0d1219,#0a0e14 75%);border:1px sol
 .hexstats{{color:#8b98a9;font-size:9.5px;font-variant-numeric:tabular-nums;letter-spacing:.01em}}
 .empty{{color:#5b6675;text-align:center;padding:30px}}
 .foot{{color:#5b6675;font-size:12px;margin-top:36px}}
-.cmoverlay{{position:fixed;inset:0;z-index:200;background:rgba(6,9,13,.72);backdrop-filter:blur(6px);overflow-y:auto}}
+.cmoverlay{{position:fixed;inset:0;z-index:200;background:rgba(6,9,13,.9);backdrop-filter:blur(6px);overflow-y:auto}}
 .cmpanel{{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:1180px;max-width:calc(100vw - 32px);min-height:200px;height:min(860px,92vh);max-height:92vh;background:#0a0e14;border:1px solid #1c2733;border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box}}
 .cmscroll{{overflow-y:auto;padding:30px 34px 0}}
 .cmclosebtn{{position:absolute;top:14px;right:14px;z-index:5;width:32px;height:32px;border-radius:50%;background:#0f141d;border:1px solid #1c2733;color:#c7d2e0;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}}
@@ -3135,7 +3135,7 @@ setInterval(poll,10000);
 // fixed-height clipping viewport, no canvas re-render needed since the SVG
 // stays the same DOM, we just move/scale it. Wheel = zoom (centered on
 // cursor), drag = pan, buttons = discrete zoom, reset = fit-to-view.
-(function(){{
+try{{
 var wrap=document.getElementById('hcwrap'),svg=document.getElementById('honeycomb');
 var vbW={vb_w:.1f},vbH={vb_h:.1f};
 var scale=1,tx=0,ty=0,dragging=false,dragged=false,lastX=0,lastY=0;
@@ -3166,7 +3166,8 @@ fit();
  btn.addEventListener('click',function(e){{e.stopPropagation();pop.hidden=!pop.hidden;}});
  document.addEventListener('click',function(e){{if(!pop.contains(e.target)&&e.target!==btn){{pop.hidden=true;}}}});
 }})();
-// Center-detail MODAL — clicking a hex fetches /api/center/{{slug}}/card and
+/}}catch(e){{console.log('panzoom-err',e);}}
+r-detail MODAL — clicking a hex fetches /api/center/{{slug}}/card and
 // injects it here instead of navigating to a separate page. Scripts inside
 // an innerHTML-injected fragment don't auto-execute (browser rule), so
 // execScripts() re-creates and re-inserts them — that's the one bit of
