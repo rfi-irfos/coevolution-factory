@@ -288,10 +288,7 @@ def _nav_html(active="", brand_extra="", right_html=None):
     with no reason to be on every single page."""
     right = right_html if right_html is not None else ""
     return f"""<nav class=sitenav><div class=navwrap>
-<a class=brand href="/">
-<svg width="22" height="18" viewBox="0 0 54 18" fill="none" style="overflow:visible;flex-shrink:0">
-<polyline points="0,9 12,9 16,2 20,16 24,2 28,9 54,9" stroke="{RFI_TEAL}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-</svg><span class=word>CoEvolution&nbsp;Factory</span></a>
+<a class=brand href="/"><span class=grad>CoEvolution AI</span></a>
 {brand_extra}
 <div class=navlinks>{right}</div>
 </div></nav>
@@ -300,7 +297,7 @@ def _nav_html(active="", brand_extra="", right_html=None):
 backdrop-filter:blur(16px);border-bottom:1px solid #1c2733}}
 .navwrap{{max-width:none;margin:0;min-height:64px;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}}
 .brand{{display:flex;align-items:center;text-decoration:none;gap:8px}}
-.brand .word{{font-weight:800;font-size:16px;letter-spacing:-.01em;color:#e6edf3}}
+.brand .grad{background:linear-gradient(90deg,#9fd0ff,#36d6a0);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;font-size:16px}}
 .navbadge{{color:#36d6a0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;
 border-left:1px solid #1c2733;padding-left:12px;margin-left:2px}}
 .navbadge .dot{{width:6px;height:6px;border-radius:50%;background:#36d6a0;animation:navblink 1.6s ease-in-out infinite}}
@@ -2802,8 +2799,8 @@ LANDING_TR = {
         "title": "CoEvolution AI — {n} voll autonome Firmen, live",
         "h1": "{n} voll autonome Firmen",
         "lede": "Jede Wabe ist eine eigenständige, autonome Firma. Klick rein für die volle Ansicht: was sie tut, was sie gerade live macht, und wie du sie buchst.",
-        "lede_hero": "Jede Wabe ist eine eigenständige, autonome Firma.",
-        "lede_sub": "Klick rein für die volle Ansicht: was sie tut, was sie gerade live macht, und wie du sie buchst.",
+        "lede_hero": "51 autonome, vollautomatische teams",
+        "lede_sub": "Klick, scroll, und pan?",
         "kpi_network": "Firmen im Netzwerk",
         "kpi_healthy": "Healthy",
         "kpi_sessions": "Sessions gesamt",
@@ -2822,8 +2819,8 @@ LANDING_TR = {
         "title": "CoEvolution AI — {n} fully autonomous teams, live",
         "h1": "{n} fully autonomous teams",
         "lede": "Each tile is its own standing team. Click in for the full picture: what it does, what it's doing live right now, and how to book it.",
-        "lede_hero": "Each tile is its own standing team.",
-        "lede_sub": "Click in for the full picture: what it does, what it's doing live right now, and how to book it.",
+        "lede_hero": "51 autonomous, fully automatic teams",
+        "lede_sub": "Click, scroll, and pan?",
         "kpi_network": "Teams in the network",
         "kpi_healthy": "Healthy",
         "kpi_sessions": "Total sessions",
