@@ -2408,7 +2408,7 @@ def center_card_html(slug, lang="en"):
 
 <div class="cmpane" id=cp2>
 <div class="officewrap">
-<div class=officecanvas id=workshop width=1200 height=800></div>
+<canvas class=officecanvas id=workshop width=1200 height=800></canvas>
 <div class=workpopup id=workpopup hidden></div>
 <div class=deskinfowrap><div class=deskinfo id=deskinfo>{t['desk_default']}</div><div class=cmcaption id=wcaption>{workshop_caption}</div></div>
 </div>
@@ -2482,7 +2482,8 @@ var LABEL_MAP=__T_STATUS_LABELS__;
 const OFFICE_PANEL = (__PANEL_JSON__ && Array.isArray(__PANEL_JSON__)) ? __PANEL_JSON__ : [];
 function officeInit(){
   const cv=$('workshop'); if(!cv){console.log('office: no canvas');return;}
-  const ctx=cv.getContext('2d'); const W=cv.width,H=cv.height;
+  if(window.__cmOfficeCanvas===cv){return;} window.__cmOfficeCanvas=cv;
+  const ctx=cv.getContext('2d'); if(!ctx){console.log('office: no 2d ctx');return;} const W=cv.width,H=cv.height;
   console.log('office: init',W,H,'panel',OFFICE_PANEL.length);
   const colors={floor:'#d5d0c4',wall:'#ffffff',wallEdge:'#e5e5e5',deskOuter:'#6b7280',deskInner:'#f3f4f6',chairDark:'#374151',chairLight:'#4b5563',plantDark:'#3f6212',plantLight:'#84cc16',paper:'#ffffff',coffee:'#78350f',wood:'#b45309',sofa:'#4b5563',carpet:'#9ca3af'};
   function setShadow(blur,offsetY,alpha){ctx.shadowColor='rgba(0,0,0,'+alpha+')';ctx.shadowBlur=blur;ctx.shadowOffsetY=offsetY;}
