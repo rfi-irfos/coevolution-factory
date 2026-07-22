@@ -2371,7 +2371,6 @@ def center_card_html(slug, lang="en"):
 <div class=cmtabs>
 <div class="cmtab on" id=ct1>{t['tab_overview']}</div>
 <div class=cmtab id=ct2>{t['tab_howwork']}</div>
-<div class=cmtab id=ct3>{t['tab_try']}</div>
 </div>
 
 <div class="cmpane on" id=cp1>
@@ -2414,20 +2413,6 @@ def center_card_html(slug, lang="en"):
 </div>
 </div>
 
-<div class="cmpane" id=cp3>
-<div class=cmask>
-<div class=nowizard>
-  <div class=nochat>{t['no_chatbot_banner']}</div>
-  <div class=pipeline>
-    <div class=pstep><span>1</span> {t['pipeline_1']}</div>
-    <div class=pstep><span>2</span> {t['pipeline_2']}</div>
-    <div class=pstep><span>3</span> {t['pipeline_3']}</div>
-  </div>
-  <p class=cmsmall>Kein Prompt-Chaos: du steuerst hier nur den Ablauf. Wenn du willst, legst du einfach los — das Team arbeitet das Ergebnis aus.</p>
-  <a class=buy id=buyLink href="{stripe_link}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;margin-top:10px"><svg viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2 stroke-linecap=round stroke-linejoin=round><circle cx=9 cy=21 r=1/><circle cx=19 cy=21 r=1/><path d="M2.5 3 H5 L7 15 H19 L21.5 7 H6"/></svg>{t['buy_button']}</a><span class=buyprice>€{c['price']:g}</span>
-</div>
-</div>
-
 <div class=cmbuy>
 <a class=buy id=buyLink2 href="{stripe_link}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2 stroke-linecap=round stroke-linejoin=round><circle cx=9 cy=21 r=1/><circle cx=19 cy=21 r=1/><path d="M2.5 3 H5 L7 15 H19 L21.5 7 H6"/></svg>{t['buy_button']}</a><span class=buyprice>€{c['price']:g}</span>
 </div>"""
@@ -2456,8 +2441,8 @@ if($('fbdown'))$('fbdown').onclick=function(){sendFb(-1);};
 // Wizard element refs removed — Tab 3 is now a direct CTA, not a 3-step form.
 // Modal-level tabs — Overview / How they work / Try it now. Plain show/hide,
 // no routing: this is a page inside a page, not worth its own history state.
-function showPane(n){['1','2','3'].forEach(function(i){$('ct'+i).classList.toggle('on',i===n);$('cp'+i).classList.toggle('on',i===n);});}
-['1','2','3'].forEach(function(i){$('ct'+i).onclick=function(){showPane(i);};});
+function showPane(n){['1','2'].forEach(function(i){$('ct'+i).classList.toggle('on',i===n);$('cp'+i).classList.toggle('on',i===n);});if(n===2) officeInit();}
+['1','2'].forEach(function(i){$('ct'+i).onclick=function(){showPane(i);};});
 // Office scene — click a desk to see what that role covers. Real, non-
 // fabricated copy: every panel member fires on every question, so the
 // "part of the standing team" line is true for whichever desk is clicked.
@@ -2472,7 +2457,7 @@ document.querySelectorAll('.desk').forEach(function(d){
 });
 // Offer click-through beacon — target=_blank so the current tab never unloads,
 // a plain fetch is enough (no keepalive/sendBeacon needed).
-['buyLink','buyLink2'].forEach(function(id){var el=$(id);if(el)el.addEventListener('click',function(){fetch('__TRACK_URL__',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:location.pathname,site:'__TRACK_SITE__',section:slug+':offer_click'})}).catch(function(){});});});
+['buyLink2'].forEach(function(id){var el=$(id);if(el)el.addEventListener('click',function(){fetch('__TRACK_URL__',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:location.pathname,site:'__TRACK_SITE__',section:slug+':offer_click'})}).catch(function(){});});});
 // Terrarium — poll this center's own live numbers + any in-flight panel
 // session (someone else's, not just yours) so a visitor watches real
 // activity happen, not a static snapshot from page-load.
