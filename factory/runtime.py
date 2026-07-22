@@ -598,7 +598,8 @@ def _active_job_for(slug):
         return None
     jobs.sort(key=lambda j: j.get("created", 0), reverse=True)
     j = jobs[0]
-    return {"status": j.get("status"), "created": j.get("created")}
+    return {"status": j.get("status"), "created": j.get("created"),
+            "kind": j.get("kind", "discuss")}
 
 
 def _live_stats_for(slug):
@@ -928,7 +929,8 @@ async def center_session(request):
     run_id = "run_" + secrets.token_hex(10)
     state.setdefault("jobs", {})[run_id] = {
         "center": center, "status": "queued", "created": int(time.time()),
-        "text": text[:500], "panel": panel, "result": None, "error": None}
+        "text": text[:500], "panel": panel, "result": None, "error": None,
+        "kind": "discuss"}
     save_state(state)
     # fire-and-forget: run the (slow) engine review off the request path
     spawn_background(run_panel_job(run_id, center, text, panel, c, acct))
@@ -972,7 +974,7 @@ def board_directive_handler_logic(center, directive, acct="board"):
     state.setdefault("jobs", {})[run_id] = {
         "center": center, "status": "queued", "created": int(time.time()),
         "text": directive[:500], "panel": panel, "result": None, "error": None,
-        "priority": "board", "board_directive_id": did}
+        "priority": "board", "board_directive_id": did, "kind": "directive"}
     save_state(state)
     spawn_background(run_panel_job(run_id, center, directive, panel, c, acct))
     return {"directive_id": did, "run_id": run_id, "ceo": ceo, "status": "routed_to_ceo"}
@@ -1159,6 +1161,7 @@ async def debate_session(request):
         "created": int(time.time()),
         "resolution": None,
         "error": None,
+        "kind": "discuss",
     }
     save_state(state)
 
@@ -1367,7 +1370,7 @@ async def spawn_session(request):
     team_id = "team_" + secrets.token_hex(8)
     state.setdefault("spawned_teams", {})[team_id] = {
         "center": center, "agents": valid, "created": int(time.time()),
-        "text": text[:500], "status": "queued"}
+        "text": text[:500], "status": "queued", "kind": "develop"}
     save_state(state)
     spawn_background(run_spawn_job(team_id, center, text, valid, c, acct))
     return web.json_response({"team_id": team_id, "status": "queued",
@@ -1437,7 +1440,7 @@ async def propose_session(request):
             "parent": center, "panel": proposal["proposed_panel"],
             "agent_frequency": proposal.get("agent_frequency", {}),
             "spawn_count": proposal["spawn_count"], "created": int(time.time()),
-            "status": "staged"}
+            "status": "staged", "kind": "improve"}
         save_state(state)
         proposal["status"] = "staged_for_laura_gate"
         proposal["apply_via"] = "/evolve"
@@ -3322,7 +3325,8 @@ async def evolve_handler(request):
         # stage the proposal (NOT applied). The cron carries it to Laura.
         state.setdefault("proposals", {})[slug] = {
             "spec": new_spec, "changelog": changelog,
-            "test_upstream_status": test_status, "at": int(time.time())}
+            "test_upstream_status": test_status, "at": int(time.time()),
+            "kind": "improve"}
         save_state(state)
         proposals.append({"center": slug, "changelog": changelog,
                           "test_upstream_status": test_status, "staged": True})
