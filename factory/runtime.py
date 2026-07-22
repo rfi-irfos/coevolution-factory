@@ -306,11 +306,11 @@ backdrop-filter:blur(16px);border-bottom:1px solid #1c2733}}
 .navbadge{{color:#36d6a0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;
 border-left:1px solid #1c2733;padding-left:12px;margin-left:2px}}
 .navbadge .dot{{width:6px;height:6px;border-radius:50%;background:#36d6a0;animation:navblink 1.6s ease-in-out infinite}}
-.hcinfobtn{position:absolute;top:12px;right:14px;z-index:10;width:34px;height:34px;background:rgba(15,20,29,.85);border:1px solid #1c2733;color:#9fd0ff;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px)}
-.hcinfobtn:hover{border-color:#2c4258;color:#e6edf3}
-.hcinfopop{position:absolute;top:48px;right:14px;width:260px;background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:14px;color:#c7d2e0;font-size:13px;line-height:1.5;box-shadow:0 10px 26px rgba(0,0,0,.55);z-index:20;font-family:inherit}
-.hcinfopop b{color:#e6edf3;font-weight:700}
-#hcwrap [hidden]{display:none !important}
+.hcinfobtn{{position:absolute;top:12px;right:14px;z-index:10;width:34px;height:34px;background:rgba(15,20,29,.85);border:1px solid #1c2733;color:#9fd0ff;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px)}}
+.hcinfobtn:hover{{border-color:#2c4258;color:#e6edf3}}
+.hcinfopop{{position:absolute;top:48px;right:14px;width:260px;background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:14px;color:#c7d2e0;font-size:13px;line-height:1.5;box-shadow:0 10px 26px rgba(0,0,0,.55);z-index:20;font-family:inherit}}
+.hcinfopop b{{color:#e6edf3;font-weight:700}}
+#hcwrap [hidden]{{display:none !important}}
 @keyframes navblink{{0%,100%{{opacity:1}}50%{{opacity:.4}}}}
 .navlinks{{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-left:auto}}
 .navlinks a{{color:#8b98a9;font-size:13px;font-weight:600;text-decoration:none;letter-spacing:.02em}}
