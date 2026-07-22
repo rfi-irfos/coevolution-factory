@@ -518,6 +518,7 @@ def _normalize_center(slug, c):
 
 
 state = load_state()
+state.setdefault("board_directives", {})
 
 # Rehydrate autonomous daughter centers (formed at runtime via the Laura-gated
 # /evolve flow) so they survive restarts. They live in state.json, not catalog.py.
@@ -933,6 +934,84 @@ async def center_session(request):
     spawn_background(run_panel_job(run_id, center, text, panel, c, acct))
     return web.json_response({"run_id": run_id, "status": "queued",
                               "poll": f"/api/center/result/{run_id}"})
+
+
+def resolve_ceo(slug):
+    """Primary lead (CEO) of a center = lead of its first roster department.
+
+    Reads the 'roster' field (added by a parallel agent via derive_roster)
+    from CENTERS_META at runtime. Guards against a missing roster so a center
+    without one does not crash.
+    """
+    roster = CENTERS.get(slug, {}).get("roster", {})
+    deps = roster.get("departments") or []
+    if not deps:
+        return None
+    return deps[0].get("lead", {}).get("agent")
+
+
+def board_directive_handler_logic(center, directive, acct="board"):
+    """Core logic for a board directive (testable without HTTP).
+
+    Mirrors center_session: validate center, resolve CEO, register a board
+    directive record, queue a panel job at 'board' priority, and spawn it in
+    the background. Returns a routing summary or None if the center is unknown.
+    """
+    c = CENTERS.get(center)
+    if not c:
+        return None
+    ceo = resolve_ceo(center)
+    did = "d-" + secrets.token_hex(8)
+    rec = {"id": did, "directive": directive[:500], "issued": int(time.time()),
+           "status": "routed_to_ceo", "ceo_ack": True, "teamlead_acks": 0,
+           "priority": "board", "center": center}
+    state.setdefault("board_directives", {}).setdefault(center, []).append(rec)
+    save_state(state)
+    panel = c["panel"]
+    run_id = "run_" + secrets.token_hex(10)
+    state.setdefault("jobs", {})[run_id] = {
+        "center": center, "status": "queued", "created": int(time.time()),
+        "text": directive[:500], "panel": panel, "result": None, "error": None,
+        "priority": "board", "board_directive_id": did}
+    save_state(state)
+    spawn_background(run_panel_job(run_id, center, directive, panel, c, acct))
+    return {"directive_id": did, "run_id": run_id, "ceo": ceo, "status": "routed_to_ceo"}
+
+
+async def board_directive(request):
+    """POST /api/board/directive — privileged (require_operator) board route."""
+    center = (request.query.get("center") or "")
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    if not center:
+        center = body.get("center", "")
+    c = CENTERS.get(center)
+    if not c:
+        return web.json_response({"error": "unknown center"}, status=404)
+    acct, err = await require_operator(request, center, "board_directive")
+    if err:
+        return err
+    directive = (body.get("directive") or "").strip()
+    if not directive:
+        return web.json_response({"error": "missing 'directive'"}, status=400)
+    out = board_directive_handler_logic(center, directive, acct=acct)
+    return web.json_response(out)
+
+
+def board_status(center):
+    """GET /api/board/status backing logic (testable without HTTP)."""
+    return {"center": center,
+            "directives": state.get("board_directives", {}).get(center, [])}
+
+
+async def board_status_handler(request):
+    """GET /api/board/status — list board directives for a center."""
+    center = request.query.get("center", "")
+    if not CENTERS.get(center):
+        return web.json_response({"error": "unknown center"}, status=404)
+    return web.json_response(board_status(center))
 
 
 def add_lead(center, kind, ref, text, outcome=None):
@@ -3394,6 +3473,8 @@ app.router.add_get("/api/center/team/{team_id}", team_result)
 app.router.add_post("/api/center/propose", propose_session)
 app.router.add_post("/api/center/debate", debate_session)
 app.router.add_get("/api/center/debate/result/{run_id}", debate_result)
+app.router.add_post("/api/board/directive", board_directive)
+app.router.add_get("/api/board/status", board_status_handler)
 app.router.add_post("/evolve", evolve_handler)
 app.router.add_post("/evolve/apply", evolve_apply_handler)
 app.router.add_post("/stripe/webhook", stripe_webhook)
