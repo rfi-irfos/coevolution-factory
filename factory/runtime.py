@@ -1854,11 +1854,7 @@ CENTER_PAGE_TR = {
         "pipeline_1": "1 · Your question",
         "pipeline_2": "2 · The team advises (multiple experts)",
         "pipeline_3": "3 · Finished result for you",
-        "what_you_get_title": "What you get",
-        "services_title": "Our Services",
-        "what_you_get_1": "A finished result, not just \"an answer\"",
-        "what_you_get_2": "Worked out jointly by a team of autonomous experts",
-        "what_you_get_3": "In a few minutes, no appointment needed",
+        "products_title": "Products & Services",
         "wiz_prompt": "What's it about?",
         "wiz_mode_ask_desc": "Ask your question — the team works out an answer plus a finished result for you.",
         "wiz_mode_test_desc": "Describe a decision — the team checks it from several angles.",
@@ -1950,11 +1946,7 @@ CENTER_PAGE_TR = {
         "pipeline_1": "1 · Deine Frage",
         "pipeline_2": "2 · Das Team berät (mehrere Experten)",
         "pipeline_3": "3 · Fertiges Ergebnis für dich",
-        "what_you_get_title": "Was du bekommst",
-        "services_title": "Unsere Services",
-        "what_you_get_1": "Ein fertiges Ergebnis, nicht nur „eine Antwort“",
-        "what_you_get_2": "Von einem Team autonomer Experten gemeinsam erarbeitet",
-        "what_you_get_3": "In wenigen Minuten, ohne Termin",
+        "products_title": "Produkte & Leistungen",
         "wiz_prompt": "Worum geht's?",
         "wiz_mode_ask_desc": "Stell deine Frage — das Team arbeitet eine Antwort plus ein fertiges Ergebnis für dich aus.",
         "wiz_mode_test_desc": "Beschreib eine Entscheidung — das Team prüft sie aus mehreren Blickwinkeln.",
@@ -2172,11 +2164,12 @@ def center_card_html(slug, lang="en"):
     adj_links = "".join(
         f'<a class=netchip href="/{a}" style="{_pill_style(ICON_COLORS.get(ICON_BY_SLUG.get(a, "shield"), "#36d6a0"))}">{CENTERS[a]["name"]}</a>'
         for a in adj[:3])
-    # Real service list — the concrete questions this firm's standing panel
-    # actually resolves for a client (from catalog.py use_cases). Honest
-    # offering, never a generated report placeholder.
-    services_html = (
-        "".join(f'<li>{html.escape(uc)}</li>' for uc in ucs) if ucs else "")
+    # Real product list — the concrete products/services this firm offers
+    # (from catalog.py products). Honest offering, never a generated
+    # report placeholder.
+    _prods = c.get("products") or []
+    products_html = (
+        "".join(f'<li>{html.escape(p)}</li>' for p in _prods) if _prods else "")
     page = f"""<style>
 #cmbody{{font-family:-apple-system,Segoe UI,Inter,sans-serif;color:#e6edf3;line-height:1.5}}
 #cmbody a{{color:#4ea1ff}}
@@ -2300,24 +2293,16 @@ def center_card_html(slug, lang="en"):
 #cmbody .chips button:hover{{border-color:#2c4258}}
 #cmbody .related{{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid #1c2733}}
 #cmbody .relabel{{color:#5b6675;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-right:4px}}
-#cmbody .whatyouget{{margin-top:18px;padding:16px 18px;background:#0f141d;border:1px solid #1c2733;border-radius:14px}}
-#cmbody .whatyouget h3{{margin:0 0 10px;font-size:11px;color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-weight:700}}
-#cmbody .whatyouget ul{{margin:0;padding-left:18px;color:#c7d2e0;font-size:13px;line-height:1.7}}
-#cmbody .whatyouget li{{margin:0}}
-#cmbody .servicelist{{margin-top:14px;padding:16px 18px;background:#0f141d;border:1px solid #1c2733;border-radius:14px}}
-#cmbody .servicelist h4{{margin:0 0 10px;font-size:11px;color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-weight:700}}
-#cmbody .servicelist ul{{margin:0;padding-left:18px;color:#c7d2e0;font-size:13px;line-height:1.7}}
-#cmbody .servicelist li{{margin:0}}
+#cmbody .productsblock{{margin-top:14px;padding:16px 18px;background:#0f141d;border:1px solid #1c2733;border-radius:14px}}
+#cmbody .productsblock h3{{margin:0 0 10px;font-size:11px;color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-weight:700}}
+#cmbody .productsblock ul{{margin:0;padding-left:18px;color:#c7d2e0;font-size:13px;line-height:1.7}}
+#cmbody .productsblock li{{margin:0}}
 #cmbody .sampleproduct{{margin-top:16px;padding:16px 18px;background:#0b1411;border:1px solid #1f4d3a;border-radius:14px}}
 #cmbody .sampleproduct .sphead{{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}}
 #cmbody .sampleproduct .sphead{{color:#36d6a0;font-weight:700;font-size:14px}}
 #cmbody .sampleproduct .spmeta{{color:#5b6675;font-size:11px;font-weight:400;white-space:nowrap}}
 #cmbody .sampleproduct .spbody{{color:#c7d2e0;font-size:13px;line-height:1.6;white-space:pre-wrap}}
 #cmbody .sectionblock{{margin-top:18px}}
-#cmbody .whatyouget{{margin-top:0;padding:16px 18px;background:#0f141d;border:1px solid #1c2733;border-radius:14px}}
-#cmbody .whatyouget h3{{margin:0 0 10px;font-size:11px;color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-weight:700}}
-#cmbody .whatyouget ul{{margin:0;padding-left:18px;color:#c7d2e0;font-size:13px;line-height:1.7}}
-#cmbody .whatyouget li{{margin:0}}
 #cmbody .prodhdr{{font-size:11px;color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px}}
 #cmbody .proditem{{padding:10px 0;border-top:1px solid #1c2733}}
 #cmbody .proditem:first-child{{border-top:none}}
@@ -2380,13 +2365,9 @@ def center_card_html(slug, lang="en"):
 </div>
 
 <div class="sectionblock">
-<div class="whatyouget">
-<h3>{t['what_you_get_title']}</h3>
-<ul><li>{t['what_you_get_1']}</li><li>{t['what_you_get_2']}</li><li>{t['what_you_get_3']}</li></ul>
-</div>
-<div class="servicelist">
-<h4>{t['services_title']}</h4>
-<ul>{services_html}</ul>
+<div class="productsblock">
+<h3>{t['products_title']}</h3>
+<ul>{products_html}</ul>
 </div>
 </div>
 {(f'<div class="sectionblock"><div class="related"><span class=relabel>{t["related_label"]}</span>{adj_links}</div></div>') if adj_links else ''}
@@ -2401,8 +2382,7 @@ def center_card_html(slug, lang="en"):
 </div>
 
 <div class=cmbuy>
-<a class=buy id=buyLink2 href="{stripe_link}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2 stroke-linecap=round stroke-linejoin=round><circle cx=9 cy=21 r=1/><circle cx=19 cy=21 r=1/><path d="M2.5 3 H5 L7 15 H19 L21.5 7 H6"/></svg>{t['buy_button']} · €{c['price']:g}</a>
-<a class=hirebtn id=hireLink href="https://rfi-irfos.com" target="_blank" rel="noopener">{t['hire_button']}</a>
+<a class=buy id=buyLink2 href="{stripe_link}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2 stroke-linecap=round stroke-linejoin=round><circle cx=9 cy=21 r=1/><circle cx=19 cy=21 r=1/><path d="M2.5 3 H5 L7 15 H19 L21.5 7 H6"/></svg>{t['hire_button']} · €{c['price']:g}</a>
 </div>"""
     js = r"""(function(){
 if(window.__cmPollId){clearInterval(window.__cmPollId);window.__cmPollId=null;}
