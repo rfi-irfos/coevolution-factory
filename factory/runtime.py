@@ -293,14 +293,14 @@ def _nav_html(active="", brand_extra="", right_html=None):
 <div class=navlinks>{right}</div>
 </div></nav>
 <style>
-.sitenav{{position:fixed;top:0;left:0;right:0;z-index:100;min-height:64px;background:rgba(10,14,20,.85);
+.sitenav{{position:fixed;top:0;left:0;right:0;z-index:100;min-height:74px;background:rgba(10,14,20,.85);
 backdrop-filter:blur(16px);border-bottom:1px solid #1c2733}}
-.navwrap{{max-width:none;margin:0;min-height:64px;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}}
+.navwrap{{max-width:none;margin:0;min-height:74px;padding:14px 34px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}}
 .brand{{display:block;text-decoration:none;gap:8px}}
 .brandwrap{{display:flex;align-items:center;gap:10px;flex-wrap:wrap}}
-.brand .grad{{background:linear-gradient(90deg,#9fd0ff,#36d6a0);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;font-size:17px;letter-spacing:-.01em}}
-.brandsep{{color:#8b98a9;font-weight:700;font-size:17px}}
-.brandsub{{color:#c7d2e0;font-size:13.5px;font-weight:500;line-height:1.25;letter-spacing:.01em}}
+.brand .grad{{background:linear-gradient(90deg,#9fd0ff,#36d6a0);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;font-size:23px;letter-spacing:-.01em}}
+.brandsep{{color:#8b98a9;font-weight:700;font-size:23px}}
+.brandsub{{color:#c7d2e0;font-size:16px;font-weight:600;line-height:1.25;letter-spacing:.01em}}
 .sep{{height:1px;background:#1c2733;margin:0;border:none}}
 .ledesub{{display:none}}
 .navbadge{{color:#36d6a0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;
@@ -1864,6 +1864,7 @@ CENTER_PAGE_TR = {
         "wiz_mode_test_desc": "Describe a decision — the team checks it from several angles.",
         "wiz_mode_check_desc": "No input — the team just checks the current standing.",
         "buy_button": "Get it done",
+        "hire_button": "Hire us",
         "buybar_note": "first {free} times free · then €{price} for a finished result · built for {icp}",
         "wiz_back": "← back",
         "wiz_again": "← ask something else",
@@ -1959,6 +1960,7 @@ CENTER_PAGE_TR = {
         "wiz_mode_test_desc": "Beschreib eine Entscheidung — das Team prüft sie aus mehreren Blickwinkeln.",
         "wiz_mode_check_desc": "Keine Eingabe nötig — das Team prüft einfach den aktuellen Stand.",
         "buy_button": "Jetzt erledigen lassen",
+        "hire_button": "Anheuern",
         "buybar_note": "die ersten {free} Male kostenlos · danach €{price} für ein fertiges Ergebnis · gedacht für {icp}",
         "wiz_back": "← zurück",
         "wiz_again": "← was anderes fragen",
@@ -2329,11 +2331,12 @@ def center_card_html(slug, lang="en"):
 #cmbody .nowizard .pipeline{{margin-bottom:10px}}
 #cmbody a.netchip{{display:inline-block;background:var(--pcbg);border:1px solid var(--pc);border-radius:14px;padding:5px 12px;margin:0;font-size:11.5px;font-weight:600;color:var(--pc)!important;text-decoration:none!important}}
 #cmbody a.netchip:hover{{background:var(--pchover)}}
-#cmbody .cmbuy{{position:absolute;right:18px;bottom:14px;margin:0;background:transparent;padding:0;display:flex;align-items:center;justify-content:flex-end;z-index:5}}
-#cmbody .buy{{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#36d6a0,#22c55e);color:#04140d;font-weight:800;font-size:13px;padding:9px 15px;border-radius:12px;text-decoration:none!important;box-shadow:0 6px 18px rgba(54,214,160,.35);transition:transform .15s ease,box-shadow .15s ease}}
+#cmbody .cmbuy{{position:absolute;right:18px;bottom:14px;margin:0;background:transparent;padding:0;display:flex;align-items:center;justify-content:flex-end;gap:10px;z-index:5}}
+#cmbody .buy{{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#36d6a0,#22c55e);color:#04140d;font-weight:800;font-size:14px;padding:11px 18px;border-radius:12px;text-decoration:none!important;box-shadow:0 6px 18px rgba(54,214,160,.35);transition:transform .15s ease,box-shadow .15s ease}}
 #cmbody .buy:hover{{transform:translateY(-1px);box-shadow:0 10px 24px rgba(54,214,160,.45)}}
-#cmbody .buy svg{{width:16px;height:16px;flex-shrink:0}}
-#cmbody .buyprice{{color:#36d6a0;font-weight:700;font-size:12px;background:#0f1b16;padding:5px 9px;border-radius:9px}}
+#cmbody .buy svg{{width:18px;height:18px;flex-shrink:0}}
+#cmbody .hirebtn{{display:inline-flex;align-items:center;gap:7px;background:transparent;color:#9fd0ff;font-weight:700;font-size:14px;padding:11px 18px;border-radius:12px;border:1px solid #2c4258;text-decoration:none!important;transition:border-color .15s ease,color .15s ease}}
+#cmbody .hirebtn:hover{{border-color:#4ea1ff;color:#cfe6ff}}
 @media(max-width:900px){{#cmbody .widgetgrid{{grid-template-columns:1fr}}}}
 @media(max-width:640px){{#cmbody .cmtabs{{overflow-x:auto}}#cmbody .cmtab{{font-size:12px;padding:9px 6px}}
 #cmbody .kpirow{{grid-template-columns:repeat(2,1fr)}}
@@ -2398,7 +2401,8 @@ def center_card_html(slug, lang="en"):
 </div>
 
 <div class=cmbuy>
-<a class=buy id=buyLink2 href="{stripe_link}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2 stroke-linecap=round stroke-linejoin=round><circle cx=9 cy=21 r=1/><circle cx=19 cy=21 r=1/><path d="M2.5 3 H5 L7 15 H19 L21.5 7 H6"/></svg>{t['buy_button']}</a><span class=buyprice>€{c['price']:g}</span>
+<a class=buy id=buyLink2 href="{stripe_link}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2 stroke-linecap=round stroke-linejoin=round><circle cx=9 cy=21 r=1/><circle cx=19 cy=21 r=1/><path d="M2.5 3 H5 L7 15 H19 L21.5 7 H6"/></svg>{t['buy_button']} · €{c['price']:g}</a>
+<a class=hirebtn id=hireLink href="https://rfi-irfos.com" target="_blank" rel="noopener">{t['hire_button']}</a>
 </div>"""
     js = r"""(function(){
 if(window.__cmPollId){clearInterval(window.__cmPollId);window.__cmPollId=null;}
@@ -2441,7 +2445,7 @@ document.querySelectorAll('.desk').forEach(function(d){
 });
 // Offer click-through beacon — target=_blank so the current tab never unloads,
 // a plain fetch is enough (no keepalive/sendBeacon needed).
-['buyLink2'].forEach(function(id){var el=$(id);if(el)el.addEventListener('click',function(){fetch('__TRACK_URL__',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:location.pathname,site:'__TRACK_SITE__',section:slug+':offer_click'})}).catch(function(){});});});
+['buyLink2','hireLink'].forEach(function(id){var el=$(id);if(el)el.addEventListener('click',function(){fetch('__TRACK_URL__',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:location.pathname,site:'__TRACK_SITE__',section:slug+':offer_click'})}).catch(function(){});});});
 // Terrarium — poll this center's own live numbers + any in-flight panel
 // session (someone else's, not just yours) so a visitor watches real
 // activity happen, not a static snapshot from page-load.
