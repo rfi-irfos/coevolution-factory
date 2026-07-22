@@ -1854,7 +1854,7 @@ CENTER_PAGE_TR = {
     "en": {
         "lead_team": "a standing team of {n} AI experts, working continuously on this problem",
         "workshop_title": "Who's on shift right now",
-        "workshop_idle": "nobody is working on anything right now — ask a question below to wake the panel up",
+        "workshop_idle": "",
         "workshop_active": "someone is answering a question right now",
         "baynote_empty": "no experts assigned yet — this center is still being set up",
         "status_title": "Status",
@@ -1922,7 +1922,7 @@ CENTER_PAGE_TR = {
         "tab_howwork": "How they work",
         "tab_try": "Try it now",
         "desk_hint": "Click a team member",
-        "desk_default": "Click someone on the team to see what they're responsible for.",
+        "desk_default": "",
         "desk_role_line": "{role} is part of the standing team here — every question passes through this perspective too.",
         "hub_label": "Request",
         "hub_idle": "waiting",
@@ -1947,7 +1947,7 @@ CENTER_PAGE_TR = {
     "de": {
         "lead_team": "ein festes Team aus {n} KI-Fachleuten, das sich ständig um dieses Thema kümmert",
         "workshop_title": "Wer gerade im Einsatz ist",
-        "workshop_idle": "gerade arbeitet niemand an etwas — stell unten eine Frage und weck das Team auf",
+        "workshop_idle": "",
         "workshop_active": "gerade beantwortet jemand eine echte Frage",
         "baynote_empty": "noch keine Fachleute zugeteilt — dieses Center wird gerade aufgebaut",
         "status_title": "Status",
@@ -2014,7 +2014,7 @@ CENTER_PAGE_TR = {
         "tab_howwork": "Wie sie arbeiten",
         "tab_try": "Jetzt ausprobieren",
         "desk_hint": "Klick auf ein Teammitglied",
-        "desk_default": "Klick auf jemanden im Team, um zu sehen, wofür er zuständig ist.",
+        "desk_default": "",
         "desk_role_line": "{role} ist Teil des festen Teams hier — jede Frage geht auch durch diese Perspektive.",
         "hub_label": "Anfrage",
         "hub_idle": "wartet",
@@ -2542,11 +2542,11 @@ function officeInit(){
     ctx.fillStyle='rgba(255,255,255,0.9)';ctx.fillRect(-6,-8,12,16);ctx.fillStyle='#d1d5db';ctx.fillRect(-4,-5,8,2);ctx.fillRect(-4,-1,8,2);
     ctx.fillStyle='#d1d5db';ctx.fillRect(6,-2,10,12);ctx.fillStyle='#9ca3af';ctx.fillRect(7,-1,8,2);ctx.fillRect(7,2,8,2);
     ctx.save();ctx.translate(14,12);ctx.shadowColor='rgba(0,0,0,0.3)';ctx.shadowBlur=2;ctx.shadowOffsetY=1;ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fill();ctx.fillStyle=colors.coffee;ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fill();ctx.restore();ctx.restore();}
-  function drawDesk(x,y,w,h,rotation,occupied,name,worker){ctx.save();ctx.translate(x,y);ctx.rotate(rotation*Math.PI/180);setShadow(12,6,.4);ctx.fillStyle=colors.deskOuter;rr(-w/2,-h/2,w,h,6);ctx.fill();clearShadow();ctx.fillStyle=colors.deskInner;rr(-w/2+4,-h/2+4,w-8,h-8,4);ctx.fill();ctx.restore();
+  function drawDesk(x,y,w,h,rotation,occupied,name,worker){ctx.save();ctx.translate(x,y);ctx.rotate(rotation*Math.PI/180);if(occupied){ctx.shadowColor='#36d6a0';ctx.shadowBlur=14;}setShadow(12,6,.4);ctx.fillStyle=colors.deskOuter;rr(-w/2,-h/2,w,h,6);ctx.fill();clearShadow();ctx.fillStyle=colors.deskInner;rr(-w/2+4,-h/2+4,w-8,h-8,4);ctx.fill();ctx.restore();
     drawDeskAccessories(x,y,rotation,w,h);
     drawChair(x+Math.sin(rotation*Math.PI/180)*35,y-Math.cos(rotation*Math.PI/180)*35,rotation);
     if(occupied){drawPerson(x+Math.sin(rotation*Math.PI/180)*25,y-Math.cos(rotation*Math.PI/180)*25,rotation,worker||null);}
-    if(name){ctx.fillStyle='#1f2937';ctx.font='bold 11px Inter,sans-serif';ctx.textAlign='center';ctx.fillText(name,x,y+h/2+12);}}
+    if(name){ctx.fillStyle=occupied?'#36d6a0':'#1f2937';ctx.font='bold 11px Inter,sans-serif';ctx.textAlign='center';ctx.fillText(name,x,y+h/2+12);}}
   function drawPlant(x,y,size){ctx.save();ctx.translate(x,y);setShadow(8,4,.4);ctx.fillStyle='#fef3c7';ctx.beginPath();ctx.arc(0,0,size*0.4,0,Math.PI*2);ctx.fill();clearShadow();const leafCount=12;for(let j=0;j<2;j++)for(let i=0;i<leafCount;i++){ctx.save();ctx.rotate((Math.PI*2/leafCount)*i+(j*0.2));ctx.fillStyle=j===0?colors.plantDark:colors.plantLight;ctx.beginPath();ctx.ellipse(0,size*(0.5-j*0.1),size*0.15,size*0.6,0,0,Math.PI*2);ctx.fill();ctx.restore();}ctx.restore();}
   function drawSofa(x,y,rotation){ctx.save();ctx.translate(x,y);ctx.rotate(rotation*Math.PI/180);setShadow(10,5,.4);ctx.fillStyle=colors.sofa;rr(-40,-40,80,30,8);ctx.fill();rr(10,-10,30,60,8);ctx.fill();clearShadow();ctx.strokeStyle='#374151';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-10,-40);ctx.lineTo(-10,-10);ctx.stroke();ctx.beginPath();ctx.moveTo(10,20);ctx.lineTo(40,20);ctx.stroke();ctx.restore();}
   function drawFoosball(x,y,rotation){ctx.save();ctx.translate(x,y);ctx.rotate(rotation*Math.PI/180);setShadow(15,8,.4);ctx.fillStyle=colors.wood;rr(-40,-60,80,120,4);ctx.fill();clearShadow();ctx.fillStyle='#166534';ctx.fillRect(-30,-50,60,100);ctx.strokeStyle='white';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-30,0);ctx.lineTo(30,0);ctx.stroke();ctx.beginPath();ctx.arc(0,0,10,0,Math.PI*2);ctx.stroke();const rods=[-40,-20,0,20,40];rods.forEach(function(yPos,index){ctx.strokeStyle='#d1d5db';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-45,yPos);ctx.lineTo(45,yPos);ctx.stroke();ctx.fillStyle=index%2===0?'#ef4444':'#3b82f6';rr(-10,yPos-3,6,6,2);ctx.fill();rr(4,yPos-3,6,6,2);ctx.fill();});ctx.restore();}
@@ -2585,7 +2585,7 @@ function officeInit(){
     drawPlant(80,80,40);drawPlant(430,80,30);drawPlant(1100,80,45);drawPlant(80,700,35);drawPlant(430,700,50);drawPlant(720,350,40);drawPlant(1120,450,30);
     // panel desks (the team) — stable workers, ring around hub
     const pos=_panelPosCached(OFFICE_PANEL.length);
-    OFFICE_PANEL.forEach(function(p,i){const x=pos[i][0],y=pos[i][1];drawDesk(x,y,120,60,Math.atan2(y-H/2,x-W/2)+Math.PI/2,true,p,_panelWorkers[i]);});
+    OFFICE_PANEL.forEach(function(p,i){const x=pos[i][0],y=pos[i][1];drawDesk(x,y,120,60,Math.atan2(y-H/2,x-W/2)+Math.PI/2,true&&hubActive,p,_panelWorkers[i]);});
     const hubCol=hubActive?'#36d6a0':'#0f141d';
     // VERY slow, soft pulse (one breath ~ every 16s)
     const pulse=0.5+0.5*Math.sin(t*0.4);
@@ -2617,7 +2617,7 @@ function officeInit(){
     const mx=(ev.clientX-r.left)*(W/r.width), my=(ev.clientY-r.top)*(H/r.height);
     const role=_workerAt(mx,my);
     const pop=$('workpopup');
-    if(role&&pop){const pretty=role.replace(/-/g,' ');pop.innerHTML='<b>'+pretty.charAt(0).toUpperCase()+pretty.slice(1)+'</b><br>Prüft mit den anderen Fachleuten, ob dein Fall rechtlich und fachlich wasserdicht ist.';pop.hidden=false;}
+    if(role&&pop){const pretty=role.replace(/-/g,' ');const bio=(window.__ROLE_BIOS__&&window.__ROLE_BIOS__[role])||'';pop.innerHTML='<b>'+pretty.charAt(0).toUpperCase()+pretty.slice(1)+'</b>'+(bio?'<br>'+esc(bio):'');pop.hidden=false;}
     else if(pop){pop.hidden=true;}
   });
   frame(false);
@@ -2674,6 +2674,7 @@ pollLive();window.__cmPollId=setInterval(pollLive,8000);
           .replace("__T_STATUS_LABELS__", json.dumps(t["status_labels"]))
           .replace("__T_WORKSHOP_ACTIVE__", json.dumps(t["workshop_active"]))
           .replace("__T_WORKSHOP_IDLE__", json.dumps(t["workshop_idle"]))
+          .replace("__ROLE_BIOS__", json.dumps({p: role_bio(p) for p in c["panel"]}))
           .replace("__T_HUB_ACTIVE__", json.dumps(t["hub_active"]))
           .replace("__T_HUB_IDLE__", json.dumps(t["hub_idle"]))
           .replace("__T_DESK_ROLE_LINE__", json.dumps(t["desk_role_line"]))
