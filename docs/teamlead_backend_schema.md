@@ -162,3 +162,77 @@ each cell showing activity/status.
 - Do we want **cross-center leads** (one person leading departments in two
   centers)? Out of scope for v1; the slug-keyed model already supports it if
   needed later.
+
+## 7. Board of Directors — governance authority & one-directional feedback channel
+
+The firms are autonomous, but the **Board of Directors stands ABOVE the CEO of
+every firm**. This is not a conflict with autonomy: each firm decides how to
+execute, but the Board sets direction and may issue directives that the CEO
+must route to their Teamleads. The channel is **strictly one-directional**:
+**Board → CEO → Teamleads**. Firms do NOT push feedback upward through this
+channel (other reporting paths exist for that).
+
+### 7.1 Where the authority lives
+
+- A **global `board` identity** (slug `board-of-directors`) is the top node of
+  the whole hierarchy — above every center's CEO. It is represented in the
+  roster schema as the lead of a dedicated `governance` department per center
+  (see Section 3 example), AND as a standalone top-level authority in the
+  pipeline, not owned by any single center.
+- Each center has exactly one **CEO agent** (its primary `lead`, the first
+  department's lead per Section 3.1). The Board's directives target the CEO,
+  who cascades to department Teamleads.
+
+### 7.2 The feedback channel (pipeline endpoint)
+
+Directives enter the **same engine pipeline** the centers already use for
+tasks — they are not a separate system. A new endpoint accepts a Board
+directive and injects it with elevated authority/priority:
+
+```json
+POST /api/board/directive
+{
+  "center": "gdpr-guard",          // which firm's CEO receives it
+  "directive": "Prioritize DPIA turnaround under 1h; report exceptions to Board.",
+  "priority": "board",             // authority level: above normal center tasks
+  "ttl": 86400
+}
+```
+
+Pipeline behaviour:
+- The directive is delivered to the **target center's CEO** (not broadcast to
+  experts directly).
+- The CEO decomposes it and routes sub-directives to the relevant **department
+  Teamleads** (per the `roster` structure in Section 3).
+- The directive carries `priority: "board"` so it is scheduled ahead of normal
+  center tasks and cannot be silently dropped by an autonomous loop.
+- **No upward path:** the endpoint accepts Board→firm only. Firm→Board goes
+  through separate reporting, never this channel.
+
+### 7.3 Telemetry (for the ant-hill dashboard)
+
+Board directives are tracked in `state.json` alongside roster telemetry:
+
+```json
+{
+  "board_directives": {
+    "gdpr-guard": [
+      { "id": "d-8821", "directive": "...", "issued": 1753000000,
+        "status": "routed_to_ceo", "ceo_ack": true, "teamlead_acks": 2 }
+    ]
+  }
+}
+```
+
+The dashboard shows, per firm: Board directive in flight → CEO → which
+Teamleads acked. This is the governance layer of the ant-hill.
+
+### 7.4 Authoring / when implemented
+
+- Add `POST /api/board/directive` to the pipeline router; it resolves
+  `center` → CEO slug (primary `lead` of the primary department) and injects a
+  `priority:"board"` task.
+- CEO agent logic: on receiving a board directive, emit one sub-directive per
+  relevant department lead (Teamlead), tracking acks in `board_directives`.
+- Validation: `center` must exist; `priority` must be `"board"`; no reverse
+  endpoint (firm→board) in this channel.
