@@ -1853,6 +1853,7 @@ CENTER_PAGE_TR = {
         "pipeline_2": "2 · The team advises (multiple experts)",
         "pipeline_3": "3 · Finished result for you",
         "what_you_get_title": "What you get",
+        "services_title": "What this firm resolves for you",
         "what_you_get_1": "A finished result, not just \"an answer\"",
         "what_you_get_2": "Worked out jointly by a team of autonomous experts",
         "what_you_get_3": "In a few minutes, no appointment needed",
@@ -1945,6 +1946,7 @@ CENTER_PAGE_TR = {
         "pipeline_2": "2 · Das Team berät (mehrere Experten)",
         "pipeline_3": "3 · Fertiges Ergebnis für dich",
         "what_you_get_title": "Was du bekommst",
+        "services_title": "Was diese Firma für dich klärt",
         "what_you_get_1": "Ein fertiges Ergebnis, nicht nur „eine Antwort“",
         "what_you_get_2": "Von einem Team autonomer Experten gemeinsam erarbeitet",
         "what_you_get_3": "In wenigen Minuten, ohne Termin",
@@ -2162,44 +2164,11 @@ def center_card_html(slug, lang="en"):
     adj_links = "".join(
         f'<a class=netchip href="/{a}" style="{_pill_style(ICON_COLORS.get(ICON_BY_SLUG.get(a, "shield"), "#36d6a0"))}">{CENTERS[a]["name"]}</a>'
         for a in adj[:3])
-    # Real, engine-generated sample product (never a placeholder). Shown in the
-    # overview tab so a visitor sees the firm is already useful — not "0 sessions".
-    _prods = []
-    for _i in range(max(1, len(c.get("panel", [])))):
-        _p = None
-        try:
-            from firm_foundation import load_sample_product
-            _p = load_sample_product(f"{slug}-p{_i+1}")
-        except Exception:
-            _p = None
-        if not _p:
-            continue
-        _body = (_p.get("body") or _p.get("summary") or "").strip()
-        _title = (_p.get("title") or "").strip()
-        if not _body or not _title:
-            continue
-        if any(_x in _body for _x in ["system_prompt", "'agent':", '"agent":', "raw_response", "complete':"]):
-            continue
-        _prods.append(
-            f'<div class="proditem"><div class="prodname">{html.escape(_title)}</div>'
-            f'<div class="prodbody">{html.escape(_body[:180])}</div></div>'
-        )
-    products_html = "".join(_prods)
-    try:
-        from firm_foundation import load_sample_product
-        _prod = load_sample_product(slug)
-    except Exception:
-        _prod = None
-    if _prod:
-        _body = (_prod.get("body") or _prod.get("summary") or "").strip()
-        _title = _prod.get("title", t["what_you_get_title"])
-        _days = max(0, int((time.time() - _prod.get("generated_at", 0)) / 86400))
-        sample_html = (
-            f'<div class=sampleproduct><div class=sphead>{html.escape(_title)}'
-            f'<span class=spmeta>vom Team erstellt · {_days}d alt</span></div>'
-            f'<div class=spbody>{html.escape(_body[:700])}</div></div>')
-    else:
-        sample_html = ""
+    # Real service list — the concrete questions this firm's standing panel
+    # actually resolves for a client (from catalog.py use_cases). Honest
+    # offering, never a generated report placeholder.
+    services_html = (
+        "".join(f'<li>{html.escape(uc)}</li>' for uc in ucs) if ucs else "")
     page = f"""<style>
 #cmbody{{font-family:-apple-system,Segoe UI,Inter,sans-serif;color:#e6edf3;line-height:1.5}}
 #cmbody a{{color:#4ea1ff}}
@@ -2327,6 +2296,10 @@ def center_card_html(slug, lang="en"):
 #cmbody .whatyouget h3{{margin:0 0 10px;font-size:11px;color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-weight:700}}
 #cmbody .whatyouget ul{{margin:0;padding-left:18px;color:#c7d2e0;font-size:13px;line-height:1.7}}
 #cmbody .whatyouget li{{margin:0}}
+#cmbody .servicelist{{margin-top:14px;padding:16px 18px;background:#0f141d;border:1px solid #1c2733;border-radius:14px}}
+#cmbody .servicelist h4{{margin:0 0 10px;font-size:11px;color:#8b98a9;text-transform:uppercase;letter-spacing:.1em;font-weight:700}}
+#cmbody .servicelist ul{{margin:0;padding-left:18px;color:#c7d2e0;font-size:13px;line-height:1.7}}
+#cmbody .servicelist li{{margin:0}}
 #cmbody .sampleproduct{{margin-top:16px;padding:16px 18px;background:#0b1411;border:1px solid #1f4d3a;border-radius:14px}}
 #cmbody .sampleproduct .sphead{{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}}
 #cmbody .sampleproduct .sphead{{color:#36d6a0;font-weight:700;font-size:14px}}
@@ -2401,7 +2374,10 @@ def center_card_html(slug, lang="en"):
 <div class="whatyouget">
 <h3>{t['what_you_get_title']}</h3>
 <ul><li>{t['what_you_get_1']}</li><li>{t['what_you_get_2']}</li><li>{t['what_you_get_3']}</li></ul>
-{products_html}
+</div>
+<div class="servicelist">
+<h4>{t['services_title']}</h4>
+<ul>{services_html}</ul>
 </div>
 </div>
 {(f'<div class="sectionblock"><div class="related"><span class=relabel>{t["related_label"]}</span>{adj_links}</div></div>') if adj_links else ''}
