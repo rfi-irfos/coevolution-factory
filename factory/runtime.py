@@ -2510,6 +2510,7 @@ document.querySelectorAll('.desk').forEach(function(d){
 // activity happen, not a static snapshot from page-load.
 var COLOR_MAP={healthy:'#36d6a0',degraded:'#f0883e','0-status':'#f85c5c'};
 var LABEL_MAP=__T_STATUS_LABELS__;
+var ROLE_BIOS=__ROLE_BIOS__;
 // === Production Office (Canvas, ported 1:1 from detailliertes_sims_office.html) ===
 const OFFICE_PANEL = (__PANEL_JSON__ && Array.isArray(__PANEL_JSON__)) ? __PANEL_JSON__ : [];
 function officeInit(){
@@ -2617,7 +2618,7 @@ function officeInit(){
     const mx=(ev.clientX-r.left)*(W/r.width), my=(ev.clientY-r.top)*(H/r.height);
     const role=_workerAt(mx,my);
     const pop=$('workpopup');
-    if(role&&pop){const pretty=role.replace(/-/g,' ');const bio=(window.__ROLE_BIOS__&&window.__ROLE_BIOS__[role])||'';pop.innerHTML='<b>'+pretty.charAt(0).toUpperCase()+pretty.slice(1)+'</b>'+(bio?'<br>'+esc(bio):'');pop.hidden=false;}
+    if(role&&pop){const pretty=role.replace(/-/g,' ');const bio=(ROLE_BIOS&&ROLE_BIOS[role])||'';pop.innerHTML='<b>'+pretty.charAt(0).toUpperCase()+pretty.slice(1)+'</b>'+(bio?'<br>'+esc(bio):'');pop.hidden=false;}
     else if(pop){pop.hidden=true;}
   });
   frame(false);
