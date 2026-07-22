@@ -2989,6 +2989,7 @@ def _firms_grid_body(request, open_slug=None):
         x, y = pixels[i]
         stats = _live_stats_for(s)
         color = STATUS_COLOR.get(stats["status"], "#f0883e")
+        accent = ICON_COLORS.get(ICON_BY_SLUG.get(s, "shield"), "#36d6a0")
         delay = min(i * 0.028, 1.1)
         fo_size = HEX_SIZE * 1.35
         # Two nested <g>s on purpose: the OUTER one carries the SVG
@@ -3000,12 +3001,12 @@ def _firms_grid_body(request, open_slug=None):
         # same <g> silently collapsed every tile onto the same coordinates.
         return (
             f'<g transform="translate({x - min_x:.1f},{y - min_y:.1f})">'
-            f'<g class=hex data-slug="{s}" style="animation-delay:{delay:.3f}s">'
+            f'<g class=hex data-slug="{s}" data-ac="{accent}" style="--ac:{accent};animation-delay:{delay:.3f}s">'
             f'<a href="/{s}?lang={lang}">'
             f'<polygon class=hexshape points="{HEX_POINTS}" data-c="{color}" style="stroke:{color}"/>'
             f'<foreignObject x="{-fo_size/2:.1f}" y="{-fo_size/2:.1f}" width="{fo_size:.1f}" height="{fo_size:.1f}">'
             f'<div xmlns="http://www.w3.org/1999/xhtml" class=hexbody>'
-            f'<svg class=hexicon viewBox="0 0 24 24" fill=none stroke="#cdd9e5" stroke-width=1.6 '
+            f'<svg class=hexicon viewBox="0 0 24 24" fill=none stroke="var(--ac)" stroke-width=1.8 '
             f'stroke-linecap=round stroke-linejoin=round>{_hex_icon(s)}</svg>'
             f'<div class=hexname>{html.escape(c["name"])}</div>'
             f'<div class=hexled style="background:{color}"></div>'
@@ -3053,10 +3054,10 @@ background:radial-gradient(ellipse at center,#0d1219,#0a0e14 75%);border:1px sol
 .zoomctl .zreset{{font-size:10px;letter-spacing:.02em}}
 .hex{{animation:hexin .5s cubic-bezier(.2,.9,.3,1.2) both}}
 .hex a{{display:block;text-decoration:none;color:inherit;cursor:pointer}}
-.hexshape{{fill:#0f141d;stroke-width:1.5;transition:fill .2s,stroke-width .2s;paint-order:stroke}}
-.hex:hover .hexshape{{fill:#141c28;stroke-width:2.5}}
+.hexshape{{fill:color-mix(in srgb, var(--ac) 30%, #0a0e14);stroke-width:1.5;transition:fill .2s,stroke-width .2s;paint-order:stroke}}
+.hex:hover .hexshape{{fill:color-mix(in srgb, var(--ac) 52%, #0a0e14);stroke-width:2.5}}
 .hexbody{{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;box-sizing:border-box;font-family:-apple-system,Segoe UI,Inter,sans-serif;pointer-events:none}}
-.hexicon{{width:26px;height:26px;margin-bottom:5px;flex-shrink:0;color:#cdd9e5}}
+.hexicon{{width:26px;height:26px;margin-bottom:5px;flex-shrink:0;color:var(--ac)}}
 .hexname{{color:#e6edf3;font-weight:650;font-size:10.5px;line-height:1.22;margin-bottom:4px;overflow-wrap:break-word;hyphens:auto}}
 .hexled{{width:7px;height:7px;border-radius:50%;margin-bottom:4px;animation:blink 1.8s ease-in-out infinite}}
 .hexstats{{color:#8b98a9;font-size:9.5px;font-variant-numeric:tabular-nums;letter-spacing:.01em}}
