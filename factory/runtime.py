@@ -3085,7 +3085,7 @@ background:radial-gradient(ellipse at center,#0d1219,#0a0e14 75%);border:1px sol
 .hexstats{{color:#8b98a9;font-size:9.5px;font-variant-numeric:tabular-nums;letter-spacing:.01em}}
 .empty{{color:#5b6675;text-align:center;padding:30px}}
 .foot{{color:#5b6675;font-size:12px;margin-top:36px}}
-.cmoverlay{{position:fixed;inset:0;z-index:200;background:rgba(6,9,13,.9);backdrop-filter:blur(6px);overflow-y:auto}}
+.cmoverlay{{position:fixed;inset:0;z-index:200;background:rgba(6,9,13,.97);backdrop-filter:blur(6px);overflow-y:auto}}
 .cmpanel{{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:1180px;max-width:calc(100vw - 32px);min-height:200px;height:min(860px,92vh);max-height:92vh;background:#0a0e14;border:1px solid #1c2733;border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box}}
 .cmscroll{{overflow-y:auto;padding:30px 34px 0}}
 .cmclosebtn{{position:absolute;top:14px;right:14px;z-index:5;width:32px;height:32px;border-radius:50%;background:#0f141d;border:1px solid #1c2733;color:#c7d2e0;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}}
@@ -3184,11 +3184,11 @@ function openModal(slug,lang,push){{
  var m=document.getElementById('centermodal'),cb=document.getElementById('cmbody');
  fetch('/api/center/'+slug+'/card?lang='+lang).then(function(r){{return r.text();}}).then(function(htm){{
   if(cb){{cb.innerHTML=htm;var ncb=cb.querySelector('#cmclose');if(ncb)ncb.addEventListener('click',function(){{closeModal(true);}});}}execScripts(cb||document);
-  if(m)m.style.display='flex';document.body.style.overflow='hidden';
+  if(m)m.style.display='flex';document.body.style.overflow='hidden';var bg=document.querySelector('.wrap');if(bg)bg.style.visibility='hidden';
   if(push)history.pushState({{slug:slug,lang:lang}},'','/'+slug+'?lang='+lang);
  }});}}
 function closeModal(push){{
- var m=document.getElementById('centermodal');if(m)m.style.display='none';document.body.style.overflow='';
+ var m=document.getElementById('centermodal');if(m)m.style.display='none';document.body.style.overflow='';var bg=document.querySelector('.wrap');if(bg)bg.style.visibility='';
  if(window.__cmPollId){{clearInterval(window.__cmPollId);window.__cmPollId=null;}}
  if(push){{var qs=new URLSearchParams(location.search);var q=qs.get('q');
   history.pushState({{}},'','/'+(q?('?q='+encodeURIComponent(q)):''));}}
