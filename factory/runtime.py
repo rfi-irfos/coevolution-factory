@@ -297,7 +297,7 @@ def _nav_html(active="", brand_extra="", right_html=None):
 backdrop-filter:blur(16px);border-bottom:1px solid #1c2733}}
 .navwrap{{max-width:none;margin:0;min-height:64px;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}}
 .brand{{display:flex;align-items:center;text-decoration:none;gap:8px}}
-.brand .grad{background:linear-gradient(90deg,#9fd0ff,#36d6a0);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;font-size:16px}
+.brand .grad{{background:linear-gradient(90deg,#9fd0ff,#36d6a0);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;font-size:16px}}
 .navbadge{{color:#36d6a0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;
 border-left:1px solid #1c2733;padding-left:12px;margin-left:2px}}
 .navbadge .dot{{width:6px;height:6px;border-radius:50%;background:#36d6a0;animation:navblink 1.6s ease-in-out infinite}}
