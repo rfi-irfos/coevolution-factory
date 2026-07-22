@@ -3183,7 +3183,7 @@ function execScripts(container){{
 function openModal(slug,lang,push){{
  var m=document.getElementById('centermodal'),cb=document.getElementById('cmbody');
  fetch('/api/center/'+slug+'/card?lang='+lang).then(function(r){{return r.text();}}).then(function(htm){{
-  if(cb)cb.innerHTML=htm;execScripts(cb||document);
+  if(cb){{cb.innerHTML=htm;var ncb=cb.querySelector('#cmclose');if(ncb)ncb.addEventListener('click',function(){{closeModal(true);}});}}execScripts(cb||document);
   if(m)m.style.display='flex';document.body.style.overflow='hidden';
   if(push)history.pushState({{slug:slug,lang:lang}},'','/'+slug+'?lang='+lang);
  }});}}
