@@ -1793,7 +1793,7 @@ CENTER_PAGE_TR = {
         "donut_title": "Team composition",
         "trust_sub": "how sure we are the last answer was right — based on whether the center is working normally{posture}",
         "trust_posture": " and how confident the experts were last time ({posture})",
-        "chart_title": "Activity — last 7 days",
+        "chart_title": "Activity",
         "chart_sub": "real session counts, not simulated",
         "chart_empty": "No sessions yet this week — be the first to ask this team something.",
         "roster_title": "Standing panel ({n} experts)",
@@ -1885,7 +1885,7 @@ CENTER_PAGE_TR = {
         "roster_widget": "Wer im Team ist",
         "trust_sub": "wie sicher wir sind, dass die letzte Antwort gestimmt hat — je nachdem, ob das Center normal läuft{posture}",
         "trust_posture": " und wie sicher sich die Fachleute beim letzten Mal waren ({posture})",
-        "chart_title": "Aktivität — letzte 7 Tage",
+        "chart_title": "Aktivität",
         "chart_sub": "echte Sitzungszahlen, nichts simuliert",
         "chart_empty": "Diese Woche noch keine Sitzungen — stell als Erster diesem Team eine Frage.",
         "roster_title": "Festes Team ({n} Fachleute)",
@@ -2114,7 +2114,8 @@ def center_card_html(slug, lang="en"):
     # widgets read as a matched pair instead of one looking broken.
     chart_body_html = (
         f'<div class=chartbars>{chart_bars}</div>' if total_week > 0 else
-        f'<div class=chartempty>{t["chart_empty"]}</div>')
+        f'<canvas id=actwave width=520 height=84 class=actwave></canvas>'
+        f'<div class=chartempty style="margin-top:8px">{t["chart_empty"]}</div>')
     icon_key = ICON_BY_SLUG.get(slug, "shield")
     icon_svg = HEX_ICONS.get(icon_key, HEX_ICONS["shield"])
     accent_color = ICON_COLORS.get(icon_key, "#36d6a0")
@@ -2253,6 +2254,7 @@ def center_card_html(slug, lang="en"):
 #cmbody .cbarfill{{width:100%;border-radius:4px 4px 0 0;min-height:3px;background:linear-gradient(to top,{accent_color}55,{accent_color})}}
 #cmbody .cbarlabel{{font-size:9px;color:#5b6675;margin-top:5px;text-transform:uppercase}}
 #cmbody .chartempty{{color:#5b6675;font-size:12.5px;font-style:italic;text-align:center;line-height:1.5;padding:12px}}
+#cmbody .actwave{{width:100%;height:84px;display:block}}
 #cmbody .cmtabs{{display:flex;gap:6px;margin-top:16px;background:#070b10;border:1px solid #1c2733;border-radius:12px;padding:5px}}
 #cmbody .cmtab{{flex:1;text-align:center;padding:10px 8px;border-radius:8px;cursor:pointer;color:#8b98a9;font-size:13px;font-weight:700;user-select:none;transition:background .15s,color .15s}}
 #cmbody .cmtab.on{{background:{accent_color}22;color:#e6edf3}}
@@ -2389,7 +2391,7 @@ def center_card_html(slug, lang="en"):
 <div class=widgetsub>{t['trust_sub'].format(posture=t['trust_posture'].format(posture=last_posture) if last_posture else '')}</div>
 </div>
 <div class=widget>
-<h3>{t['chart_title']}<b>{total_week} {t['sessions']}</b></h3>
+<h3>{t['chart_title']}</h3>
 <div class=widgetbody>{chart_body_html}</div>
 <div class=widgetsub>{t['chart_sub']}</div>
 </div>
@@ -2592,6 +2594,20 @@ var wcap=$('wcaption');if(wcap)wcap.textContent=s.active_job?__T_WORKSHOP_ACTIVE
 var runbtn=$('run');if(runbtn&&!runbtn.disabled)runbtn.classList.toggle('idle',!s.active_job);
 }).catch(function(){});}
 pollLive();window.__cmPollId=setInterval(pollLive,3000);
+(function(){
+  var cv=document.getElementById('actwave'); if(!cv) return;
+  var ctx=cv.getContext('2d'); var W=cv.width,H=cv.height; var t=0;
+  function draw(){
+    t+=0.006; ctx.clearRect(0,0,W,H);
+    ctx.lineWidth=2; ctx.strokeStyle='#36d6a0'; ctx.beginPath();
+    for(var x=0;x<=W;x+=2){
+      var y=H/2 + Math.sin(x*0.02 + t)*14 + Math.sin(x*0.05 + t*1.7)*7 + Math.sin(x*0.11 + t*0.6)*3;
+      if(x===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke(); requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
 })();"""
     js = (js.replace("__SLUG__", slug).replace("__SAMPLE__", json.dumps(c["sample_question"]))
           .replace("__PANEL_JSON__", json.dumps(c["panel"]))
