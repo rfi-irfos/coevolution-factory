@@ -606,13 +606,15 @@ def _live_stats_for(slug):
     usage = state.get("usage", [])
     deb = state.get("debates", {})
     leads = state.get("leads", {})
+    aj = _active_job_for(slug)
     return {
         "slug": slug, "status": get_center_status(slug),
         "sessions": _sessions_for(slug, usage),
         "revenue_eur": _revenue_for(slug, usage),
         "leads": _leads_for(slug, leads),
         "problems": _problems_for(slug, usage, deb),
-        "active_job": _active_job_for(slug),
+        "active_job": aj,
+        "kind": (aj or {}).get("kind", "idle") if aj else "idle",
     }
 
 
@@ -3389,13 +3391,18 @@ COMPANY_ICONS = {
 
 
 def _hex_icon(slug):
+    icon = None
     if slug in COMPANY_ICONS:
-        return COMPANY_ICONS[slug]
-    # daughter/spin-off centers inherit the parent's logo
-    parent = CENTERS.get(slug, {}).get("parent")
-    if parent and parent in COMPANY_ICONS:
-        return COMPANY_ICONS[parent]
-    return HEX_ICONS[ICON_BY_SLUG.get(slug, "shield")]
+        icon = COMPANY_ICONS[slug]
+    else:
+        # daughter/spin-off centers inherit the parent's logo
+        parent = CENTERS.get(slug, {}).get("parent")
+        if parent and parent in COMPANY_ICONS:
+            icon = COMPANY_ICONS[parent]
+    if not icon:
+        icon = HEX_ICONS.get(ICON_BY_SLUG.get(slug, "shield"),
+                             HEX_ICONS.get("shield", ""))
+    return icon or ""
 
 
 def _firms_grid_body(request, open_slug=None):
@@ -3511,10 +3518,16 @@ background:radial-gradient(ellipse at center,#0d1219,#0a0e14 75%);border:1px sol
 .zoomctl button:hover{{border-color:#2c4258}}
 .zoomctl .zreset{{font-size:10px;letter-spacing:.02em}}
 .hex{{animation:hexin .5s cubic-bezier(.2,.9,.3,1.2) both}}
+.hex[data-kind=develop]{{animation:hexin .5s cubic-bezier(.2,.9,.3,1.2) both;--flow:#3b82f6}}
+.hex[data-kind=discuss]{{animation:hexin .5s cubic-bezier(.2,.9,.3,1.2) both;--flow:#36d6a0}}
+.hex[data-kind=improve]{{animation:hexin .5s cubic-bezier(.2,.9,.3,1.2) both;--flow:#f59e0b}}
+.hex[data-kind=directive]{{animation:hexin .5s cubic-bezier(.2,.9,.3,1.2) both;--flow:#a855f7}}
+.hex:not([data-kind=idle]) .hexshape{{animation:flowpulse 2.2s ease-in-out infinite}}
+@keyframes flowpulse{{0%,100%{{stroke:var(--flow,#36d6a0)}}50%{{stroke:#fff}}}}
 .hex a{{display:block;text-decoration:none;color:inherit;cursor:pointer}}
-.hexshape{{fill:color-mix(in srgb, var(--ac) 30%, #0a0e14);stroke-width:1.5;transition:fill .2s,stroke-width .2s;paint-order:stroke}}
-.hex:hover .hexshape{{fill:color-mix(in srgb, var(--ac) 52%, #0a0e14);stroke-width:2.5}}
-.hexbody{{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;box-sizing:border-box;font-family:-apple-system,Segoe UI,Inter,sans-serif;pointer-events:none}}
+.hexshape{{fill:color-mix(in srgb, var(--ac) 30%, #0a0e14);stroke:#1c2733;stroke-width:3;stroke-linejoin:round;stroke-linecap:round;transition:fill .2s,stroke-width .2s;paint-order:stroke}}
+.hex:hover .hexshape{{fill:color-mix(in srgb, var(--ac) 52%, #0a0e14);stroke-width:4}}
+.hexbody{{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;box-sizing:border-box;font-family:-apple-system,Segoe UI,Inter,sans-serif;border-radius:14px;pointer-events:none}}
 .hexicon{{width:26px;height:26px;margin-bottom:5px;flex-shrink:0;color:var(--ac)}}
 .hexname{{color:#e6edf3;font-weight:650;font-size:10.5px;line-height:1.22;margin-bottom:4px;overflow-wrap:break-word;hyphens:auto}}
 .hexled{{width:7px;height:7px;border-radius:50%;margin-bottom:4px;animation:blink 1.8s ease-in-out infinite}}
@@ -3562,8 +3575,8 @@ var s=d[g.dataset.slug];if(!s)return;
 var c=g.querySelector('.hexshape'),color=c.getAttribute('data-c');
 var colorMap={{healthy:'#36d6a0',degraded:'#f0883e','0-status':'#f85c5c'}};
 var nc=colorMap[s.status]||color;
-c.setAttribute('data-c',nc);c.style.stroke=nc;
-var led=g.querySelector('.hexled');if(led)led.style.background=nc;
+c.setAttribute('data-c',nc);c.style.stroke=nc;g.setAttribute('data-kind',s.kind||'idle');
+var led=g.querySelector('.hexled');if(led){{var kindColor={{develop:'#3b82f6',discuss:'#36d6a0',improve:'#f59e0b',directive:'#a855f7',idle:nc}};led.style.background=kindColor[s.kind]||nc;}}
 var ss=g.querySelector('[data-k=sessions]');if(ss)ss.textContent=s.sessions;
 var ld=g.querySelector('[data-k=leads]');if(ld)ld.textContent=s.leads;
 }});}}).catch(function(){{}});}}
