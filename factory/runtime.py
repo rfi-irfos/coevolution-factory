@@ -1784,8 +1784,8 @@ CENTER_PAGE_TR = {
         "leads": "Leads",
         "trust_title": "How much to trust this",
         "trust_word": "trust",
-        "kpi_sessions_week": "Sessions this week",
-        "kpi_leads": "Leads",
+        "kpi_latency": "Server latency",
+        "kpi_active_session": "Active session",
         "kpi_price": "Price per session",
         "kpi_team": "Team size",
         "kpi_related": "Related teams",
@@ -1877,8 +1877,8 @@ CENTER_PAGE_TR = {
         "leads": "Anfragen",
         "trust_title": "Wie sehr man dem hier vertrauen kann",
         "trust_word": "Vertrauen",
-        "kpi_sessions_week": "Sitzungen diese Woche",
-        "kpi_leads": "Anfragen",
+        "kpi_latency": "Server-Latenz",
+        "kpi_active_session": "Aktive Sitzung",
         "kpi_price": "Preis pro Sitzung",
         "kpi_team": "Teamgröße",
         "kpi_related": "Verwandte Teams",
@@ -2125,15 +2125,14 @@ def center_card_html(slug, lang="en"):
         # declaration. Precompute the alpha variants here instead.
         return f"{var}:{pc};{var}bg:{pc}1f;{var}hover:{pc}33"
 
-    # KPI strip — every number here is a real field already computed above
-    # (sessions, leads, price, panel size). No fabricated metrics — a
-    # BI-dashboard look needs several tiles, but each one has to be honest
-    # or it's not worth doing. Trust is NOT in this strip: it gets its own
-    # gauge widget below. Related-team count was dropped from here too —
-    # it's not a KPI, it's navigation, and lives as its own pill row.
+    # KPI strip — latency is measured client-side from the live poll
+    # (real fetch round-trip, never fabricated); active session reflects a
+    # real panel job in flight for this center right now. Price + team size
+    # are real fields. Trust is NOT in this strip: its own gauge widget below.
+    _active_session = 1 if initial_stats.get("active_job") else 0
     kpi_tiles = [
-        (t["kpi_sessions_week"], f"{total_week}", "#60a5fa", "eye"),
-        (t["kpi_leads"], f"{initial_stats['leads']}", "#fbbf24", "speech"),
+        (t["kpi_latency"], "— ms", "#60a5fa", "eye"),
+        (t["kpi_active_session"], f"{_active_session}", "#fbbf24", "users"),
         (t["kpi_price"], f"€{c['price']:g}", "#4ade80", "coin"),
         (t["kpi_team"], f"{len(c['panel'])}", "#c084fc", "users"),
     ]
