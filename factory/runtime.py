@@ -3200,6 +3200,7 @@ document.querySelectorAll('.hex a').forEach(function(a){{
   var g=a.closest('.hex');openModal(g.getAttribute('data-slug'),CUR_LANG,true);
  }});}});
 var __cb=document.getElementById('cmclose');if(__cb)__cb.addEventListener('click',function(){{closeModal(true);}});
+window.__cmcloseBound=true;
 modal.addEventListener('mousedown',function(e){{if(e.target===modal)closeModal(true);}});
 window.addEventListener('keydown',function(e){{if(e.key==='Escape'&&modal.style.display!=='none')closeModal(true);}});
 window.addEventListener('popstate',function(){{
@@ -3208,6 +3209,7 @@ window.addEventListener('popstate',function(){{
  else{{closeModal(false);}}
 }});
 {"document.body.style.overflow='hidden';" if modal_open else ""}
+window.__modalIIFEend=true;
 }})();
 }})();</script>
 {_footer_html()}
