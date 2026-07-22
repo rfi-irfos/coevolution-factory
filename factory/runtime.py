@@ -3174,12 +3174,12 @@ r-detail MODAL — clicking a hex fetches /api/center/{{slug}}/card and
 // non-obvious plumbing this needs.
 (function(){{
 var modal=document.getElementById('centermodal'),cmbody=document.getElementById('cmbody');
-var CUR_LANG='{lang}';
+var CUR_LANG='{lang}';window.__p1=true;
 function execScripts(container){{
  container.querySelectorAll('script').forEach(function(old){{
   var s=document.createElement('script');if(old.type)s.type=old.type;s.text=old.textContent;
   old.parentNode.replaceChild(s,old);
- }});}}
+ }});}}window.__p2=true;
 function openModal(slug,lang,push){{
  var m=document.getElementById('centermodal'),cb=document.getElementById('cmbody');
  fetch('/api/center/'+slug+'/card?lang='+lang).then(function(r){{return r.text();}}).then(function(htm){{
@@ -3192,13 +3192,13 @@ function closeModal(push){{
  if(window.__cmPollId){{clearInterval(window.__cmPollId);window.__cmPollId=null;}}
  if(push){{var qs=new URLSearchParams(location.search);var q=qs.get('q');
   history.pushState({{}},'','/'+(q?('?q='+encodeURIComponent(q)):''));}}
-}}
+}}window.__p4=true;
 document.querySelectorAll('.hex a').forEach(function(a){{
  a.addEventListener('click',function(e){{
   if(e.ctrlKey||e.metaKey||e.shiftKey||e.button===1)return;
   e.preventDefault();
   var g=a.closest('.hex');openModal(g.getAttribute('data-slug'),CUR_LANG,true);
- }});}});
+ }});}});window.__p5=true;
 var __cb=document.getElementById('cmclose');if(__cb)__cb.addEventListener('click',function(){{closeModal(true);}});
 window.__cmcloseBound=true;
 modal.addEventListener('mousedown',function(e){{if(e.target===modal)closeModal(true);}});
