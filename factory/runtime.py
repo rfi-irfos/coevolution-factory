@@ -3211,6 +3211,7 @@ window.addEventListener('popstate',function(){{
 {"document.body.style.overflow='hidden';" if modal_open else ""}
 window.__modalIIFEend=true;
 }})();
+window.__scriptEnd=true;
 }})();</script>
 {_footer_html()}
 {_tracker_js((('center:' + open_slug) if modal_open else ('search:' + q if q else '')))}</body></html>"""
