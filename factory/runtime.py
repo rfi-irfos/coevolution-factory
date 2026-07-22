@@ -3209,6 +3209,41 @@ HEX_POINTS = " ".join(
     for i in range(6))
 
 
+def _hex_path(size, corner=0.18):
+    """A rounded-hex <path> 'd' string: true rounded corners (arcs), not a
+    sharp <polygon>. `corner` is the fraction of the edge length chamfered
+    into an arc at each vertex. Replaces the sharp HEX_POINTS polygon so the
+    honeycomb tiles actually look softly rounded."""
+    pts = [(size * math.cos(math.radians(60 * i - 30)),
+            size * math.sin(math.radians(60 * i - 30))) for i in range(6)]
+    # edge vectors + lengths
+    edges = []
+    for i in range(6):
+        x0, y0 = pts[i]
+        x1, y1 = pts[(i + 1) % 6]
+        dx, dy = x1 - x0, y1 - y0
+        ln = math.hypot(dx, dy)
+        edges.append((dx / ln, dy / ln, ln))
+    r = size * corner  # arc radius
+    d = []
+    for i in range(6):
+        x0, y0 = pts[i]
+        ex, ey, ln = edges[i]
+        # point where the arc starts on this edge (r from the vertex)
+        sx, sy = x0 + ex * r, y0 + ey * r
+        if i == 0:
+            d.append(f"M{sx:.2f},{sy:.2f}")
+        # arc to the next edge's start point (r from the next vertex)
+        nx, ny, _ = edges[(i + 1) % 6]
+        ex2, ey2 = pts[(i + 1) % 6]
+        tx, ty = ex2 - nx * r, ey2 - ny * r
+        d.append(f"A{r:.2f},{r:.2f} 0 0,1 {tx:.2f},{ty:.2f}")
+    return "".join(d)
+
+
+HEX_PATH = _hex_path(HEX_SIZE)
+
+
 LANDING_TR = {
     "de": {
         "title": "CoEvolution AI — {n} voll autonome Firmen, live",
@@ -3468,7 +3503,7 @@ def _firms_grid_body(request, open_slug=None):
             f'<g transform="translate({x - min_x:.1f},{y - min_y:.1f})">'
             f'<g class=hex data-slug="{s}" data-ac="{accent}" style="--ac:{accent};animation-delay:{delay:.3f}s">'
             f'<a href="/{s}?lang={lang}">'
-            f'<polygon class=hexshape points="{HEX_POINTS}" data-c="{color}" style="stroke:{color}"/>'
+            f'<path class=hexshape d="{HEX_PATH}" data-c="{color}" style="stroke:{color}"/>'
             f'<foreignObject x="{-fo_size/2:.1f}" y="{-fo_size/2:.1f}" width="{fo_size:.1f}" height="{fo_size:.1f}">'
             f'<div xmlns="http://www.w3.org/1999/xhtml" class=hexbody>'
             f'<svg class=hexicon viewBox="0 0 24 24" fill=none stroke="var(--ac)" stroke-width=1.8 '
