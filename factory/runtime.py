@@ -2400,6 +2400,7 @@ def center_card_html(slug, lang="en"):
 <div class="whatyouget">
 <h3>{t['what_you_get_title']}</h3>
 <ul><li>{t['what_you_get_1']}</li><li>{t['what_you_get_2']}</li><li>{t['what_you_get_3']}</li></ul>
+{products_html}
 </div>
 </div>
 {(f'<div class="sectionblock"><div class="related"><span class=relabel>{t["related_label"]}</span>{adj_links}</div></div>') if adj_links else ''}
