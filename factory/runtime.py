@@ -297,10 +297,10 @@ def _nav_html(active="", brand_extra="", right_html=None):
 backdrop-filter:blur(16px);border-bottom:1px solid #1c2733}}
 .navwrap{{max-width:none;margin:0;min-height:64px;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}}
 .brand{{display:block;text-decoration:none;gap:8px}}
-.brandwrap{{display:flex;align-items:center;gap:8px;flex-wrap:wrap}}
-.brand .grad{{background:linear-gradient(90deg,#9fd0ff,#36d6a0);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;font-size:16px}}
-.brandsep{{color:#8b98a9;font-weight:700}}
-.brandsub{{color:#8b98a9;font-size:12px;font-weight:500;line-height:1.2;letter-spacing:.01em}}
+.brandwrap{{display:flex;align-items:center;gap:10px;flex-wrap:wrap}}
+.brand .grad{{background:linear-gradient(90deg,#9fd0ff,#36d6a0);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;font-size:17px;letter-spacing:-.01em}}
+.brandsep{{color:#8b98a9;font-weight:700;font-size:17px}}
+.brandsub{{color:#c7d2e0;font-size:13.5px;font-weight:500;line-height:1.25;letter-spacing:.01em}}
 .sep{{height:1px;background:#1c2733;margin:0;border:none}}
 .ledesub{{display:none}}
 .navbadge{{color:#36d6a0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;
