@@ -3166,7 +3166,7 @@ fit();
  btn.addEventListener('click',function(e){{e.stopPropagation();pop.hidden=!pop.hidden;}});
  document.addEventListener('click',function(e){{if(!pop.contains(e.target)&&e.target!==btn){{pop.hidden=true;}}}});
 }})();
-/}}catch(e){{console.log('panzoom-err',e);}}
+}}catch(e){{console.log('panzoom-err',e);}}
 r-detail MODAL — clicking a hex fetches /api/center/{{slug}}/card and
 // injects it here instead of navigating to a separate page. Scripts inside
 // an innerHTML-injected fragment don't auto-execute (browser rule), so
