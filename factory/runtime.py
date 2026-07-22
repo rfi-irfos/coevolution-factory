@@ -1785,7 +1785,9 @@ CENTER_PAGE_TR = {
         "trust_title": "How much to trust this",
         "trust_word": "trust",
         "kpi_latency": "Server latency",
-        "kpi_active_session": "Active session",
+        "kpi_status": "Status",
+        "status_healthy": "Operational",
+        "status_degraded": "Degraded",
         "kpi_price": "Price per session",
         "kpi_team": "Team size",
         "kpi_related": "Related teams",
@@ -1853,7 +1855,7 @@ CENTER_PAGE_TR = {
         "pipeline_2": "2 · The team advises (multiple experts)",
         "pipeline_3": "3 · Finished result for you",
         "what_you_get_title": "What you get",
-        "services_title": "What this firm resolves for you",
+        "services_title": "Our Services",
         "what_you_get_1": "A finished result, not just \"an answer\"",
         "what_you_get_2": "Worked out jointly by a team of autonomous experts",
         "what_you_get_3": "In a few minutes, no appointment needed",
@@ -1879,7 +1881,9 @@ CENTER_PAGE_TR = {
         "trust_title": "Wie sehr man dem hier vertrauen kann",
         "trust_word": "Vertrauen",
         "kpi_latency": "Server-Latenz",
-        "kpi_active_session": "Aktive Sitzung",
+        "kpi_status": "Status",
+        "status_healthy": "Betriebsbereit",
+        "status_degraded": "Eingeschränkt",
         "kpi_price": "Preis pro Sitzung",
         "kpi_team": "Teamgröße",
         "kpi_related": "Verwandte Teams",
@@ -1946,7 +1950,7 @@ CENTER_PAGE_TR = {
         "pipeline_2": "2 · Das Team berät (mehrere Experten)",
         "pipeline_3": "3 · Fertiges Ergebnis für dich",
         "what_you_get_title": "Was du bekommst",
-        "services_title": "Was diese Firma für dich klärt",
+        "services_title": "Unsere Services",
         "what_you_get_1": "Ein fertiges Ergebnis, nicht nur „eine Antwort“",
         "what_you_get_2": "Von einem Team autonomer Experten gemeinsam erarbeitet",
         "what_you_get_3": "In wenigen Minuten, ohne Termin",
@@ -2129,13 +2133,15 @@ def center_card_html(slug, lang="en"):
         return f"{var}:{pc};{var}bg:{pc}1f;{var}hover:{pc}33"
 
     # KPI strip — latency is measured client-side from the live poll
-    # (real fetch round-trip, never fabricated); active session reflects a
-    # real panel job in flight for this center right now. Price + team size
-    # are real fields. Trust is NOT in this strip: its own gauge widget below.
-    _active_session = 1 if initial_stats.get("active_job") else 0
+    # (real fetch round-trip, never fabricated); status is the firm's real
+    # operational state from _live_stats_for. Price + team size are real
+    # fields. Trust is NOT in this strip: its own gauge widget below.
+    _status_raw = (initial_stats.get("status") or "healthy")
+    _status_label = {"healthy": t["status_healthy"], "degraded": t["status_degraded"]}.get(
+        _status_raw, t["status_healthy"])
     kpi_tiles = [
         (t["kpi_latency"], "— ms", "#60a5fa", "eye"),
-        (t["kpi_active_session"], f"{_active_session}", "#fbbf24", "users"),
+        (t["kpi_status"], _status_label, "#fbbf24", "alert"),
         (t["kpi_price"], f"€{c['price']:g}", "#4ade80", "coin"),
         (t["kpi_team"], f"{len(c['panel'])}", "#c084fc", "users"),
     ]
