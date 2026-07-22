@@ -312,8 +312,8 @@ border-left:1px solid #1c2733;padding-left:12px;margin-left:2px}}
 .hcinfopop b{{color:#e6edf3;font-weight:700}}
 #hcwrap [hidden]{{display:none !important}}
 @keyframes navblink{{0%,100%{{opacity:1}}50%{{opacity:.4}}}}
-.navlinks{{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-left:auto}}
-.navlinks a{{color:#8b98a9;font-size:13px;font-weight:600;text-decoration:none;letter-spacing:.02em}}
+.navlinks{{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-left:auto}}
+.navlinks a{{color:#8b98a9;font-size:15px;font-weight:600;text-decoration:none;letter-spacing:.02em;padding:6px 4px;line-height:1}}
 .navlinks a:hover{{color:#e6edf3}}
 .navsearchwrap{{position:relative;display:flex;align-items:center}}
 .navsearchicon{{position:absolute;left:10px;width:14px;height:14px;color:#9fd0ff;pointer-events:none}}
