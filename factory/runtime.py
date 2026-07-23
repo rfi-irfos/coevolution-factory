@@ -3017,19 +3017,20 @@ function officeInit(){
     for(let i=0;i<pos.length;i++){const x=pos[i][0],y=pos[i][1];if(Math.abs(mx-x)<70&&Math.abs(my-y)<40)return OFFICE_PANEL[i];}
     return null;
   }
-  cv.addEventListener('click',function(ev){
-    const r=cv.getBoundingClientRect();
+  var _cv=$('workshop');
+  _cv.addEventListener('click',function(ev){
+    const r=_cv.getBoundingClientRect();
     const mx=(ev.clientX-r.left)*(W/r.width), my=(ev.clientY-r.top)*(H/r.height);
     const role=_workerAt(mx,my);
     const pop=$('workpopup');
     if(role&&pop){window.__activeRole=role;const pretty=role.replace(/-/g,' ');const bio=(ROLE_BIOS&&ROLE_BIOS[role])||'';pop.innerHTML='<b>'+pretty.charAt(0).toUpperCase()+pretty.slice(1)+'</b>'+(bio?'<br>'+esc(bio):'');pop.hidden=false;}
     else if(pop){pop.hidden=true;window.__activeRole=null;}
   });
-  cv.addEventListener('mousemove',function(ev){
-    const r=cv.getBoundingClientRect();
+  _cv.addEventListener('mousemove',function(ev){
+    const r=_cv.getBoundingClientRect();
     const mx=(ev.clientX-r.left)*(W/r.width), my=(ev.clientY-r.top)*(H/r.height);
     window.__activeRole=_workerAt(mx,my);
-    cv.style.cursor=window.__activeRole?'pointer':'default';
+    _cv.style.cursor=window.__activeRole?'pointer':'default';
   });
 window.__hubActive=false;window.__activeRole=null;
 // start office immediately when modal opens (cp2 is the default-visible tab on open)
