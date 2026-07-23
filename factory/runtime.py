@@ -3241,7 +3241,7 @@ def _hex_path(size, corner=0.18):
     return "".join(d)
 
 
-HEX_PATH = _hex_path(HEX_SIZE)
+HEX_PATH = _hex_path(HEX_SIZE, corner=0.30)
 
 
 LANDING_TR = {
@@ -3560,7 +3560,7 @@ background:radial-gradient(ellipse at center,#0d1219,#0a0e14 75%);border:1px sol
 .hex:not([data-kind=idle]) .hexshape{{animation:flowpulse 2.2s ease-in-out infinite}}
 @keyframes flowpulse{{0%,100%{{stroke:var(--flow,#36d6a0)}}50%{{stroke:#fff}}}}
 .hex a{{display:block;text-decoration:none;color:inherit;cursor:pointer}}
-.hexshape{{fill:color-mix(in srgb, var(--ac) 30%, #0a0e14);stroke:#1c2733;stroke-width:3;stroke-linejoin:round;stroke-linecap:round;transition:fill .2s,stroke-width .2s;paint-order:stroke}}
+.hexshape{{fill:color-mix(in srgb, var(--ac) 30%, #0a0e14);stroke:#1c2733;stroke-width:1;stroke-linejoin:round;stroke-linecap:round;transition:fill .2s,stroke-width .2s;paint-order:stroke}}
 .hex:hover .hexshape{{fill:color-mix(in srgb, var(--ac) 52%, #0a0e14);stroke-width:4}}
 .hexbody{{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;box-sizing:border-box;font-family:-apple-system,Segoe UI,Inter,sans-serif;border-radius:14px;pointer-events:none}}
 .hexicon{{width:26px;height:26px;margin-bottom:5px;flex-shrink:0;color:var(--ac)}}
