@@ -3209,41 +3209,6 @@ HEX_POINTS = " ".join(
     for i in range(6))
 
 
-def _hex_path(size, corner=0.18):
-    """A rounded-hex <path> 'd' string: true rounded corners (arcs), not a
-    sharp <polygon>. `corner` is the fraction of the edge length chamfered
-    into an arc at each vertex. Replaces the sharp HEX_POINTS polygon so the
-    honeycomb tiles actually look softly rounded."""
-    pts = [(size * math.cos(math.radians(60 * i - 30)),
-            size * math.sin(math.radians(60 * i - 30))) for i in range(6)]
-    # edge vectors + lengths
-    edges = []
-    for i in range(6):
-        x0, y0 = pts[i]
-        x1, y1 = pts[(i + 1) % 6]
-        dx, dy = x1 - x0, y1 - y0
-        ln = math.hypot(dx, dy)
-        edges.append((dx / ln, dy / ln, ln))
-    r = size * corner  # arc radius
-    d = []
-    for i in range(6):
-        x0, y0 = pts[i]
-        ex, ey, ln = edges[i]
-        # point where the arc starts on this edge (r from the vertex)
-        sx, sy = x0 + ex * r, y0 + ey * r
-        if i == 0:
-            d.append(f"M{sx:.2f},{sy:.2f}")
-        # arc to the next edge's start point (r from the next vertex)
-        nx, ny, _ = edges[(i + 1) % 6]
-        ex2, ey2 = pts[(i + 1) % 6]
-        tx, ty = ex2 - nx * r, ey2 - ny * r
-        d.append(f"A{r:.2f},{r:.2f} 0 0,1 {tx:.2f},{ty:.2f}")
-    return "".join(d)
-
-
-HEX_PATH = _hex_path(HEX_SIZE, corner=0.30)
-
-
 LANDING_TR = {
     "de": {
         "title": "CoEvolution AI — {n} voll autonome Firmen, live",
@@ -3503,7 +3468,7 @@ def _firms_grid_body(request, open_slug=None):
             f'<g transform="translate({x - min_x:.1f},{y - min_y:.1f})">'
             f'<g class=hex data-slug="{s}" data-ac="{accent}" style="--ac:{accent};animation-delay:{delay:.3f}s">'
             f'<a href="/{s}?lang={lang}">'
-            f'<path class=hexshape d="{HEX_PATH}" data-c="{color}" style="stroke:{color}"/>'
+            f'<polygon class=hexshape points="{HEX_POINTS}" data-c="{color}" style="stroke:{color}"/>'
             f'<foreignObject x="{-fo_size/2:.1f}" y="{-fo_size/2:.1f}" width="{fo_size:.1f}" height="{fo_size:.1f}">'
             f'<div xmlns="http://www.w3.org/1999/xhtml" class=hexbody>'
             f'<svg class=hexicon viewBox="0 0 24 24" fill=none stroke="var(--ac)" stroke-width=1.8 '
@@ -3553,16 +3518,10 @@ background:radial-gradient(ellipse at center,#0d1219,#0a0e14 75%);border:1px sol
 .zoomctl button:hover{{border-color:#2c4258}}
 .zoomctl .zreset{{font-size:10px;letter-spacing:.02em}}
 .hex{{animation:hexin .5s cubic-bezier(.2,.9,.3,1.2) both}}
-.hex[data-kind=develop]{{animation:hexin .5s cubic-bezier(.2,.9,.3,1.2) both;--flow:#3b82f6}}
-.hex[data-kind=discuss]{{animation:hexin .5s cubic-bezier(.2,.9,.3,1.2) both;--flow:#36d6a0}}
-.hex[data-kind=improve]{{animation:hexin .5s cubic-bezier(.2,.9,.3,1.2) both;--flow:#f59e0b}}
-.hex[data-kind=directive]{{animation:hexin .5s cubic-bezier(.2,.9,.3,1.2) both;--flow:#a855f7}}
-.hex:not([data-kind=idle]) .hexshape{{animation:flowpulse 2.2s ease-in-out infinite}}
-@keyframes flowpulse{{0%,100%{{stroke:var(--flow,#36d6a0)}}50%{{stroke:#fff}}}}
 .hex a{{display:block;text-decoration:none;color:inherit;cursor:pointer}}
-.hexshape{{fill:color-mix(in srgb, var(--ac) 30%, #0a0e14);stroke:#1c2733;stroke-width:1;stroke-linejoin:round;stroke-linecap:round;transition:fill .2s,stroke-width .2s;paint-order:stroke}}
-.hex:hover .hexshape{{fill:color-mix(in srgb, var(--ac) 52%, #0a0e14);stroke-width:4}}
-.hexbody{{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;box-sizing:border-box;font-family:-apple-system,Segoe UI,Inter,sans-serif;border-radius:14px;pointer-events:none}}
+.hexshape{{fill:color-mix(in srgb, var(--ac) 30%, #0a0e14);stroke-width:1.5;transition:fill .2s,stroke-width .2s;paint-order:stroke}}
+.hex:hover .hexshape{{fill:color-mix(in srgb, var(--ac) 52%, #0a0e14);stroke-width:2.5}}
+.hexbody{{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;box-sizing:border-box;font-family:-apple-system,Segoe UI,Inter,sans-serif;pointer-events:none}}
 .hexicon{{width:26px;height:26px;margin-bottom:5px;flex-shrink:0;color:var(--ac)}}
 .hexname{{color:#e6edf3;font-weight:650;font-size:10.5px;line-height:1.22;margin-bottom:4px;overflow-wrap:break-word;hyphens:auto}}
 .hexled{{width:7px;height:7px;border-radius:50%;margin-bottom:4px;animation:blink 1.8s ease-in-out infinite}}
@@ -3610,7 +3569,7 @@ var s=d[g.dataset.slug];if(!s)return;
 var c=g.querySelector('.hexshape'),color=c.getAttribute('data-c');
 var colorMap={{healthy:'#36d6a0',degraded:'#f0883e','0-status':'#f85c5c'}};
 var nc=colorMap[s.status]||color;
-c.setAttribute('data-c',nc);c.style.stroke=nc;g.setAttribute('data-kind',s.kind||'idle');
+c.setAttribute('data-c',nc);c.style.stroke=nc;
 var led=g.querySelector('.hexled');if(led){{var kindColor={{develop:'#3b82f6',discuss:'#36d6a0',improve:'#f59e0b',directive:'#a855f7',idle:nc}};led.style.background=kindColor[s.kind]||nc;}}
 var ss=g.querySelector('[data-k=sessions]');if(ss)ss.textContent=s.sessions;
 var ld=g.querySelector('[data-k=leads]');if(ld)ld.textContent=s.leads;
