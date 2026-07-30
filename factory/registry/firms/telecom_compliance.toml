@@ -1,0 +1,12 @@
+slug = "telecom-compliance"
+name = "Telecom Compliance Team"
+lane = "compliance"
+price_model = "per-assessment"
+price_eur = 3600
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 13500
+problem = "Ein festes Team aus Telekom und Regulierung findet die Meldelücke, die deine Lizenz aussetzen würde."
+agents = ["legal-compliance", "risk-enterprise", "infra-networking"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

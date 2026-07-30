@@ -1,0 +1,12 @@
+slug = "franchise-compliance"
+name = "Franchise Compliance Team"
+lane = "compliance"
+price_model = "per-assessment"
+price_eur = 1900
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 7500
+problem = "Ein festes Team aus Franchise- und Gesellschaftsrecht findet den FTC-Regelverstoß in deinem Vertrag — bevor der Franchisenehmer klagt."
+agents = ["legal-commercial", "legal-compliance", "risk-ethics"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

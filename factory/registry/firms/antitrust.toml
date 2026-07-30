@@ -1,0 +1,12 @@
+slug = "antitrust"
+name = "Antitrust Risk Team"
+lane = "legal"
+price_model = "per-assessment"
+price_eur = 3800
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 14000
+problem = "Ein festes Team aus Kartellrecht und Gesellschaftsrecht findet das Verhalten, das eine Razzia auslösen würde."
+agents = ["legal-compliance", "risk-ethics", "govt-regulatory"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

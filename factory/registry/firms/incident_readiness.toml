@@ -1,0 +1,12 @@
+slug = "incident-readiness"
+name = "Incident Response Team"
+lane = "security"
+price_model = "per-assessment"
+price_eur = 4500
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 16500
+problem = "Ein festes Team aus SRE und Security-Incident-Response probt deine Reaktion, damit der echte Ernstfall nicht deine erste Übung ist."
+agents = ["cyber-incident", "sre-incident", "sece-ng-blue"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

@@ -1,0 +1,12 @@
+slug = "ip-watch"
+name = "Patents & IP Team"
+lane = "legal"
+price_model = "per-assessment"
+price_eur = 4200
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 15500
+problem = "Ein festes Team aus IP-, Patent- und Gesellschaftsrecht sagt dir, wem das geistige Eigentum, das du ausliefert, wirklich gehört und wo deine Diligence-Lücken liegen."
+agents = ["legal-ip", "legal-licensing", "risk-enterprise"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

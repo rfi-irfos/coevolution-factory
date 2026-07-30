@@ -1,0 +1,12 @@
+slug = "ma-diligence"
+name = "M&A Due Diligence Team"
+lane = "legal"
+price_model = "per-assessment"
+price_eur = 8500
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 30000
+problem = "Ein festes Team aus M&A, Recht und Risiko beziffert die versteckte Haftung im Deal — bevor du die Absichtserklärung unterschreibst."
+agents = ["legal-ip", "legal-compliance", "corpdev-diligence"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

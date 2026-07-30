@@ -1,0 +1,430 @@
+firms:
+- slug: a11y-audit
+  lane: privacy
+  agents:
+  - fe-accessibility
+  - ux-design
+  - legal-compliance
+- slug: ai-act-guard
+  lane: compliance
+  agents:
+  - ai-safety-governance
+  - risk-ethics
+  - legal-compliance
+- slug: antitrust
+  lane: legal
+  agents:
+  - legal-compliance
+  - risk-ethics
+  - govt-regulatory
+- slug: audit-readiness
+  lane: risk
+  agents:
+  - risk-sox
+  - risk-enterprise
+  - infomgmt-records
+- slug: bias-audit
+  lane: risk
+  agents:
+  - ai-safety-alignment
+  - risk-ethics
+  - mlops-registry
+- slug: board-gov
+  lane: legal
+  agents:
+  - legal-corporate
+  - legal-compliance
+  - risk-ethics
+- slug: breach-readiness
+  lane: data
+  agents:
+  - legal-privacy
+  - cyber-incident
+  - sre-incident
+- slug: carbon-audit
+  lane: risk
+  agents:
+  - sustain-carbon
+  - ops-process
+  - fin-forecasting
+- slug: child-safety
+  lane: privacy
+  agents:
+  - legal-privacy
+  - risk-gdpr
+  - content-policy
+- slug: clinical-doc
+  lane: ops
+  agents:
+  - risk-ethics
+  - docs-tech-writers
+  - legal-compliance
+- slug: content-policy
+  lane: ops
+  agents:
+  - content-policy
+  - legal-compliance
+  - docs-tech-writers
+- slug: contract-risk
+  lane: legal
+  agents:
+  - legal-commercial
+  - legal-licensing
+  - risk-enterprise
+- slug: crisis-comms
+  lane: risk
+  agents:
+  - corpcomms-crisis
+  - mkt-comms-pr
+  - legal-compliance
+- slug: crypto-reg
+  lane: compliance
+  agents:
+  - finserv-compliance
+  - legal-compliance
+  - risk-enterprise
+- slug: cyber-posture
+  lane: security
+  agents:
+  - sece-ng-cloudsec
+  - sece-ng-appsec
+  - cyber-posture
+- slug: data-governance
+  lane: data
+  agents:
+  - gov-metadata
+  - gov-compliance
+  - infomgmt-records
+- slug: edu-compliance
+  lane: privacy
+  agents:
+  - risk-gdpr
+  - legal-privacy
+  - legal-compliance
+- slug: employment-law
+  lane: legal
+  agents:
+  - legal-employment
+  - hr-contracts
+  - hr-benefits
+- slug: energy-compliance
+  lane: compliance
+  agents:
+  - risk-iso
+  - infra-networking
+  - legal-compliance
+- slug: esg-report
+  lane: esg
+  agents:
+  - sustain-esg
+  - sustain-supply-chain
+  - risk-ethics
+- slug: export-control
+  lane: compliance
+  agents:
+  - legal-compliance
+  - risk-enterprise
+  - govt-regulatory
+- slug: finserv-compliance
+  lane: compliance
+  agents:
+  - finserv-compliance
+  - legal-compliance
+  - risk-enterprise
+- slug: food-safety
+  lane: compliance
+  agents:
+  - risk-enterprise
+  - ops-process
+  - quality-iso
+- slug: franchise-compliance
+  lane: compliance
+  agents:
+  - legal-commercial
+  - legal-compliance
+  - risk-ethics
+- slug: gdpr-guard
+  lane: privacy
+  agents:
+  - risk-gdpr
+  - legal-privacy
+  - legal-compliance
+- slug: gdpr-guard-daughter-7
+  lane: privacy
+  agents:
+  - risk-gdpr
+  - legal-privacy
+  - legal-compliance
+- slug: hipaa-check
+  lane: privacy
+  agents:
+  - risk-gdpr
+  - legal-privacy
+  - legal-compliance
+- slug: incident-readiness
+  lane: security
+  agents:
+  - cyber-incident
+  - sre-incident
+  - sece-ng-blue
+- slug: insurance-review
+  lane: risk
+  agents:
+  - risk-enterprise
+  - legal-compliance
+  - fin-treasury-invest
+- slug: investor-disclosure
+  lane: legal
+  agents:
+  - fin-ir-earnings
+  - legal-compliance
+  - cmo
+- slug: ip-watch
+  lane: legal
+  agents:
+  - legal-ip
+  - legal-licensing
+  - risk-enterprise
+- slug: lease-review
+  lane: legal
+  agents:
+  - legal-commercial
+  - fin-budgeting
+  - risk-enterprise
+- slug: license-audit
+  lane: risk
+  agents:
+  - legal-licensing
+  - legal-ip
+  - risk-enterprise
+- slug: litigation-risk
+  lane: legal
+  agents:
+  - ops-process
+  - risk-enterprise
+  - legal-compliance
+- slug: ma-diligence
+  lane: legal
+  agents:
+  - legal-ip
+  - legal-compliance
+  - corpdev-diligence
+- slug: model-card
+  lane: data
+  agents:
+  - ai-safety-governance
+  - mlops-registry
+  - docs-tech-writers
+- slug: nonprofit-gov
+  lane: legal
+  agents:
+  - legal-corporate
+  - risk-iso
+  - fin-general-ledger
+- slug: payments-compliance
+  lane: compliance
+  agents:
+  - finserv-compliance
+  - risk-sox
+  - sece-ng-appsec
+- slug: pharma-labeling
+  lane: compliance
+  agents:
+  - legal-compliance
+  - risk-ethics
+  - docs-tech-writers
+- slug: procure-leak
+  lane: growth
+  agents:
+  - proc-negotiation
+  - fin-procurement-finance
+  - vendor-risk
+- slug: product-safety
+  lane: compliance
+  agents:
+  - risk-enterprise
+  - ops-six-sigma
+  - legal-compliance
+- slug: recall-readiness
+  lane: growth
+  agents:
+  - quality-process
+  - sre-incident
+  - sc-logistics
+- slug: resilience-review
+  lane: risk
+  agents:
+  - sre-reliability
+  - sre-scaling
+  - infra-cloud
+- slug: saas-security
+  lane: security
+  agents:
+  - sece-ng-cloudsec
+  - sece-ng-appsec
+  - cyber-posture
+- slug: sox-controls
+  lane: risk
+  agents:
+  - risk-sox
+  - fin-general-ledger
+  - fin-ar
+- slug: supply-chain-risk
+  lane: risk
+  agents:
+  - ops-process
+  - risk-enterprise
+  - legal-compliance
+- slug: tax-exposure
+  lane: ops
+  agents:
+  - fin-tax-corp
+  - fin-tax-intl
+  - risk-enterprise
+- slug: telecom-compliance
+  lane: compliance
+  agents:
+  - legal-compliance
+  - risk-enterprise
+  - infra-networking
+- slug: threat-intel
+  lane: security
+  agents:
+  - cyber-threat-intel
+  - sece-ng-threat-det
+  - sre-monitoring
+- slug: vendor-risk
+  lane: risk
+  agents:
+  - risk-enterprise
+  - vendor-risk
+  - legal-compliance
+- slug: whistleblower
+  lane: legal
+  agents:
+  - legal-employment
+  - hr-culture
+  - risk-ethics
+trains:
+- name: privacy
+  description: privacy lane — 6 firms
+  agents:
+  - content-policy
+  - fe-accessibility
+  - legal-compliance
+  - legal-privacy
+  - risk-gdpr
+  - ux-design
+- name: compliance
+  description: compliance lane — 11 firms
+  agents:
+  - ai-safety-governance
+  - docs-tech-writers
+  - finserv-compliance
+  - govt-regulatory
+  - infra-networking
+  - legal-commercial
+  - legal-compliance
+  - ops-process
+  - ops-six-sigma
+  - quality-iso
+  - risk-enterprise
+  - risk-ethics
+  - risk-iso
+  - risk-sox
+  - sece-ng-appsec
+- name: legal
+  description: legal lane — 11 firms
+  agents:
+  - cmo
+  - corpdev-diligence
+  - fin-budgeting
+  - fin-general-ledger
+  - fin-ir-earnings
+  - govt-regulatory
+  - hr-benefits
+  - hr-contracts
+  - hr-culture
+  - legal-commercial
+  - legal-compliance
+  - legal-corporate
+  - legal-employment
+  - legal-ip
+  - legal-licensing
+  - ops-process
+  - risk-enterprise
+  - risk-ethics
+  - risk-iso
+- name: risk
+  description: risk lane — 10 firms
+  agents:
+  - ai-safety-alignment
+  - corpcomms-crisis
+  - fin-ar
+  - fin-forecasting
+  - fin-general-ledger
+  - fin-treasury-invest
+  - infomgmt-records
+  - infra-cloud
+  - legal-compliance
+  - legal-ip
+  - legal-licensing
+  - mkt-comms-pr
+  - mlops-registry
+  - ops-process
+  - risk-enterprise
+  - risk-ethics
+  - risk-sox
+  - sre-reliability
+  - sre-scaling
+  - sustain-carbon
+  - vendor-risk
+- name: data
+  description: data lane — 3 firms
+  agents:
+  - ai-safety-governance
+  - cyber-incident
+  - docs-tech-writers
+  - gov-compliance
+  - gov-metadata
+  - infomgmt-records
+  - legal-privacy
+  - mlops-registry
+  - sre-incident
+- name: ops
+  description: ops lane — 3 firms
+  agents:
+  - content-policy
+  - docs-tech-writers
+  - fin-tax-corp
+  - fin-tax-intl
+  - legal-compliance
+  - risk-enterprise
+  - risk-ethics
+- name: security
+  description: security lane — 4 firms
+  agents:
+  - cyber-incident
+  - cyber-posture
+  - cyber-threat-intel
+  - sece-ng-appsec
+  - sece-ng-blue
+  - sece-ng-cloudsec
+  - sece-ng-threat-det
+  - sre-incident
+  - sre-monitoring
+- name: esg
+  description: esg lane — 1 firms
+  agents:
+  - risk-ethics
+  - sustain-esg
+  - sustain-supply-chain
+- name: growth
+  description: growth lane — 2 firms
+  agents:
+  - fin-procurement-finance
+  - proc-negotiation
+  - quality-process
+  - sc-logistics
+  - sre-incident
+  - vendor-risk

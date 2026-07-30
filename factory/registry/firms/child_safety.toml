@@ -1,0 +1,12 @@
+slug = "child-safety"
+name = "Child Safety Team"
+lane = "privacy"
+price_model = "per-assessment"
+price_eur = 2600
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 9800
+problem = "Ein festes Team aus Kinderschutz und Altersverifikation findet die COPPA-Lücke — bevor die Behörde sie findet."
+agents = ["legal-privacy", "risk-gdpr", "content-policy"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

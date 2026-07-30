@@ -1,0 +1,12 @@
+slug = "finserv-compliance"
+name = "Fintech Compliance Team"
+lane = "compliance"
+price_model = "per-assessment"
+price_eur = 5500
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 20000
+problem = "Ein festes Team aus Fintech und Compliance sagt dir, gegen welche Regelung du gerade verstößt — bevor die Lizenzprüfung kommt."
+agents = ["finserv-compliance", "legal-compliance", "risk-enterprise"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

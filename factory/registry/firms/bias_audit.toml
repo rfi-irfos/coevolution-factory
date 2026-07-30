@@ -1,0 +1,12 @@
+slug = "bias-audit"
+name = "AI Fairness Team"
+lane = "risk"
+price_model = "per-assessment"
+price_eur = 2800
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 10500
+problem = "Ein festes Team aus Bias und Fairness findet die diskriminierende Wirkung in eurem Modell — bevor der Audit zur Pflicht wird."
+agents = ["ai-safety-alignment", "risk-ethics", "mlops-registry"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

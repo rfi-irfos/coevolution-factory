@@ -1,0 +1,12 @@
+slug = "clinical-doc"
+name = "Clinical Trial Docs Team"
+lane = "ops"
+price_model = "per-assessment"
+price_eur = 3200
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 11800
+problem = "Ein festes Team aus Klinik und Compliance findet die Kennzeichnungs- oder Dokumentationslücke, die ein Schreiben von FDA oder EMA nach sich zieht."
+agents = ["risk-ethics", "docs-tech-writers", "legal-compliance"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

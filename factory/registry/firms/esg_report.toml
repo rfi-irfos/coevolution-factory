@@ -1,0 +1,12 @@
+slug = "esg-report"
+name = "ESG Reporting Team"
+lane = "esg"
+price_model = "per-assessment"
+price_eur = 3800
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 14000
+problem = "Ein festes Team aus ESG und IR sagt dir, welche CSRD-Angabe du nicht belegen kannst — bevor der Bericht rausgeht."
+agents = ["sustain-esg", "sustain-supply-chain", "risk-ethics"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

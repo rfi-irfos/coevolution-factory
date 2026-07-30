@@ -1,0 +1,12 @@
+slug = "carbon-audit"
+name = "Carbon Footprint Team"
+lane = "risk"
+price_model = "per-assessment"
+price_eur = 4200
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 15500
+problem = "Ein festes Team aus CO2-Bilanz und Lieferkette findet die Emissionszahl, die du unter dem Berichterstattungsgesetz verteidigen musst."
+agents = ["sustain-carbon", "ops-process", "fin-forecasting"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

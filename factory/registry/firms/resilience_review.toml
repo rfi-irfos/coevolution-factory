@@ -1,0 +1,12 @@
+slug = "resilience-review"
+name = "Business Resilience Team"
+lane = "risk"
+price_model = "per-assessment"
+price_eur = 5500
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 20000
+problem = "Ein festes Team aus SRE und Resilienz findet den Single Point of Failure, den eure Status-Seite gerade verbirgt."
+agents = ["sre-reliability", "sre-scaling", "infra-cloud"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

@@ -1,0 +1,12 @@
+slug = "breach-readiness"
+name = "Data Breach Team"
+lane = "data"
+price_model = "per-assessment"
+price_eur = 2100
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 8000
+problem = "Ein festes Team aus Sicherheitsvorfällen und Recht timt deine Meldung so, dass die Behörde Compliance sieht, nicht Panik."
+agents = ["legal-privacy", "cyber-incident", "sre-incident"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

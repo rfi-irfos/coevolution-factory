@@ -1,0 +1,12 @@
+slug = "pharma-labeling"
+name = "Drug Labeling Team"
+lane = "compliance"
+price_model = "per-assessment"
+price_eur = 3200
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 12000
+problem = "Ein festes Team aus Kennzeichnung und Compliance findet die Aussage, die eine behördliche Abmahnung nach sich zieht."
+agents = ["legal-compliance", "risk-ethics", "docs-tech-writers"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

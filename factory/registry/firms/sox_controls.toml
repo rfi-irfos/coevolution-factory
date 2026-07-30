@@ -1,0 +1,12 @@
+slug = "sox-controls"
+name = "Financial Controls Team"
+lane = "risk"
+price_model = "per-assessment"
+price_eur = 4200
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 15500
+problem = "Ein festes Team aus internen Kontrollen und Bilanzierung sagt dir, welche SOX-Prüfpunkte dein Abschlussprozess nicht belegen kann — bevor es der Wirtschaftsprüfer merkt."
+agents = ["risk-sox", "fin-general-ledger", "fin-ar"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

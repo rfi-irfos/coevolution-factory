@@ -1,0 +1,12 @@
+slug = "ai-act-guard"
+name = "EU AI Act Team"
+lane = "compliance"
+price_model = "per-assessment"
+price_eur = 3500
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 12900
+problem = "Ein festes Team aus KI-Governance, Sicherheit und Recht sagt dir, ob dein System unter dem EU AI Act als hochriskant gilt und welche Konformitätspflichten du hast — bevor du live g"
+agents = ["ai-safety-governance", "risk-ethics", "legal-compliance"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"
