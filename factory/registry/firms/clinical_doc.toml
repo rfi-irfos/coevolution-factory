@@ -23,3 +23,6 @@ products = [
   { title = "Vollprüfung + Optimierungsplan", description = "Detaillierte Analyse mit priorisierten Maßnahmen und Prüfprotokollen.", price_eur = 3200, sla_hours = 72 },
   { title = "Laufender Betriebspartner", description = "Monatliche Reviews, Updates und direkter Draht zum Expertenteam.", price_eur = 11200, sla_hours = 0, recurring = true },
 ]
+swarm_agents = ["ops-process", "risk-enterprise", "legal-compliance"]
+delivery_mode = "serial"
+auto_spawn = true

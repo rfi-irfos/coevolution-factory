@@ -23,3 +23,6 @@ products = [
   { title = "Vollprüfung + Datenkonzept", description = "Umfassende Analyse mit Maßnahmenplan und Governance-Vorlagen.", price_eur = 3800, sla_hours = 72 },
   { title = "Laufender Datenpartner", description = "Monatliche Qualitätschecks, Catalog-Pflege und direktes Reporting.", price_eur = 13300, sla_hours = 0, recurring = true },
 ]
+swarm_agents = ["gov-compliance", "infomgmt-records", "legal-privacy"]
+delivery_mode = "serial"
+auto_spawn = true

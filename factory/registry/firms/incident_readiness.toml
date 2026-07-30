@@ -23,3 +23,6 @@ products = [
   { title = "Vollprüfung + Sicherheitsplan", description = "Schwachstellenanalyse mit priorisierten Maßnahmen und Prüfprotokollen.", price_eur = 4500, sla_hours = 72 },
   { title = "Laufender Sicherheitspartner", description = "Monatliche Monitoring-Updates, Incident-Vorbereitung und direkter Draht.", price_eur = 15750, sla_hours = 0, recurring = true },
 ]
+swarm_agents = ["sece-ng-cloudsec", "sece-ng-appsec", "cyber-posture"]
+delivery_mode = "parallel"
+auto_spawn = true

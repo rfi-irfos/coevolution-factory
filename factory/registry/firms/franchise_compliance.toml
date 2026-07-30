@@ -23,3 +23,6 @@ products = [
   { title = "Vollprüfung + Fahrplan", description = "Lückenanalyse mit priorisierten Maßnahmen und fertigen Vorlagen.", price_eur = 1900, sla_hours = 72 },
   { title = "Laufender Compliance-Partner", description = "Monatliche Updates, Änderungsdienst und direkter Draht zu deinem Ansprechpartner.", price_eur = 6650, sla_hours = 0, recurring = true },
 ]
+swarm_agents = ["legal-compliance", "risk-enterprise", "govt-regulatory"]
+delivery_mode = "serial"
+auto_spawn = true
