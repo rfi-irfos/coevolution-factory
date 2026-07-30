@@ -1,0 +1,12 @@
+slug = "a11y-audit"
+name = "Accessibility Team"
+lane = "privacy"
+price_model = "per-assessment"
+price_eur = 2200
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 8500
+problem = "Ein festes Team aus Barrierefreiheit und Design findet den WCAG/ADA-Fehler, aus dem sonst ein Abmahnschreiben wird."
+agents = ["fe-accessibility", "ux-design", "legal-compliance"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

@@ -1,0 +1,12 @@
+slug = "contract-risk"
+name = "Contract Risk Team"
+lane = "legal"
+price_model = "per-assessment"
+price_eur = 2800
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 10500
+problem = "Ein festes Team aus Vertrags-, Gesellschafts- und Einkaufsrecht prüft Durchsetzbarkeit und versteckte Risiken in deinen Verträgen — bevor du unterschreibst."
+agents = ["legal-commercial", "legal-licensing", "risk-enterprise"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

@@ -1,0 +1,12 @@
+slug = "gdpr-guard"
+name = "GDPR & Data Privacy Team"
+lane = "privacy"
+price_model = "per-assessment"
+price_eur = 2500
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 9900
+problem = "Bevor du ein Feature launchst, das EU-Personendaten berührt: ein festes Team aus Datenschutz-, Risiko- und Datenschutzbeauftragten prüft Rechtsgrundlage und Meldepflichten — bevor "
+agents = ["risk-gdpr", "legal-privacy", "legal-compliance"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

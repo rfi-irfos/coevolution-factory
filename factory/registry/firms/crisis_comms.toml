@@ -1,0 +1,12 @@
+slug = "crisis-comms"
+name = "Crisis Communications Team"
+lane = "risk"
+price_model = "per-assessment"
+price_eur = 2800
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 10500
+problem = "Ein festes Team aus Krisenkommunikation und PR formuliert die erste Reaktion — bevor die Geschichte sich selbst schreibt."
+agents = ["corpcomms-crisis", "mkt-comms-pr", "legal-compliance"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

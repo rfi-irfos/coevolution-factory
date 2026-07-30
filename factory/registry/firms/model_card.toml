@@ -1,0 +1,12 @@
+slug = "model-card"
+name = "AI Documentation Team"
+lane = "data"
+price_model = "per-assessment"
+price_eur = 3800
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 14000
+problem = "Ein festes Team aus Modellkarten und Dokumentation baut die Nachweise, die Prüfer jetzt unter dem AI Act verlangen."
+agents = ["ai-safety-governance", "mlops-registry", "docs-tech-writers"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

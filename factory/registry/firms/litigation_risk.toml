@@ -1,0 +1,12 @@
+slug = "litigation-risk"
+name = "Lawsuit Risk Team"
+lane = "legal"
+price_model = "per-assessment"
+price_eur = 5800
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 21000
+problem = "Ein festes Team aus Prozessrecht und Ermittlungen beziffert dein Risiko bei laufenden Ansprüchen — bevor die Kanzlei dir dieselbe Einschätzung in Rechnung stellt."
+agents = ["ops-process", "risk-enterprise", "legal-compliance"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

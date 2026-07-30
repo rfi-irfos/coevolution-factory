@@ -1,0 +1,12 @@
+slug = "cyber-posture"
+name = "App Security Team"
+lane = "security"
+price_model = "per-assessment"
+price_eur = 2600
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 9800
+problem = "Ein festes Team aus AppSec, Red/Blue-Team und CISO-Perspektive findet die Lücke, die ein Angreifer nutzen würde — vor deinem nächsten Pentest oder deiner Vertragsverlängerung."
+agents = ["sece-ng-cloudsec", "sece-ng-appsec", "cyber-posture"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

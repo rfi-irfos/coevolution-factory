@@ -1,0 +1,12 @@
+slug = "product-safety"
+name = "Product Safety Team"
+lane = "compliance"
+price_model = "per-assessment"
+price_eur = 3800
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 14000
+problem = "Ein festes Team aus Produkt und Qualität findet den Sicherheitsmangel, aus dem ein Rückruf wird."
+agents = ["risk-enterprise", "ops-six-sigma", "legal-compliance"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

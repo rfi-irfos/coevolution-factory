@@ -1,0 +1,12 @@
+slug = "nonprofit-gov"
+name = "Nonprofit Governance Team"
+lane = "legal"
+price_model = "per-assessment"
+price_eur = 2800
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 10500
+problem = "Ein festes Team aus Non-Profit- und Förderrecht findet die Compliance-Lücke, die deine Förderung aussetzen würde."
+agents = ["legal-corporate", "risk-iso", "fin-general-ledger"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

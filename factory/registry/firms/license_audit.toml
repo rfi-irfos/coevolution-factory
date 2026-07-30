@@ -1,0 +1,12 @@
+slug = "license-audit"
+name = "Software License Team"
+lane = "risk"
+price_model = "per-assessment"
+price_eur = 3600
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 13500
+problem = "Ein festes Team aus Lizenzrecht und Software findet den OSS-Lizenzkonflikt, der dir M&A oder den Produktbetrieb kaputt machen würde."
+agents = ["legal-licensing", "legal-ip", "risk-enterprise"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

@@ -1,0 +1,12 @@
+slug = "hipaa-check"
+name = "Health Data Privacy Team"
+lane = "privacy"
+price_model = "per-assessment"
+price_eur = 3200
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 12000
+problem = "Ein festes Team aus Datenschutz, Compliance, Security und Klinik zeigt dir, wo dein Umgang mit Gesundheitsdaten eine HIPAA-Prüfung nicht bestehen würde — bevor es zu einer Datenpan"
+agents = ["risk-gdpr", "legal-privacy", "legal-compliance"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

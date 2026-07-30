@@ -1,0 +1,12 @@
+slug = "employment-law"
+name = "Employment Law Team"
+lane = "legal"
+price_model = "per-assessment"
+price_eur = 2400
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 9000
+problem = "Ein festes Team aus Arbeitsrecht und HR erkennt Fehleinstufungen und Kündigungsrisiken — bevor die Klage kommt."
+agents = ["legal-employment", "hr-contracts", "hr-benefits"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

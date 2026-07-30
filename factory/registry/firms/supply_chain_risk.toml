@@ -1,0 +1,12 @@
+slug = "supply-chain-risk"
+name = "Supply Chain Risk Team"
+lane = "risk"
+price_model = "per-assessment"
+price_eur = 4800
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 17500
+problem = "Ein festes Team aus Lieferkette und Ops findet die eine Abhängigkeit, die deine Produktion stoppen würde."
+agents = ["ops-process", "risk-enterprise", "legal-compliance"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

@@ -1,0 +1,12 @@
+slug = "crypto-reg"
+name = "Crypto Regulation Team"
+lane = "compliance"
+price_model = "per-assessment"
+price_eur = 4000
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 15000
+problem = "Ein festes Team aus Krypto und Compliance sagt dir, welche MiCA-Pflicht dir fehlt — bevor die Behörde anruft."
+agents = ["finserv-compliance", "legal-compliance", "risk-enterprise"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

@@ -1,0 +1,12 @@
+slug = "energy-compliance"
+name = "Energy Compliance Team"
+lane = "compliance"
+price_model = "per-assessment"
+price_eur = 4500
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 16500
+problem = "Ein festes Team aus Energie und NERC-Recht findet die Zuverlässigkeitslücke, die eine Strafe nach sich zieht."
+agents = ["risk-iso", "infra-networking", "legal-compliance"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

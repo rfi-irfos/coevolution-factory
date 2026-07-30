@@ -1,0 +1,12 @@
+slug = "gdpr-guard-daughter-7"
+name = "GDPR & Data Privacy Team — Spin-off"
+lane = "privacy"
+price_model = "per-assessment"
+price_eur = 2500
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 9900
+problem = "Spawned by GDPRGuard Center when its own panel kept hitting the same gap."
+agents = ["risk-gdpr", "legal-privacy", "legal-compliance"]
+output_contract = []
+status = "läuft normal"

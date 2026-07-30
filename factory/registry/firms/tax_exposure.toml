@@ -1,0 +1,12 @@
+slug = "tax-exposure"
+name = "Tax Exposure Team"
+lane = "ops"
+price_model = "per-assessment"
+price_eur = 3800
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 14000
+problem = "Ein festes Team aus Unternehmens- und internationalem Steuerrecht zeigt dir die Strukturlücken, die Prüfern und Finanzämtern zuerst auffallen."
+agents = ["fin-tax-corp", "fin-tax-intl", "risk-enterprise"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

@@ -1,0 +1,12 @@
+slug = "payments-compliance"
+name = "Payments Compliance Team"
+lane = "compliance"
+price_model = "per-assessment"
+price_eur = 2800
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 10500
+problem = "Ein festes Team aus Payments und Security findet die PCI-DSS-Lücke, die dir die Zahlungsabwicklung entziehen würde."
+agents = ["finserv-compliance", "risk-sox", "sece-ng-appsec"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

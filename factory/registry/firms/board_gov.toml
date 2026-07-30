@@ -1,0 +1,12 @@
+slug = "board-gov"
+name = "Board Governance Team"
+lane = "legal"
+price_model = "per-assessment"
+price_eur = 4500
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 16500
+problem = "Ein festes Team aus Governance und Risiko zeigt Vorständen, wo ihre Treuepflicht-Risiken wirklich liegen."
+agents = ["legal-corporate", "legal-compliance", "risk-ethics"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

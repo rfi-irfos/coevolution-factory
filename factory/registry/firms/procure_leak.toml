@@ -1,0 +1,12 @@
+slug = "procure-leak"
+name = "Procurement Savings Team"
+lane = "growth"
+price_model = "per-assessment"
+price_eur = 2500
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 9500
+problem = "Ein festes Team aus Einkauf und Finanzen findet die Streuverluste, die vor Jahresende deine Marge auffressen."
+agents = ["proc-negotiation", "fin-procurement-finance", "vendor-risk"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

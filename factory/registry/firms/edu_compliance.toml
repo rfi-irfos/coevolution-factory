@@ -1,0 +1,12 @@
+slug = "edu-compliance"
+name = "Student Privacy Team"
+lane = "privacy"
+price_model = "per-assessment"
+price_eur = 2400
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 9000
+problem = "Ein festes Team aus Bildung und Datenschutz findet die FERPA-Lücke in eurem Edtech-Produkt."
+agents = ["risk-gdpr", "legal-privacy", "legal-compliance"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"

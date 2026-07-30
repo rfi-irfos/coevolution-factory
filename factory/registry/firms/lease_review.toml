@@ -1,0 +1,12 @@
+slug = "lease-review"
+name = "Lease Review Team"
+lane = "legal"
+price_model = "per-assessment"
+price_eur = 2100
+currency = "EUR"
+recurring_eur_month = 0
+enterprise_eur_month = 7800
+problem = "Ein festes Team aus Immobilien- und Finanzrecht findet die Mietvertragsklausel, die in einer Krise zur Haftung wird."
+agents = ["legal-commercial", "fin-budgeting", "risk-enterprise"]
+output_contract = ["report", "template", "score"]
+status = "läuft normal"
