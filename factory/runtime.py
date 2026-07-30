@@ -3113,7 +3113,138 @@ async def center_card_handler(request):
     lang = request.query.get("lang", "en")
     if lang not in ("en", "de"):
         lang = "en"
-    return web.Response(text=center_card_html(slug, lang=lang), content_type="text/html")
+
+    # Money-first card: pull from registry TOML if available, otherwise fall
+    # back to the legacy card template so this never breaks live traffic.
+    c = CENTERS[slug]
+    offer_title = c.get("name", slug)
+    one_liner = c.get("mandate", "")
+    cta = "Jetzt prüfen lassen"
+    price_quick = None
+    price_full = c.get("price_eur")
+    price_retainer = None
+    products = []
+    try:
+        reg_path = HERE / "registry" / "firms" / f"{slug}.toml"
+        if reg_path.exists():
+            raw = reg_path.read_text()
+            key = None
+            in_products = False
+            product = {}
+            for line in raw.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("#") or not stripped:
+                    continue
+                if in_products:
+                    if stripped == "]":
+                        if product:
+                            products.append(product)
+                            product = {}
+                        in_products = False
+                        continue
+                    if stripped.startswith("{") or stripped.startswith("}"):
+                        continue
+                    if stripped.startswith("["):
+                        continue
+                    if "=" in stripped:
+                        child_key, child_value = stripped.split("=", 1)
+                        child_key = child_key.strip()
+                        child_value = child_value.strip()
+                        if child_value.startswith('"') and child_value.endswith('"') and child_value.count('"') == 2:
+                            product[child_key] = child_value[1:-1]
+                        else:
+                            try:
+                                product[child_key] = int(child_value)
+                            except ValueError:
+                                product[child_key] = child_value
+                    continue
+                if "=" not in stripped:
+                    continue
+                key, value = stripped.split("=", 1)
+                key = key.strip()
+                value = value.strip()
+                if value.startswith('"') and value.endswith('"') and value.count('"') == 2:
+                    v = value[1:-1]
+                    if key == "offer_title":
+                        offer_title = v
+                    elif key == "one_liner":
+                        one_liner = v
+                    elif key == "cta_hook":
+                        cta = v
+                elif value.startswith('"') and value.endswith('"'):
+                    pass
+                elif key == "price_quick_eur":
+                    try:
+                        price_quick = int(value)
+                    except ValueError:
+                        pass
+                elif key == "price_full_eur":
+                    try:
+                        price_full = int(value)
+                    except ValueError:
+                        pass
+                elif key == "price_retainer_eur":
+                    try:
+                        price_retainer = int(value)
+                    except ValueError:
+                        pass
+                elif key == "products":
+                    in_products = True
+    except Exception:
+        pass
+    legacy_price = c.get("price_eur")
+    if price_full is None and legacy_price:
+        price_full = legacy_price
+    if price_quick is None and price_full is not None:
+        price_quick = max(900, int(price_full * 0.65))
+    if price_retainer is None and price_full is not None:
+        price_retainer = int(price_full * 3.2)
+
+    def _fmt_eur(v):
+        try:
+            return f"{int(v):,} €".replace(",", ".")
+        except Exception:
+            return "Auf Anfrage"
+
+    products_html = ""
+    if products:
+        rows = []
+        for prod in products[:3]:
+            title = prod.get("title", "Paket")
+            desc = prod.get("description", "")
+            p = prod.get("price_eur")
+            recurring = " (monatlich)" if prod.get("recurring") else ""
+            price_txt = _fmt_eur(p) if p is not None else "Auf Anfrage"
+            rows.append(
+                f"<div style='background:#0f141d;border:1px solid #1c2733;border-radius:12px;padding:14px 16px'>"
+                f"<div style='color:#e6edf3;font-weight:600'>{html.escape(title)}{recurring}</div>"
+                f"<div style='color:#8b98a9;font-size:13px;margin-top:6px'>{html.escape(desc)}</div>"
+                f"<div style='color:#36d6a0;font-weight:700;margin-top:8px'>{price_txt}</div>"
+                "</div>"
+            )
+        products_html = "<div style='display:grid;gap:10px;margin-top:12px'>" + "".join(rows) + "</div>"
+
+    lead = (
+        f"<div id=cmbody>"
+        f"<div class='cmhero'><div><div class='cmheadtext'><h2>{html.escape(offer_title)}</h2>"
+        f"<p class='cmvalue'>{html.escape(one_liner)}</p></div>"
+        f"<div class='cmstatus'><span class='tled'></span> buchbar</div></div></div>"
+        f"<div class='widget'><div class='widgetbody'>"
+        f"<div><div class='cmsmall' style='color:#8b98a9'>Quick Check</div>"
+        f"<div style='color:#e6edf3;font-weight:700;font-size:18px'>{_fmt_eur(price_quick)}</div>"
+        f"<div class='cmsmall'>24h</div></div>"
+        f"<div><div class='cmsmall' style='color:#8b98a9'>Vollprüfung</div>"
+        f"<div style='color:#e6edf3;font-weight:700;font-size:18px'>{_fmt_eur(price_full)}</div>"
+        f"<div class='cmsmall'>3–5 Tage</div></div>"
+        f"<div><div class='cmsmall' style='color:#8b98a9'>Retainer</div>"
+        f"<div style='color:#e6edf3;font-weight:700;font-size:18px'>{_fmt_eur(price_retainer)}</div>"
+        f"<div class='cmsmall'>monatlich</div></div>"
+        f"</div></div>"
+        f"{products_html}"
+        f"<div style='margin-top:16px;text-align:right'><a href='/signup?center={html.escape(slug)}'><button>{html.escape(cta)}</button></a></div>"
+        f"</div>"
+    )
+    return web.Response(text=lead, content_type="text/html")
 
 
 async def briefing_page_handler(request):
