@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Prozessrecht und Ermittlungen beziffert dein Risi
 agents = ["ops-process", "risk-enterprise", "legal-compliance"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Lawsuit Risk Team"
+offer_slug = "litigation-risk"
+one_liner = "Ein festes Team aus Prozessrecht und Ermittlungen beziffert dein Risiko bei laufenden Ansprüchen — bevor die Kanzlei dir dieselbe Einschätzu"
+price_quick_eur = 4059
+price_full_eur = 5800
+price_retainer_eur = 20300
+cta_hook = "Hier prüfen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikolage", description = "Erste Einschätzung der kritischsten Rechtsrisiken innerhalb eines Tages.", price_eur = 4059, sla_hours = 24 },
+  { title = "Vollprüfung + Handlungsempfehlung", description = "Detaillierte Prüfung mit vorformulierten Maßnahmen und Musterverträgen.", price_eur = 5800, sla_hours = 72 },
+  { title = "Laufender Rechtsbeistand", description = "Monatliche Checks, Vertragsänderungen und Priorisierung deiner Fälle.", price_eur = 20300, sla_hours = 0, recurring = true },
+]

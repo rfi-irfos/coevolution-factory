@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Lieferkette und Ops findet die eine Abhängigkeit
 agents = ["ops-process", "risk-enterprise", "legal-compliance"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Supply Chain Risk Team"
+offer_slug = "supply-chain-risk"
+one_liner = "Ein festes Team aus Lieferkette und Ops findet die eine Abhängigkeit, die deine Produktion stoppen würde."
+price_quick_eur = 3360
+price_full_eur = 4800
+price_retainer_eur = 16800
+cta_hook = "Sicherheit kaufen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikofenster", description = "Schneller Überblick über die größten unvorhersehbaren Risiken.", price_eur = 3360, sla_hours = 24 },
+  { title = "Vollprüfung + Resilienzplan", description = "Detaillierte Risikobewertung mit Maßnahmenpriorisierung und Testprotokollen.", price_eur = 4800, sla_hours = 72 },
+  { title = "Laufender Risikopartner", description = "Monatliche Reviews, Trend-Updates und Warnsystem.", price_eur = 16800, sla_hours = 0, recurring = true },
+]

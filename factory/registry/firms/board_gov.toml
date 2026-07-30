@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Governance und Risiko zeigt Vorständen, wo ihre 
 agents = ["legal-corporate", "legal-compliance", "risk-ethics"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Board Governance Team"
+offer_slug = "board-gov"
+one_liner = "Ein festes Team aus Governance und Risiko zeigt Vorständen, wo ihre Treuepflicht-Risiken wirklich liegen."
+price_quick_eur = 3150
+price_full_eur = 4500
+price_retainer_eur = 15750
+cta_hook = "Sofort abklären"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikolage", description = "Erste Einschätzung der kritischsten Rechtsrisiken innerhalb eines Tages.", price_eur = 3150, sla_hours = 24 },
+  { title = "Vollprüfung + Handlungsempfehlung", description = "Detaillierte Prüfung mit vorformulierten Maßnahmen und Musterverträgen.", price_eur = 4500, sla_hours = 72 },
+  { title = "Laufender Rechtsbeistand", description = "Monatliche Checks, Vertragsänderungen und Priorisierung deiner Fälle.", price_eur = 15750, sla_hours = 0, recurring = true },
+]

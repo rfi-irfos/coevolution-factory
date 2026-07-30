@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Einkauf und Finanzen findet die Streuverluste, di
 agents = ["proc-negotiation", "fin-procurement-finance", "vendor-risk"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Procurement Savings Team"
+offer_slug = "procure-leak"
+one_liner = "Ein festes Team aus Einkauf und Finanzen findet die Streuverluste, die vor Jahresende deine Marge auffressen."
+price_quick_eur = 1750
+price_full_eur = 2500
+price_retainer_eur = 8750
+cta_hook = "Jetzt starten"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Einsparung", description = "In 24h identifizieren wir die größten versteckten Kosten.", price_eur = 1750, sla_hours = 24 },
+  { title = "Vollprüfung + Umsetzungsplan", description = "Detaillierte Potenzialanalyse mit priorisierten Maßnahmen und Vorlagen.", price_eur = 2500, sla_hours = 72 },
+  { title = "Laufender Optimierungspartner", description = "Monatliche Reviews, Benchmarking und direktes Reporting.", price_eur = 8750, sla_hours = 0, recurring = true },
+]

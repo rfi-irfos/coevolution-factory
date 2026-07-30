@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Bias und Fairness findet die diskriminierende Wir
 agents = ["ai-safety-alignment", "risk-ethics", "mlops-registry"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "AI Fairness Team"
+offer_slug = "bias-audit"
+one_liner = "Ein festes Team aus Bias und Fairness findet die diskriminierende Wirkung in eurem Modell — bevor der Audit zur Pflicht wird."
+price_quick_eur = 1959
+price_full_eur = 2800
+price_retainer_eur = 9800
+cta_hook = "Sicherheit kaufen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikofenster", description = "Schneller Überblick über die größten unvorhersehbaren Risiken.", price_eur = 1959, sla_hours = 24 },
+  { title = "Vollprüfung + Resilienzplan", description = "Detaillierte Risikobewertung mit Maßnahmenpriorisierung und Testprotokollen.", price_eur = 2800, sla_hours = 72 },
+  { title = "Laufender Risikopartner", description = "Monatliche Reviews, Trend-Updates und Warnsystem.", price_eur = 9800, sla_hours = 0, recurring = true },
+]

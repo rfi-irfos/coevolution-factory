@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Krisenkommunikation und PR formuliert die erste R
 agents = ["corpcomms-crisis", "mkt-comms-pr", "legal-compliance"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Crisis Communications Team"
+offer_slug = "crisis-comms"
+one_liner = "Ein festes Team aus Krisenkommunikation und PR formuliert die erste Reaktion — bevor die Geschichte sich selbst schreibt."
+price_quick_eur = 1959
+price_full_eur = 2800
+price_retainer_eur = 9800
+cta_hook = "Risiko checken"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikofenster", description = "Schneller Überblick über die größten unvorhersehbaren Risiken.", price_eur = 1959, sla_hours = 24 },
+  { title = "Vollprüfung + Resilienzplan", description = "Detaillierte Risikobewertung mit Maßnahmenpriorisierung und Testprotokollen.", price_eur = 2800, sla_hours = 72 },
+  { title = "Laufender Risikopartner", description = "Monatliche Reviews, Trend-Updates und Warnsystem.", price_eur = 9800, sla_hours = 0, recurring = true },
+]

@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Telekom und Regulierung findet die Meldelücke, d
 agents = ["legal-compliance", "risk-enterprise", "infra-networking"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Telecom Compliance Team"
+offer_slug = "telecom-compliance"
+one_liner = "Ein festes Team aus Telekom und Regulierung findet die Meldelücke, die deine Lizenz aussetzen würde."
+price_quick_eur = 2520
+price_full_eur = 3600
+price_retainer_eur = 12600
+cta_hook = "Hier prüfen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Pflichtenheft", description = "In 24h weißt du, welche Regeln auf dich zukommen und was sofort zu tun ist.", price_eur = 2520, sla_hours = 24 },
+  { title = "Vollprüfung + Fahrplan", description = "Lückenanalyse mit priorisierten Maßnahmen und fertigen Vorlagen.", price_eur = 3600, sla_hours = 72 },
+  { title = "Laufender Compliance-Partner", description = "Monatliche Updates, Änderungsdienst und direkter Draht zu deinem Ansprechpartner.", price_eur = 12600, sla_hours = 0, recurring = true },
+]

@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Drittanbieter- und Sicherheitsrisiko sagt dir, we
 agents = ["risk-enterprise", "vendor-risk", "legal-compliance"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Vendor Risk Team"
+offer_slug = "vendor-risk"
+one_liner = "Ein festes Team aus Drittanbieter- und Sicherheitsrisiko sagt dir, welcher Lieferant dich bei einer Lieferketten-Prüfung zu Fall bringen wür"
+price_quick_eur = 2240
+price_full_eur = 3200
+price_retainer_eur = 11200
+cta_hook = "Problem lösen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikofenster", description = "Schneller Überblick über die größten unvorhersehbaren Risiken.", price_eur = 2240, sla_hours = 24 },
+  { title = "Vollprüfung + Resilienzplan", description = "Detaillierte Risikobewertung mit Maßnahmenpriorisierung und Testprotokollen.", price_eur = 3200, sla_hours = 72 },
+  { title = "Laufender Risikopartner", description = "Monatliche Reviews, Trend-Updates und Warnsystem.", price_eur = 11200, sla_hours = 0, recurring = true },
+]

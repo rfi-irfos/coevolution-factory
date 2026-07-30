@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Vertrags-, Gesellschafts- und Einkaufsrecht prüf
 agents = ["legal-commercial", "legal-licensing", "risk-enterprise"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Contract Risk Team"
+offer_slug = "contract-risk"
+one_liner = "Ein festes Team aus Vertrags-, Gesellschafts- und Einkaufsrecht prüft Durchsetzbarkeit und versteckte Risiken in deinen Verträgen — bevor du"
+price_quick_eur = 1959
+price_full_eur = 2800
+price_retainer_eur = 9800
+cta_hook = "Jetzt starten"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikolage", description = "Erste Einschätzung der kritischsten Rechtsrisiken innerhalb eines Tages.", price_eur = 1959, sla_hours = 24 },
+  { title = "Vollprüfung + Handlungsempfehlung", description = "Detaillierte Prüfung mit vorformulierten Maßnahmen und Musterverträgen.", price_eur = 2800, sla_hours = 72 },
+  { title = "Laufender Rechtsbeistand", description = "Monatliche Checks, Vertragsänderungen und Priorisierung deiner Fälle.", price_eur = 9800, sla_hours = 0, recurring = true },
+]

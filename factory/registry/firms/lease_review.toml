@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Immobilien- und Finanzrecht findet die Mietvertra
 agents = ["legal-commercial", "fin-budgeting", "risk-enterprise"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Lease Review Team"
+offer_slug = "lease-review"
+one_liner = "Ein festes Team aus Immobilien- und Finanzrecht findet die Mietvertragsklausel, die in einer Krise zur Haftung wird."
+price_quick_eur = 1470
+price_full_eur = 2100
+price_retainer_eur = 7350
+cta_hook = "Jetzt starten"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikolage", description = "Erste Einschätzung der kritischsten Rechtsrisiken innerhalb eines Tages.", price_eur = 1470, sla_hours = 24 },
+  { title = "Vollprüfung + Handlungsempfehlung", description = "Detaillierte Prüfung mit vorformulierten Maßnahmen und Musterverträgen.", price_eur = 2100, sla_hours = 72 },
+  { title = "Laufender Rechtsbeistand", description = "Monatliche Checks, Vertragsänderungen und Priorisierung deiner Fälle.", price_eur = 7350, sla_hours = 0, recurring = true },
+]

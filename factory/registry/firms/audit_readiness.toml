@@ -10,3 +10,16 @@ problem = "Ein festes Team aus interner Kontrolle und Audit hält euch dauerhaft
 agents = ["risk-sox", "risk-enterprise", "infomgmt-records"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Audit Readiness Team"
+offer_slug = "audit-readiness"
+one_liner = "Ein festes Team aus interner Kontrolle und Audit hält euch dauerhaft bereit, damit der Audit zur Formsache wird."
+price_quick_eur = 2170
+price_full_eur = 3100
+price_retainer_eur = 10850
+cta_hook = "Jetzt starten"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikofenster", description = "Schneller Überblick über die größten unvorhersehbaren Risiken.", price_eur = 2170, sla_hours = 24 },
+  { title = "Vollprüfung + Resilienzplan", description = "Detaillierte Risikobewertung mit Maßnahmenpriorisierung und Testprotokollen.", price_eur = 3100, sla_hours = 72 },
+  { title = "Laufender Risikopartner", description = "Monatliche Reviews, Trend-Updates und Warnsystem.", price_eur = 10850, sla_hours = 0, recurring = true },
+]

@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Qualität und SRE probt deinen Rückruf, damit de
 agents = ["quality-process", "sre-incident", "sc-logistics"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Product Recall Team"
+offer_slug = "recall-readiness"
+one_liner = "Ein festes Team aus Qualität und SRE probt deinen Rückruf, damit der echte kein Feuerwehreinsatz wird."
+price_quick_eur = 2380
+price_full_eur = 3400
+price_retainer_eur = 11900
+cta_hook = "Sicherheit kaufen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Einsparung", description = "In 24h identifizieren wir die größten versteckten Kosten.", price_eur = 2380, sla_hours = 24 },
+  { title = "Vollprüfung + Umsetzungsplan", description = "Detaillierte Potenzialanalyse mit priorisierten Maßnahmen und Vorlagen.", price_eur = 3400, sla_hours = 72 },
+  { title = "Laufender Optimierungspartner", description = "Monatliche Reviews, Benchmarking und direktes Reporting.", price_eur = 11900, sla_hours = 0, recurring = true },
+]

@@ -10,3 +10,16 @@ problem = "Ein festes Team aus IP-, Patent- und Gesellschaftsrecht sagt dir, wem
 agents = ["legal-ip", "legal-licensing", "risk-enterprise"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Patents & IP Team"
+offer_slug = "ip-watch"
+one_liner = "Ein festes Team aus IP-, Patent- und Gesellschaftsrecht sagt dir, wem das geistige Eigentum, das du ausliefert, wirklich gehört und wo deine"
+price_quick_eur = 2940
+price_full_eur = 4200
+price_retainer_eur = 14700
+cta_hook = "Sicherheit kaufen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikolage", description = "Erste Einschätzung der kritischsten Rechtsrisiken innerhalb eines Tages.", price_eur = 2940, sla_hours = 24 },
+  { title = "Vollprüfung + Handlungsempfehlung", description = "Detaillierte Prüfung mit vorformulierten Maßnahmen und Musterverträgen.", price_eur = 4200, sla_hours = 72 },
+  { title = "Laufender Rechtsbeistand", description = "Monatliche Checks, Vertragsänderungen und Priorisierung deiner Fälle.", price_eur = 14700, sla_hours = 0, recurring = true },
+]

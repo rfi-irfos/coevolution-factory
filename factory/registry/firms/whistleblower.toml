@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Arbeitsrecht und Compliance prüft euer Whistlebl
 agents = ["legal-employment", "hr-culture", "risk-ethics"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Whistleblower Policy Team"
+offer_slug = "whistleblower"
+one_liner = "Ein festes Team aus Arbeitsrecht und Compliance prüft euer Whistleblower-Programm — bevor die EU-Pflicht zuschlägt."
+price_quick_eur = 1680
+price_full_eur = 2400
+price_retainer_eur = 8400
+cta_hook = "Klarheit schaffen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikolage", description = "Erste Einschätzung der kritischsten Rechtsrisiken innerhalb eines Tages.", price_eur = 1680, sla_hours = 24 },
+  { title = "Vollprüfung + Handlungsempfehlung", description = "Detaillierte Prüfung mit vorformulierten Maßnahmen und Musterverträgen.", price_eur = 2400, sla_hours = 72 },
+  { title = "Laufender Rechtsbeistand", description = "Monatliche Checks, Vertragsänderungen und Priorisierung deiner Fälle.", price_eur = 8400, sla_hours = 0, recurring = true },
+]

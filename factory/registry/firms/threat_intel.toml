@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Threat-Intel und SOC sagt dir, welche aktive Kamp
 agents = ["cyber-threat-intel", "sece-ng-threat-det", "sre-monitoring"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Cyber Threat Team"
+offer_slug = "threat-intel"
+one_liner = "Ein festes Team aus Threat-Intel und SOC sagt dir, welche aktive Kampagne gerade auf euren Stack zielt."
+price_quick_eur = 2240
+price_full_eur = 3200
+price_retainer_eur = 11200
+cta_hook = "Risiko checken"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Angriffsfenster", description = "In 24h siehst du, wo Angreifer am einfachsten reinkommen.", price_eur = 2240, sla_hours = 24 },
+  { title = "Vollprüfung + Sicherheitsplan", description = "Schwachstellenanalyse mit priorisierten Maßnahmen und Prüfprotokollen.", price_eur = 3200, sla_hours = 72 },
+  { title = "Laufender Sicherheitspartner", description = "Monatliche Monitoring-Updates, Incident-Vorbereitung und direkter Draht.", price_eur = 11200, sla_hours = 0, recurring = true },
+]

@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Energie und NERC-Recht findet die Zuverlässigkei
 agents = ["risk-iso", "infra-networking", "legal-compliance"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Energy Compliance Team"
+offer_slug = "energy-compliance"
+one_liner = "Ein festes Team aus Energie und NERC-Recht findet die Zuverlässigkeitslücke, die eine Strafe nach sich zieht."
+price_quick_eur = 3150
+price_full_eur = 4500
+price_retainer_eur = 15750
+cta_hook = "Sicherheit kaufen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Pflichtenheft", description = "In 24h weißt du, welche Regeln auf dich zukommen und was sofort zu tun ist.", price_eur = 3150, sla_hours = 24 },
+  { title = "Vollprüfung + Fahrplan", description = "Lückenanalyse mit priorisierten Maßnahmen und fertigen Vorlagen.", price_eur = 4500, sla_hours = 72 },
+  { title = "Laufender Compliance-Partner", description = "Monatliche Updates, Änderungsdienst und direkter Draht zu deinem Ansprechpartner.", price_eur = 15750, sla_hours = 0, recurring = true },
+]
