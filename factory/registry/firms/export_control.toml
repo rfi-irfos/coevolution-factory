@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Exportrecht und Politik findet den ITAR/EAR-Fehle
 agents = ["legal-compliance", "risk-enterprise", "govt-regulatory"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Export Control Team"
+offer_slug = "export-control"
+one_liner = "Ein festes Team aus Exportrecht und Politik findet den ITAR/EAR-Fehler, der eine Strafuntersuchung auslösen würde."
+price_quick_eur = 2310
+price_full_eur = 3300
+price_retainer_eur = 11550
+cta_hook = "Jetzt prüfen lassen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Pflichtenheft", description = "In 24h weißt du, welche Regeln auf dich zukommen und was sofort zu tun ist.", price_eur = 2310, sla_hours = 24 },
+  { title = "Vollprüfung + Fahrplan", description = "Lückenanalyse mit priorisierten Maßnahmen und fertigen Vorlagen.", price_eur = 3300, sla_hours = 72 },
+  { title = "Laufender Compliance-Partner", description = "Monatliche Updates, Änderungsdienst und direkter Draht zu deinem Ansprechpartner.", price_eur = 11550, sla_hours = 0, recurring = true },
+]

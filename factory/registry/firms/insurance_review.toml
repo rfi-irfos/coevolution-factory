@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Risiko und Finanzen findet die Deckungslücke, di
 agents = ["risk-enterprise", "legal-compliance", "fin-treasury-invest"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Insurance Coverage Team"
+offer_slug = "insurance-review"
+one_liner = "Ein festes Team aus Risiko und Finanzen findet die Deckungslücke, die den letzten Vorfall bezahlt hätte."
+price_quick_eur = 2520
+price_full_eur = 3600
+price_retainer_eur = 12600
+cta_hook = "Jetzt starten"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikofenster", description = "Schneller Überblick über die größten unvorhersehbaren Risiken.", price_eur = 2520, sla_hours = 24 },
+  { title = "Vollprüfung + Resilienzplan", description = "Detaillierte Risikobewertung mit Maßnahmenpriorisierung und Testprotokollen.", price_eur = 3600, sla_hours = 72 },
+  { title = "Laufender Risikopartner", description = "Monatliche Reviews, Trend-Updates und Warnsystem.", price_eur = 12600, sla_hours = 0, recurring = true },
+]

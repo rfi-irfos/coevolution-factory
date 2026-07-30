@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Sicherheitsvorfällen und Recht timt deine Meldun
 agents = ["legal-privacy", "cyber-incident", "sre-incident"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Data Breach Team"
+offer_slug = "breach-readiness"
+one_liner = "Ein festes Team aus Sicherheitsvorfällen und Recht timt deine Meldung so, dass die Behörde Compliance sieht, nicht Panik."
+price_quick_eur = 1470
+price_full_eur = 2100
+price_retainer_eur = 7350
+cta_hook = "Sicherheit kaufen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Datenqualität", description = "Schnelle Prüfung deines Datenbestands auf Schwachstellen.", price_eur = 1470, sla_hours = 24 },
+  { title = "Vollprüfung + Datenkonzept", description = "Umfassende Analyse mit Maßnahmenplan und Governance-Vorlagen.", price_eur = 2100, sla_hours = 72 },
+  { title = "Laufender Datenpartner", description = "Monatliche Qualitätschecks, Catalog-Pflege und direktes Reporting.", price_eur = 7350, sla_hours = 0, recurring = true },
+]

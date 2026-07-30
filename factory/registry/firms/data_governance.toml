@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Katalog-, Qualitäts- und Governance-Perspektive 
 agents = ["gov-metadata", "gov-compliance", "infomgmt-records"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Data Governance Team"
+offer_slug = "data-governance"
+one_liner = "Ein festes Team aus Katalog-, Qualitäts- und Governance-Perspektive sagt dir, welche Daten du eigentlich nicht nutzen darfst — bevor ein DOR"
+price_quick_eur = 2380
+price_full_eur = 3400
+price_retainer_eur = 11900
+cta_hook = "Sofort abklären"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Datenqualität", description = "Schnelle Prüfung deines Datenbestands auf Schwachstellen.", price_eur = 2380, sla_hours = 24 },
+  { title = "Vollprüfung + Datenkonzept", description = "Umfassende Analyse mit Maßnahmenplan und Governance-Vorlagen.", price_eur = 3400, sla_hours = 72 },
+  { title = "Laufender Datenpartner", description = "Monatliche Qualitätschecks, Catalog-Pflege und direktes Reporting.", price_eur = 11900, sla_hours = 0, recurring = true },
+]

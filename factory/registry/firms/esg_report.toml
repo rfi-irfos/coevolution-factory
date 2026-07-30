@@ -10,3 +10,16 @@ problem = "Ein festes Team aus ESG und IR sagt dir, welche CSRD-Angabe du nicht 
 agents = ["sustain-esg", "sustain-supply-chain", "risk-ethics"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "ESG Reporting Team"
+offer_slug = "esg-report"
+one_liner = "Ein festes Team aus ESG und IR sagt dir, welche CSRD-Angabe du nicht belegen kannst — bevor der Bericht rausgeht."
+price_quick_eur = 2660
+price_full_eur = 3800
+price_retainer_eur = 13300
+cta_hook = "Jetzt starten"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Greenwashing-Risiko", description = "Schnelltest: welche ESG-Angaben rechtlich oder reputationsseitig gefährlich sind.", price_eur = 2660, sla_hours = 24 },
+  { title = "Vollprüfung + Bericht", description = "Umfassende Prüfung mit Handlungsempfehlung und vorbereitetem Bericht.", price_eur = 3800, sla_hours = 72 },
+  { title = "Laufender ESG-Partner", description = "Monatliche Updates, Pflichtenprüfung und direkter Kontakt.", price_eur = 13300, sla_hours = 0, recurring = true },
+]

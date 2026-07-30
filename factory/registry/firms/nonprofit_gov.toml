@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Non-Profit- und Förderrecht findet die Complianc
 agents = ["legal-corporate", "risk-iso", "fin-general-ledger"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Nonprofit Governance Team"
+offer_slug = "nonprofit-gov"
+one_liner = "Ein festes Team aus Non-Profit- und Förderrecht findet die Compliance-Lücke, die deine Förderung aussetzen würde."
+price_quick_eur = 1959
+price_full_eur = 2800
+price_retainer_eur = 9800
+cta_hook = "Problem lösen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikolage", description = "Erste Einschätzung der kritischsten Rechtsrisiken innerhalb eines Tages.", price_eur = 1959, sla_hours = 24 },
+  { title = "Vollprüfung + Handlungsempfehlung", description = "Detaillierte Prüfung mit vorformulierten Maßnahmen und Musterverträgen.", price_eur = 2800, sla_hours = 72 },
+  { title = "Laufender Rechtsbeistand", description = "Monatliche Checks, Vertragsänderungen und Priorisierung deiner Fälle.", price_eur = 9800, sla_hours = 0, recurring = true },
+]

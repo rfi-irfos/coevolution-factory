@@ -10,3 +10,16 @@ problem = "Ein festes Team aus SRE und Resilienz findet den Single Point of Fail
 agents = ["sre-reliability", "sre-scaling", "infra-cloud"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Business Resilience Team"
+offer_slug = "resilience-review"
+one_liner = "Ein festes Team aus SRE und Resilienz findet den Single Point of Failure, den eure Status-Seite gerade verbirgt."
+price_quick_eur = 3849
+price_full_eur = 5500
+price_retainer_eur = 19250
+cta_hook = "Hier prüfen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikofenster", description = "Schneller Überblick über die größten unvorhersehbaren Risiken.", price_eur = 3849, sla_hours = 24 },
+  { title = "Vollprüfung + Resilienzplan", description = "Detaillierte Risikobewertung mit Maßnahmenpriorisierung und Testprotokollen.", price_eur = 5500, sla_hours = 72 },
+  { title = "Laufender Risikopartner", description = "Monatliche Reviews, Trend-Updates und Warnsystem.", price_eur = 19250, sla_hours = 0, recurring = true },
+]

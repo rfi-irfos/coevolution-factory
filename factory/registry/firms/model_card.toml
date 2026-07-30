@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Modellkarten und Dokumentation baut die Nachweise
 agents = ["ai-safety-governance", "mlops-registry", "docs-tech-writers"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "AI Documentation Team"
+offer_slug = "model-card"
+one_liner = "Ein festes Team aus Modellkarten und Dokumentation baut die Nachweise, die Prüfer jetzt unter dem AI Act verlangen."
+price_quick_eur = 2660
+price_full_eur = 3800
+price_retainer_eur = 13300
+cta_hook = "Jetzt prüfen lassen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Datenqualität", description = "Schnelle Prüfung deines Datenbestands auf Schwachstellen.", price_eur = 2660, sla_hours = 24 },
+  { title = "Vollprüfung + Datenkonzept", description = "Umfassende Analyse mit Maßnahmenplan und Governance-Vorlagen.", price_eur = 3800, sla_hours = 72 },
+  { title = "Laufender Datenpartner", description = "Monatliche Qualitätschecks, Catalog-Pflege und direktes Reporting.", price_eur = 13300, sla_hours = 0, recurring = true },
+]

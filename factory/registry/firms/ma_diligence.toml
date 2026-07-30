@@ -10,3 +10,16 @@ problem = "Ein festes Team aus M&A, Recht und Risiko beziffert die versteckte Ha
 agents = ["legal-ip", "legal-compliance", "corpdev-diligence"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "M&A Due Diligence Team"
+offer_slug = "ma-diligence"
+one_liner = "Ein festes Team aus M&A, Recht und Risiko beziffert die versteckte Haftung im Deal — bevor du die Absichtserklärung unterschreibst."
+price_quick_eur = 5950
+price_full_eur = 8500
+price_retainer_eur = 29750
+cta_hook = "Jetzt prüfen lassen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikolage", description = "Erste Einschätzung der kritischsten Rechtsrisiken innerhalb eines Tages.", price_eur = 5950, sla_hours = 24 },
+  { title = "Vollprüfung + Handlungsempfehlung", description = "Detaillierte Prüfung mit vorformulierten Maßnahmen und Musterverträgen.", price_eur = 8500, sla_hours = 72 },
+  { title = "Laufender Rechtsbeistand", description = "Monatliche Checks, Vertragsänderungen und Priorisierung deiner Fälle.", price_eur = 29750, sla_hours = 0, recurring = true },
+]

@@ -10,3 +10,16 @@ problem = "Ein festes Team aus AppSec, Red/Blue-Team und CISO-Perspektive findet
 agents = ["sece-ng-cloudsec", "sece-ng-appsec", "cyber-posture"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "App Security Team"
+offer_slug = "cyber-posture"
+one_liner = "Ein festes Team aus AppSec, Red/Blue-Team und CISO-Perspektive findet die Lücke, die ein Angreifer nutzen würde — vor deinem nächsten Pentes"
+price_quick_eur = 1819
+price_full_eur = 2600
+price_retainer_eur = 9100
+cta_hook = "Klarheit schaffen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Angriffsfenster", description = "In 24h siehst du, wo Angreifer am einfachsten reinkommen.", price_eur = 1819, sla_hours = 24 },
+  { title = "Vollprüfung + Sicherheitsplan", description = "Schwachstellenanalyse mit priorisierten Maßnahmen und Prüfprotokollen.", price_eur = 2600, sla_hours = 72 },
+  { title = "Laufender Sicherheitspartner", description = "Monatliche Monitoring-Updates, Incident-Vorbereitung und direkter Draht.", price_eur = 9100, sla_hours = 0, recurring = true },
+]

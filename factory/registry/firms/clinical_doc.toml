@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Klinik und Compliance findet die Kennzeichnungs- 
 agents = ["risk-ethics", "docs-tech-writers", "legal-compliance"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Clinical Trial Docs Team"
+offer_slug = "clinical-doc"
+one_liner = "Ein festes Team aus Klinik und Compliance findet die Kennzeichnungs- oder Dokumentationslücke, die ein Schreiben von FDA oder EMA nach sich "
+price_quick_eur = 2240
+price_full_eur = 3200
+price_retainer_eur = 11200
+cta_hook = "Hier prüfen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Betriebsrisiken", description = "Schnelle Prüfung der kritischsten Betriebsrisiken.", price_eur = 2240, sla_hours = 24 },
+  { title = "Vollprüfung + Optimierungsplan", description = "Detaillierte Analyse mit priorisierten Maßnahmen und Prüfprotokollen.", price_eur = 3200, sla_hours = 72 },
+  { title = "Laufender Betriebspartner", description = "Monatliche Reviews, Updates und direkter Draht zum Expertenteam.", price_eur = 11200, sla_hours = 0, recurring = true },
+]

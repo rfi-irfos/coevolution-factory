@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Kinderschutz und Altersverifikation findet die CO
 agents = ["legal-privacy", "risk-gdpr", "content-policy"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Child Safety Team"
+offer_slug = "child-safety"
+one_liner = "Ein festes Team aus Kinderschutz und Altersverifikation findet die COPPA-Lücke — bevor die Behörde sie findet."
+price_quick_eur = 1819
+price_full_eur = 2600
+price_retainer_eur = 9100
+cta_hook = "Jetzt prüfen lassen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Grundschutz", description = "Prüfung der wichtigsten Compliance-Lücken in 24 Stunden.", price_eur = 1819, sla_hours = 24 },
+  { title = "Vollprüfung + Maßnahmenplan", description = "Detaillierte Analyse mit konkreten Handlungsempfehlungen und Vorlagen.", price_eur = 2600, sla_hours = 72 },
+  { title = "Laufender Datenschutz-Partner", description = "Monatliche Prüfungen, Updates und direkter Zugang zum Expertenteam.", price_eur = 9100, sla_hours = 0, recurring = true },
+]

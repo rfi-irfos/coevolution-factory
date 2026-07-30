@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Content und Richtlinien findet das Moderationsris
 agents = ["content-policy", "legal-compliance", "docs-tech-writers"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Content Moderation Team"
+offer_slug = "content-policy"
+one_liner = "Ein festes Team aus Content und Richtlinien findet das Moderationsrisiko in eurer Plattform — vor der nächsten Prüfwelle."
+price_quick_eur = 1819
+price_full_eur = 2600
+price_retainer_eur = 9100
+cta_hook = "Jetzt starten"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Betriebsrisiken", description = "Schnelle Prüfung der kritischsten Betriebsrisiken.", price_eur = 1819, sla_hours = 24 },
+  { title = "Vollprüfung + Optimierungsplan", description = "Detaillierte Analyse mit priorisierten Maßnahmen und Prüfprotokollen.", price_eur = 2600, sla_hours = 72 },
+  { title = "Laufender Betriebspartner", description = "Monatliche Reviews, Updates und direkter Draht zum Expertenteam.", price_eur = 9100, sla_hours = 0, recurring = true },
+]

@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Fintech und Compliance sagt dir, gegen welche Reg
 agents = ["finserv-compliance", "legal-compliance", "risk-enterprise"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Fintech Compliance Team"
+offer_slug = "finserv-compliance"
+one_liner = "Ein festes Team aus Fintech und Compliance sagt dir, gegen welche Regelung du gerade verstößt — bevor die Lizenzprüfung kommt."
+price_quick_eur = 3849
+price_full_eur = 5500
+price_retainer_eur = 19250
+cta_hook = "Klarheit schaffen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Pflichtenheft", description = "In 24h weißt du, welche Regeln auf dich zukommen und was sofort zu tun ist.", price_eur = 3849, sla_hours = 24 },
+  { title = "Vollprüfung + Fahrplan", description = "Lückenanalyse mit priorisierten Maßnahmen und fertigen Vorlagen.", price_eur = 5500, sla_hours = 72 },
+  { title = "Laufender Compliance-Partner", description = "Monatliche Updates, Änderungsdienst und direkter Draht zu deinem Ansprechpartner.", price_eur = 19250, sla_hours = 0, recurring = true },
+]

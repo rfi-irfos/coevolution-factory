@@ -10,3 +10,16 @@ problem = "Ein festes Team aus CO2-Bilanz und Lieferkette findet die Emissionsza
 agents = ["sustain-carbon", "ops-process", "fin-forecasting"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Carbon Footprint Team"
+offer_slug = "carbon-audit"
+one_liner = "Ein festes Team aus CO2-Bilanz und Lieferkette findet die Emissionszahl, die du unter dem Berichterstattungsgesetz verteidigen musst."
+price_quick_eur = 2940
+price_full_eur = 4200
+price_retainer_eur = 14700
+cta_hook = "Sofort abklären"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikofenster", description = "Schneller Überblick über die größten unvorhersehbaren Risiken.", price_eur = 2940, sla_hours = 24 },
+  { title = "Vollprüfung + Resilienzplan", description = "Detaillierte Risikobewertung mit Maßnahmenpriorisierung und Testprotokollen.", price_eur = 4200, sla_hours = 72 },
+  { title = "Laufender Risikopartner", description = "Monatliche Reviews, Trend-Updates und Warnsystem.", price_eur = 14700, sla_hours = 0, recurring = true },
+]

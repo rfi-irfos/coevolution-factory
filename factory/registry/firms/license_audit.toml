@@ -10,3 +10,16 @@ problem = "Ein festes Team aus Lizenzrecht und Software findet den OSS-Lizenzkon
 agents = ["legal-licensing", "legal-ip", "risk-enterprise"]
 output_contract = ["report", "template", "score"]
 status = "läuft normal"
+offer_title = "Software License Team"
+offer_slug = "license-audit"
+one_liner = "Ein festes Team aus Lizenzrecht und Software findet den OSS-Lizenzkonflikt, der dir M&A oder den Produktbetrieb kaputt machen würde."
+price_quick_eur = 2520
+price_full_eur = 3600
+price_retainer_eur = 12600
+cta_hook = "Hier prüfen"
+sla_hours = 24
+products = [
+  { title = "Schnellcheck Risikofenster", description = "Schneller Überblick über die größten unvorhersehbaren Risiken.", price_eur = 2520, sla_hours = 24 },
+  { title = "Vollprüfung + Resilienzplan", description = "Detaillierte Risikobewertung mit Maßnahmenpriorisierung und Testprotokollen.", price_eur = 3600, sla_hours = 72 },
+  { title = "Laufender Risikopartner", description = "Monatliche Reviews, Trend-Updates und Warnsystem.", price_eur = 12600, sla_hours = 0, recurring = true },
+]
