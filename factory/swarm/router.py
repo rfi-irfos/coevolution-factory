@@ -14,23 +14,18 @@ HERE = Path(__file__).parent
 FIRMS_DIR = HERE.parent / "registry" / "firms"
 
 
-def _parse_toml_value(line: str):
-    line = line.strip()
-    if not line or line.startswith("#"):
-        return None, None
-    if "=" not in line:
-        return None, None
-    key, value = line.split("=", 1)
-    key = key.strip()
+def _parse_value(value: str):
     value = value.strip()
-    if value.startswith('"') and value.endswith('"') and value.count('"') == 2:
-        return key, value[1:-1]
-    if value.startswith('"'):
-        return key, value[1:-1]
+    if value.startswith('"') and value.endswith('"'):
+        return value[1:-1]
     try:
-        return key, int(value)
+        return int(value)
     except ValueError:
-        return key, value
+        if value.lower() == "true":
+            return True
+        if value.lower() == "false":
+            return False
+        return value
 
 
 def load_firm(slug: str) -> dict[str, Any]:
@@ -39,37 +34,35 @@ def load_firm(slug: str) -> dict[str, Any]:
         raise KeyError(f"unknown firm: {slug}")
     raw = path.read_text()
     out: dict[str, Any] = {}
-    products: list[dict[str, Any]] = []
-    in_products = False
-    current: dict[str, Any] = {}
-    for line in raw.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("#") or not stripped:
+    lines = raw.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        i += 1
+        if not line or line.startswith("#"):
             continue
-        if in_products:
-            if stripped == "]":
-                if current:
-                    products.append(current)
-                    current = {}
-                in_products = False
-                continue
-            if stripped.startswith(("{", "}", "[")):
-                continue
-            key, value = _parse_toml_value(stripped)
-            if key is None or current is None:
-                continue
-            current[key] = value
+        if line.startswith("products = ["):
+            products: list[dict[str, Any]] = []
+            current: dict[str, Any] = {}
+            while i < len(lines):
+                item_line = lines[i].strip()
+                i += 1
+                if item_line == "]":
+                    if current:
+                        products.append(dict(current))
+                        current = {}
+                    break
+                if "=" in item_line:
+                    for pair_m in re.finditer(r'(\w+)\s*=\s*("(?:[^"\\]|\\.)*"|[\d]+(?:\.\d+)?|true|false)', item_line):
+                        current[pair_m.group(1)] = _parse_value(pair_m.group(2))
+            if current:
+                products.append(current)
+            out["products"] = products
             continue
-        key, value = _parse_toml_value(stripped)
-        if key is None:
+        if "=" not in line:
             continue
-        if key == "products":
-            in_products = True
-            continue
-        out[key] = value
-    if products:
-        out["products"] = products
-    # Default fallbacks
+        key, value = line.split("=", 1)
+        out[key.strip()] = _parse_value(value)
     out.setdefault("swarm_agents", [])
     out.setdefault("delivery_mode", "serial")
     out.setdefault("auto_spawn", False)
