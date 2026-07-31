@@ -23,3 +23,6 @@ products = [
   { title = "Vollprüfung + Resilienzplan", description = "Detaillierte Risikobewertung mit Maßnahmenpriorisierung und Testprotokollen.", price_eur = 3100, sla_hours = 72 },
   { title = "Laufender Risikopartner", description = "Monatliche Reviews, Trend-Updates und Warnsystem.", price_eur = 10850, sla_hours = 0, recurring = true },
 ]
+swarm_agents = ["risk-enterprise", "risk-ethics", "legal-compliance"]
+delivery_mode = "serial"
+auto_spawn = true

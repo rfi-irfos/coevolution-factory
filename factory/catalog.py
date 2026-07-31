@@ -1650,20 +1650,20 @@ CENTERS_META = {c["slug"]: {
                            if s in _REG}),
     # standing health-check prompt: what this center asks itself continuously
     "standing_prompt": (
-        f"Standing health check for {c["name"]}. Mandate: {c["mandate"]}. "
-        f"Convene the panel across {', '.join(sorted({_REG[s]['lane'] for s in build_panel(c["slug"], c["seed_agents"]) if s in _REG}))} "
+        f"Standing health check for {c['name']}. Mandate: {c['mandate']}. "
+        f"Convene the panel across {', '.join(sorted({_REG[s]['lane'] for s in build_panel(c['slug'], c['seed_agents']) if s in _REG}))} "
         f"and assess current exposure, emerging tensions, and whether any "
         f"discipline would change its prior view given new context."),
     # value proposition: SPECIFIC per-domain (see VALUE_PROPS), not a template
     "value_prop": VALUE_PROPS.get(c["slug"], {}).get(
         "value_prop",
-        f"A standing body of {len(build_panel(c["slug"], c["seed_agents"]))} experts that convenes "
-        f"on your {c["mandate"].lower()}."),
+        f"A standing body of {len(build_panel(c['slug'], c['seed_agents']))} experts that convenes "
+        f"on your {c['mandate'].lower()}."),
     "use_cases": VALUE_PROPS.get(c["slug"], {}).get("use_cases", []),
     "icp_pain": VALUE_PROPS.get(c["slug"], {}).get("icp_pain", ""),
     # a concrete opening question visitors can drop straight into the panel
     "sample_question": (
-        f"What is our current exposure on {c["mandate"].lower()}, and which disciplines "
+        f"What is our current exposure on {c['mandate'].lower()}, and which disciplines "
         f"on our panel would most change their view if we shipped a change "
         f"this quarter?"),
 } for c in CENTERS}

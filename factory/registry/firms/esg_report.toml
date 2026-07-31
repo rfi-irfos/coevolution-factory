@@ -23,3 +23,6 @@ products = [
   { title = "Vollprüfung + Bericht", description = "Umfassende Prüfung mit Handlungsempfehlung und vorbereitetem Bericht.", price_eur = 3800, sla_hours = 72 },
   { title = "Laufender ESG-Partner", description = "Monatliche Updates, Pflichtenprüfung und direkter Kontakt.", price_eur = 13300, sla_hours = 0, recurring = true },
 ]
+swarm_agents = ["sustain-esg", "risk-ethics", "fin-forecasting"]
+delivery_mode = "serial"
+auto_spawn = true

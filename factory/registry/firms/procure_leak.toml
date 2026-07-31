@@ -23,3 +23,6 @@ products = [
   { title = "Vollprüfung + Umsetzungsplan", description = "Detaillierte Potenzialanalyse mit priorisierten Maßnahmen und Vorlagen.", price_eur = 2500, sla_hours = 72 },
   { title = "Laufender Optimierungspartner", description = "Monatliche Reviews, Benchmarking und direktes Reporting.", price_eur = 8750, sla_hours = 0, recurring = true },
 ]
+swarm_agents = ["ops-process", "vendor-risk", "fin-general-ledger"]
+delivery_mode = "parallel"
+auto_spawn = true
