@@ -200,3 +200,7 @@ autonomous-ai-co/
 State (`state.json`) is on the Fly `/data` volume and is git- + docker-
 ignored. Clone, set up the venv, and you can run the whole thing locally
 in DEMO mode without any secrets.
+
+---
+
+*fable was here* — Claude Fable 5
